@@ -1,3 +1,4 @@
+﻿using ManagementApi.Application.Roles.Commands;
 using ManagementApi.Infrastructure.Authorization;
 using ManagementApi.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
@@ -48,5 +49,29 @@ public class RolesController : BaseApiController
         }
 
         return Ok(new List<string>());
+    }
+
+    /// <summary>
+    /// Update permissions for a specific role
+    /// </summary>
+    [HttpPut("{roleName}/permissions")]
+    [MustHavePermission(Permissions.RolesManagePermissions)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateRolePermissions(string roleName, [FromBody] List<string> permissions)
+    {
+        var result = await Mediator.Send(new UpdateRolePermissionsCommand(roleName, permissions));
+
+        if (!result.Succeeded)
+        {
+            if (result.Messages.Contains("not found"))
+            {
+                return NotFound(new { errors = result.Messages });
+            }
+            return BadRequest(new { errors = result.Messages });
+        }
+
+        return Ok(new { message = result.Messages.FirstOrDefault() });
     }
 }

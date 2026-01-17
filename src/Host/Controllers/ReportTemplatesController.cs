@@ -30,6 +30,25 @@ public class ReportTemplatesController : BaseApiController
     }
 
     /// <summary>
+    /// Get a specific report template by ID
+    /// </summary>
+    [HttpGet("{templateId}")]
+    [MustHavePermission(Permissions.ReportTemplatesView)]
+    [ProducesResponseType(typeof(ReportTemplateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetReportTemplateById(Guid templateId)
+    {
+        var result = await Mediator.Send(new GetReportTemplateByIdQuery(templateId));
+
+        if (!result.Succeeded)
+        {
+            return NotFound(new { errors = result.Messages });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
     /// Create a new report template
     /// </summary>
     [HttpPost]

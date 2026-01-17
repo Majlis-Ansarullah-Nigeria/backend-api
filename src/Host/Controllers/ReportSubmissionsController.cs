@@ -31,6 +31,25 @@ public class ReportSubmissionsController : BaseApiController
     }
 
     /// <summary>
+    /// Get a specific report submission by ID
+    /// </summary>
+    [HttpGet("{submissionId}")]
+    [MustHavePermission(Permissions.ReportsView)]
+    [ProducesResponseType(typeof(ReportSubmissionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSubmissionById(Guid submissionId)
+    {
+        var result = await Mediator.Send(new GetSubmissionByIdQuery(submissionId));
+
+        if (!result.Succeeded)
+        {
+            return NotFound(new { errors = result.Messages });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
     /// Get report analytics and statistics
     /// </summary>
     [HttpGet("analytics")]
