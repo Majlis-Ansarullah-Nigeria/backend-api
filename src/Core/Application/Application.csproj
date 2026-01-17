@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>ManagementApi.Application</RootNamespace>
+    <AssemblyName>ManagementApi.Application</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\Domain.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ardalis.Specification" Version="8.0.0" />
+    <PackageReference Include="FluentValidation" Version="11.12.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.12.0" />
+    <PackageReference Include="Mapster" Version="7.4.0" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="9.0.1" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+</Project>
