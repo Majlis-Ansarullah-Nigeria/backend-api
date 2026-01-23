@@ -30,7 +30,37 @@ public class ReportTemplatesController : BaseApiController
     }
 
     /// <summary>
-    /// Get a specific report template by ID
+    /// Get a specific report template by ID (for users with submit permission)
+    /// </summary>
+    [HttpGet("accessible/{templateId}")]
+    [MustHavePermission(Permissions.ReportsSubmit)]
+    [ProducesResponseType(typeof(ReportTemplateDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserAccessibleTemplate(Guid templateId)
+    {
+        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (!Guid.TryParse(currentUserId, out Guid userId))
+        {
+            return BadRequest(new { errors = new[] { "Invalid user ID" } });
+        }
+
+        var result = await Mediator.Send(new GetUserAccessibleTemplateQuery(templateId, userId));
+
+        if (!result.Succeeded)
+        {
+            if (result.Messages.Contains("not found") || result.Messages.Contains("User not found"))
+            {
+                return NotFound(new { errors = result.Messages });
+            }
+            return BadRequest(new { errors = result.Messages });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Get a specific report template by ID (for users with view permission)
     /// </summary>
     [HttpGet("{templateId}")]
     [MustHavePermission(Permissions.ReportTemplatesView)]

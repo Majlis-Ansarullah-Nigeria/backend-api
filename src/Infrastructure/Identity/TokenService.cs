@@ -34,6 +34,7 @@ public class TokenService : ITokenService
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.UserName ?? string.Empty),  // Add UserName claim
             new(ClaimTypes.Email, user.Email ?? string.Empty),
             new("chandaNo", user.ChandaNo ?? string.Empty),
             new("memberId", user.MemberId?.ToString() ?? string.Empty),
@@ -62,8 +63,8 @@ public class TokenService : ITokenService
 
         foreach (var roleName in roles)
         {
-            // Admin has all permissions
-            if (roleName == Roles.Admin)
+            // SuperAdmin and NationalAdmin have all permissions
+            if (roleName == Roles.SuperAdmin || roleName == Roles.NationalAdmin)
             {
                 permissions = Permissions.GetAllPermissions().ToHashSet();
                 break;

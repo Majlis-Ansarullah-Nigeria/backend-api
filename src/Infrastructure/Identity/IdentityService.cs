@@ -97,8 +97,8 @@ public class IdentityService : IIdentityService
     {
         var roles = await GetUserRolesAsync(user);
 
-        // Admin has all permissions
-        if (roles.Contains(Roles.Admin))
+        // SuperAdmin and NationalAdmin have all permissions
+        if (roles.Contains(Roles.SuperAdmin) || roles.Contains(Roles.NationalAdmin))
         {
             return Permissions.GetAllPermissions();
         }

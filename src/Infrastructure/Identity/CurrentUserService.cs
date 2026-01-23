@@ -25,7 +25,7 @@ public class CurrentUserService : ICurrentUserService
 
     public string? UserName => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
 
-    public string? ChandaNo => _httpContextAccessor.HttpContext?.User?.FindFirst("ChandaNo")?.Value;
+    public string? ChandaNo => _httpContextAccessor.HttpContext?.User?.FindFirst("chandaNo")?.Value;
 
     public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
 
@@ -33,7 +33,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var muqamIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("MuqamId")?.Value;
+            var muqamIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("muqamId")?.Value;
             return Guid.TryParse(muqamIdClaim, out var muqamId) ? muqamId : null;
         }
     }
@@ -42,7 +42,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var dilaIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("DilaId")?.Value;
+            var dilaIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("dilaId")?.Value;
             return Guid.TryParse(dilaIdClaim, out var dilaId) ? dilaId : null;
         }
     }
@@ -51,7 +51,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var zoneIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("ZoneId")?.Value;
+            var zoneIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("zoneId")?.Value;
             return Guid.TryParse(zoneIdClaim, out var zoneId) ? zoneId : null;
         }
     }
@@ -60,7 +60,7 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var orgLevelClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("OrganizationLevel")?.Value;
+            var orgLevelClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("organizationLevel")?.Value;
             return Enum.TryParse<OrganizationLevel>(orgLevelClaim, out var orgLevel)
                 ? orgLevel
                 : OrganizationLevel.Muqam;

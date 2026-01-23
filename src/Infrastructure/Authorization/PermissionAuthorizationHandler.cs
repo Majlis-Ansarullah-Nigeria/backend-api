@@ -15,14 +15,15 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
             return Task.CompletedTask;
         }
 
-        // Admin role has all permissions
-        if (context.User.IsInRole(Roles.Admin))
+        // SuperAdmin and NationalAdmin roles have all permissions
+        if (context.User.IsInRole(Roles.SuperAdmin) ||
+            context.User.IsInRole(Roles.NationalAdmin))
         {
             context.Succeed(requirement);
             return Task.CompletedTask;
         }
 
-        // Check if user has the required permission
+        // Check if user has the required permission in claims
         var permissions = context.User.Claims
             .Where(c => c.Type == "permission")
             .Select(c => c.Value)

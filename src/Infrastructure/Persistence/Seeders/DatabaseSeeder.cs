@@ -120,8 +120,58 @@ public class DatabaseSeeder
 
     private async Task SeedAdminUserAsync()
     {
-        _logger.LogInformation("Checking for admin user...");
+        _logger.LogInformation("Checking for admin users...");
 
+        // Seed SuperAdmin user
+        const string superAdminChandaNo = "SUPERADMIN";
+        const string superAdminPassword = "SuperAdmin@123";
+
+        var superAdminUser = await _userManager.Users.FirstOrDefaultAsync(u => u.ChandaNo == superAdminChandaNo);
+
+        if (superAdminUser == null)
+        {
+            superAdminUser = new ApplicationUser
+            {
+                UserName = superAdminChandaNo,
+                Email = "superadmin@majlisansarullah.ng",
+                EmailConfirmed = true,
+                ChandaNo = superAdminChandaNo,
+                FirstName = "Super",
+                LastName = "Administrator",
+                IsActive = true,
+                OrganizationLevel = Domain.Enums.OrganizationLevel.National
+            };
+
+            var result = await _userManager.CreateAsync(superAdminUser, superAdminPassword);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Created SuperAdmin user with ChandaNo: {ChandaNo}", superAdminChandaNo);
+
+                var roleResult = await _userManager.AddToRoleAsync(superAdminUser, Roles.SuperAdmin);
+
+                if (roleResult.Succeeded)
+                {
+                    _logger.LogInformation("Assigned SuperAdmin role to superadmin user");
+                }
+                else
+                {
+                    _logger.LogError("Failed to assign SuperAdmin role. Errors: {Errors}",
+                        string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                }
+            }
+            else
+            {
+                _logger.LogError("Failed to create superadmin user. Errors: {Errors}",
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
+        }
+        else
+        {
+            _logger.LogInformation("SuperAdmin user already exists");
+        }
+
+        // Seed NationalAdmin user
         const string adminChandaNo = "ADMIN001";
         const string adminPassword = "Admin@123";
 
@@ -135,7 +185,7 @@ public class DatabaseSeeder
                 Email = "admin@majlisansarullah.ng",
                 EmailConfirmed = true,
                 ChandaNo = adminChandaNo,
-                FirstName = "System",
+                FirstName = "National",
                 LastName = "Administrator",
                 IsActive = true,
                 OrganizationLevel = Domain.Enums.OrganizationLevel.National
@@ -145,18 +195,17 @@ public class DatabaseSeeder
 
             if (result.Succeeded)
             {
-                _logger.LogInformation("Created admin user with ChandaNo: {ChandaNo}", adminChandaNo);
+                _logger.LogInformation("Created NationalAdmin user with ChandaNo: {ChandaNo}", adminChandaNo);
 
-                // Assign Admin role
-                var roleResult = await _userManager.AddToRoleAsync(adminUser, Roles.Admin);
+                var roleResult = await _userManager.AddToRoleAsync(adminUser, Roles.NationalAdmin);
 
                 if (roleResult.Succeeded)
                 {
-                    _logger.LogInformation("Assigned Admin role to admin user");
+                    _logger.LogInformation("Assigned NationalAdmin role to admin user");
                 }
                 else
                 {
-                    _logger.LogError("Failed to assign Admin role. Errors: {Errors}",
+                    _logger.LogError("Failed to assign NationalAdmin role. Errors: {Errors}",
                         string.Join(", ", roleResult.Errors.Select(e => e.Description)));
                 }
             }
@@ -168,7 +217,7 @@ public class DatabaseSeeder
         }
         else
         {
-            _logger.LogInformation("Admin user already exists");
+            _logger.LogInformation("NationalAdmin user already exists");
         }
     }
 
@@ -176,16 +225,35 @@ public class DatabaseSeeder
     {
         return roleName switch
         {
-            Roles.Admin => "System administrator with full access to all features",
-            Roles.Member => "Default role for all registered members",
-            Roles.NationalSecretary => "National level secretary with organization-wide access",
-            Roles.ZonalCoordinator => "Zone level coordinator with zone-wide access",
-            Roles.NazimAala => "Dila (District) head with district-level access",
-            Roles.ZaimAala => "Muqam (Local) head with local-level access",
-            Roles.TajneedSecretary => "Tajneed (Membership) secretary managing member records",
-            Roles.MaalSecretary => "Maal (Finance) secretary managing financial records",
-            Roles.TalimSecretary => "Talim (Education) secretary managing educational programs",
-            Roles.TarbiyyatSecretary => "Tarbiyyat (Training) secretary managing training programs",
+            // System Roles
+            Roles.SuperAdmin => "Super Administrator - Technical administrator with all system permissions",
+
+            // National Level
+            Roles.NationalAdmin => "National Administrator - Full administrative access nationwide",
+            Roles.NationalSecretary => "National Secretary - Administrative support with view and export access nationwide",
+
+            // Zone Level
+            Roles.ZoneNazim => "Zone Nazim - Regional leadership overseeing multiple Dilas in a Zone",
+            Roles.ZoneSecretary => "Zone Secretary - Administrative support for Zone Nazim with view-only access",
+
+            // Dila Level
+            Roles.NazimAla => "Nazim Ala - Dila Coordinator managing multiple Muqams within a Dila",
+            Roles.DilaSecretary => "Dila Secretary - Administrative support for Nazim Ala with view-only access",
+
+            // Muqam Level
+            Roles.ZaimAla => "Zaim Ala - Muqam Leader managing local Muqam activities and members",
+            Roles.MuqamSecretary => "Muqam Secretary - Administrative support for Zaim Ala with view-only access",
+
+            // Default Role
+            Roles.Member => "Member - Default role for registered users without organizational position",
+
+            // Legacy Roles (kept for backward compatibility)
+#pragma warning disable CS0618 // Type or member is obsolete
+            Roles.NazimAala => "Nazim A'ala (Legacy) - Use NazimAla instead",
+            Roles.ZaimAala => "Zaim A'ala (Legacy) - Use ZaimAla instead",
+            Roles.ZonalCoordinator => "Zonal Coordinator (Legacy) - Use ZoneNazim instead",
+#pragma warning restore CS0618 // Type or member is obsolete
+
             _ => $"Role: {roleName}"
         };
     }

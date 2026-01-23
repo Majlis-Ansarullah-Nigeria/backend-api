@@ -27,11 +27,58 @@ public class SearchMembersQueryHandler : IRequestHandler<SearchMembersQuery, Pag
                     .ThenInclude(d => d!.Zone)
             .AsQueryable();
 
-        // Apply filters based on organization level
+        // SECURITY: First apply automatic filtering based on current user's organization level
+        // This ensures users can only see data within their organizational scope
+        var orgLevel = _currentUser.OrganizationLevel;
+
+        switch (orgLevel)
+        {
+            case ManagementApi.Domain.Enums.OrganizationLevel.Muqam:
+                if (_currentUser.MuqamId.HasValue)
+                {
+                    var muqamJamaatIds = _context.Jamaats
+                        .Where(j => j.MuqamId == _currentUser.MuqamId.Value)
+                        .Select(j => j.JamaatId)
+                        .ToList();
+
+                    query = query.Where(m => m.JamaatId.HasValue && muqamJamaatIds.Contains(m.JamaatId.Value));
+                }
+                break;
+
+            case ManagementApi.Domain.Enums.OrganizationLevel.Dila:
+                if (_currentUser.DilaId.HasValue)
+                {
+                    var dilaJamaatIds = _context.Jamaats
+                        .Where(j => j.Muqam != null && j.Muqam.DilaId == _currentUser.DilaId.Value)
+                        .Select(j => j.JamaatId)
+                        .ToList();
+
+                    query = query.Where(m => m.JamaatId.HasValue && dilaJamaatIds.Contains(m.JamaatId.Value));
+                }
+                break;
+
+            case ManagementApi.Domain.Enums.OrganizationLevel.Zone:
+                if (_currentUser.ZoneId.HasValue)
+                {
+                    var zoneJamaatIds = _context.Jamaats
+                        .Where(j => j.Muqam != null &&
+                                   j.Muqam.Dila != null &&
+                                   j.Muqam.Dila.ZoneId == _currentUser.ZoneId.Value)
+                        .Select(j => j.JamaatId)
+                        .ToList();
+
+                    query = query.Where(m => m.JamaatId.HasValue && zoneJamaatIds.Contains(m.JamaatId.Value));
+                }
+                break;
+
+            case ManagementApi.Domain.Enums.OrganizationLevel.National:
+                // National level - no automatic filtering
+                break;
+        }
+
+        // Then apply additional filters from request (within user's scope)
         if (request.Request.MuqamId.HasValue)
         {
-            // Get members through Jamaat relationship
-            // Members have JamaatId, Jamaats have MuqamId
             var muqamJamaatIds = _context.Jamaats
                 .Where(j => j.MuqamId == request.Request.MuqamId.Value)
                 .Select(j => j.JamaatId)
@@ -41,7 +88,6 @@ public class SearchMembersQueryHandler : IRequestHandler<SearchMembersQuery, Pag
         }
         else if (request.Request.DilaId.HasValue)
         {
-            // Get members through Jamaat -> Muqam -> Dila relationship
             var dilaJamaatIds = _context.Jamaats
                 .Where(j => j.Muqam != null && j.Muqam.DilaId == request.Request.DilaId.Value)
                 .Select(j => j.JamaatId)
@@ -51,7 +97,6 @@ public class SearchMembersQueryHandler : IRequestHandler<SearchMembersQuery, Pag
         }
         else if (request.Request.ZoneId.HasValue)
         {
-            // Get members through Jamaat -> Muqam -> Dila -> Zone relationship
             var zoneJamaatIds = _context.Jamaats
                 .Where(j => j.Muqam != null &&
                            j.Muqam.Dila != null &&

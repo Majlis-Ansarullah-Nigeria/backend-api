@@ -2,6 +2,9 @@ namespace ManagementApi.Shared.Authorization;
 
 public static class Permissions
 {
+    // Dashboard
+    public const string DashboardView = "Dashboard.View";
+
     // Members
     public const string MembersView = "Members.View";
     public const string MembersCreate = "Members.Create";
@@ -17,6 +20,7 @@ public static class Permissions
 
     // Organizations
     public const string OrganizationsView = "Organizations.View";
+    public const string OrganizationsManage = "Organizations.Manage";
     public const string OrganizationsCreate = "Organizations.Create";
     public const string OrganizationsEdit = "Organizations.Edit";
     public const string OrganizationsDelete = "Organizations.Delete";
@@ -28,25 +32,42 @@ public static class Permissions
     public const string ReportsDelete = "Reports.Delete";
     public const string ReportsApprove = "Reports.Approve";
     public const string ReportsReject = "Reports.Reject";
+    public const string ReportsViewAll = "Reports.ViewAll";
     public const string ReportsViewAnalytics = "Reports.ViewAnalytics";
 
     // Report Templates
     public const string ReportTemplatesView = "ReportTemplates.View";
+    public const string ReportTemplatesManage = "ReportTemplates.Manage";
     public const string ReportTemplatesCreate = "ReportTemplates.Create";
     public const string ReportTemplatesEdit = "ReportTemplates.Edit";
     public const string ReportTemplatesDelete = "ReportTemplates.Delete";
 
+    // Submission Windows
+    public const string SubmissionWindowsView = "SubmissionWindows.View";
+    public const string SubmissionWindowsManage = "SubmissionWindows.Manage";
+    public const string SubmissionWindowsCreate = "SubmissionWindows.Create";
+    public const string SubmissionWindowsEdit = "SubmissionWindows.Edit";
+    public const string SubmissionWindowsDelete = "SubmissionWindows.Delete";
+
     // Users & Roles
     public const string UsersView = "Users.View";
+    public const string UsersManage = "Users.Manage";
     public const string UsersCreate = "Users.Create";
     public const string UsersEdit = "Users.Edit";
     public const string UsersDelete = "Users.Delete";
     public const string UsersAssignRoles = "Users.AssignRoles";
+
     public const string RolesView = "Roles.View";
+    public const string RolesManage = "Roles.Manage";
     public const string RolesCreate = "Roles.Create";
     public const string RolesEdit = "Roles.Edit";
     public const string RolesDelete = "Roles.Delete";
     public const string RolesManagePermissions = "Roles.ManagePermissions";
+
+    // Settings
+    public const string SettingsView = "Settings.View";
+    public const string SettingsManage = "Settings.Manage";
+    public const string SettingsManageTheme = "Settings.ManageTheme";
 
     public static List<string> GetAllPermissions()
     {

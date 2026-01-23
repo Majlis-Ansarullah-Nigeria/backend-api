@@ -11,10 +11,12 @@ public record GetSubmissionsQuery(GetSubmissionsRequest Request) : IRequest<Resu
 public class GetSubmissionsQueryHandler : IRequestHandler<GetSubmissionsQuery, Result<PaginationResponse<ReportSubmissionDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetSubmissionsQueryHandler(IApplicationDbContext context)
+    public GetSubmissionsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<PaginationResponse<ReportSubmissionDto>>> Handle(GetSubmissionsQuery request, CancellationToken cancellationToken)
@@ -24,7 +26,39 @@ public class GetSubmissionsQueryHandler : IRequestHandler<GetSubmissionsQuery, R
             .Include(s => s.Approvals)
             .AsQueryable();
 
-        // Apply filters
+        // SECURITY: First apply automatic filtering based on current user's organization level
+        // This ensures users can only see submissions within their organizational scope
+        var orgLevel = _currentUser.OrganizationLevel;
+
+        switch (orgLevel)
+        {
+            case ManagementApi.Domain.Enums.OrganizationLevel.Muqam:
+                if (_currentUser.MuqamId.HasValue)
+                {
+                    query = query.Where(s => s.MuqamId == _currentUser.MuqamId.Value);
+                }
+                break;
+
+            case ManagementApi.Domain.Enums.OrganizationLevel.Dila:
+                if (_currentUser.DilaId.HasValue)
+                {
+                    query = query.Where(s => s.DilaId == _currentUser.DilaId.Value);
+                }
+                break;
+
+            case ManagementApi.Domain.Enums.OrganizationLevel.Zone:
+                if (_currentUser.ZoneId.HasValue)
+                {
+                    query = query.Where(s => s.ZoneId == _currentUser.ZoneId.Value);
+                }
+                break;
+
+            case ManagementApi.Domain.Enums.OrganizationLevel.National:
+                // National level - no automatic filtering
+                break;
+        }
+
+        // Then apply additional filters from request (within user's scope)
         if (request.Request.ReportTemplateId.HasValue)
         {
             query = query.Where(s => s.ReportTemplateId == request.Request.ReportTemplateId.Value);

@@ -40,25 +40,29 @@ public class GetReportTemplateByIdQueryHandler : IRequestHandler<GetReportTempla
             IsForAllMembers = template.IsForAllMembers,
             IsActive = template.IsActive,
             DisplayOrder = template.DisplayOrder,
-            Sections = template.Sections.Select(s => new ReportSectionDto
-            {
-                Id = s.Id,
-                Title = s.Title,
-                Description = s.Description,
-                DisplayOrder = s.DisplayOrder,
-                IsRequired = s.IsRequired,
-                Questions = s.Questions.Select(q => new ReportQuestionDto
+            Sections = template.Sections
+                .OrderBy(s => s.DisplayOrder)
+                .Select(s => new ReportSectionDto
                 {
-                    Id = q.Id,
-                    QuestionText = q.QuestionText,
-                    HelpText = q.HelpText,
-                    QuestionType = q.QuestionType.ToString(),
-                    Options = q.Options,
-                    IsRequired = q.IsRequired,
-                    DisplayOrder = q.DisplayOrder,
-                    ValidationRules = q.ValidationRules
-                }).ToList()
-            }).ToList(),
+                    Id = s.Id,
+                    Title = s.Title,
+                    Description = s.Description,
+                    DisplayOrder = s.DisplayOrder,
+                    IsRequired = s.IsRequired,
+                    Questions = s.Questions
+                        .OrderBy(q => q.DisplayOrder)
+                        .Select(q => new ReportQuestionDto
+                        {
+                            Id = q.Id,
+                            QuestionText = q.QuestionText,
+                            HelpText = q.HelpText,
+                            QuestionType = q.QuestionType.ToString(),
+                            Options = q.Options,
+                            IsRequired = q.IsRequired,
+                            DisplayOrder = q.DisplayOrder,
+                            ValidationRules = q.ValidationRules
+                        }).ToList()
+                }).ToList(),
             CreatedOn = template.CreatedOn
         };
 

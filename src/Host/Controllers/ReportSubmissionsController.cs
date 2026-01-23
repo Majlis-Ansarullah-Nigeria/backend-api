@@ -62,6 +62,25 @@ public class ReportSubmissionsController : BaseApiController
     }
 
     /// <summary>
+    /// Get analytics for a specific submission window
+    /// </summary>
+    [HttpGet("analytics/window/{windowId}")]
+    [MustHavePermission(Permissions.ReportsView)]
+    [ProducesResponseType(typeof(SubmissionWindowAnalyticsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSubmissionWindowAnalytics(Guid windowId)
+    {
+        var result = await Mediator.Send(new GetSubmissionWindowAnalyticsQuery(windowId));
+
+        if (!result.Succeeded)
+        {
+            return NotFound(new { errors = result.Messages });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
     /// Submit a new report
     /// </summary>
     [HttpPost]
