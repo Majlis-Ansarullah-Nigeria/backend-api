@@ -24,12 +24,13 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
         }
 
         // Check if user has the required permission in claims
+        // NOTE: Case-insensitive comparison to handle database storing permissions in different casing
         var permissions = context.User.Claims
             .Where(c => c.Type == "permission")
             .Select(c => c.Value)
             .ToList();
 
-        if (permissions.Contains(requirement.Permission))
+        if (permissions.Any(p => string.Equals(p, requirement.Permission, StringComparison.OrdinalIgnoreCase)))
         {
             context.Succeed(requirement);
         }

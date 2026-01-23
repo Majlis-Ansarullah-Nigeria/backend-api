@@ -25,6 +25,31 @@ public class MembersController : BaseApiController
     }
 
     /// <summary>
+    /// Get member profile by Chanda Number
+    /// Users can only view their own profile unless they have elevated permissions
+    /// </summary>
+    [HttpGet("profile/{chandaNo}")]
+    [MustHavePermission(Permissions.MembersView)]
+    [ProducesResponseType(typeof(MemberDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMemberProfile(string chandaNo)
+    {
+        var result = await Mediator.Send(new GetMemberProfileQuery(chandaNo));
+
+        if (!result.Succeeded)
+        {
+            if (result.Messages.Any(m => m.Contains("not found")))
+            {
+                return NotFound(new { errors = result.Messages });
+            }
+            return StatusCode(StatusCodes.Status403Forbidden, new { errors = result.Messages });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
     /// Search members with filters and pagination
     /// </summary>
     [HttpPost("search")]

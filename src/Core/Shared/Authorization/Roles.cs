@@ -128,11 +128,13 @@ public static class Roles
             {
                 Member, new List<string>
                 {
-                    // Dashboard
-                    Permissions.DashboardView,
-
-                    // Members (view only - own profile)
+                    // Members (view only - own profile via dedicated endpoint)
                     Permissions.MembersView
+
+                    // NOTE: Members should NOT have access to:
+                    // - Dashboard (no organizational data)
+                    // - Members list (only their own profile)
+                    // - Reports (no reporting responsibilities)
                 }
             },
 
@@ -314,6 +316,55 @@ public static class Roles
 
             // ===== SUPER ADMIN =====
             // SuperAdmin gets all permissions (handled in PermissionAuthorizationHandler)
+
+            // ===== LEGACY ROLE MAPPINGS (for backward compatibility) =====
+#pragma warning disable CS0618 // Type or member is obsolete
+            {
+                ZaimAala, new List<string>  // "Zaim A'ala" - same as ZaimAla
+                {
+                    Permissions.DashboardView,
+                    Permissions.MembersView,
+                    Permissions.MembersEdit,
+                    Permissions.ReportsView,
+                    Permissions.ReportsSubmit
+                }
+            },
+            {
+                NazimAala, new List<string>  // "Nazim A'ala" - same as NazimAla
+                {
+                    Permissions.DashboardView,
+                    Permissions.MembersView,
+                    Permissions.MembersCreate,
+                    Permissions.MembersEdit,
+                    Permissions.MembersExport,
+                    Permissions.JamaatsView,
+                    Permissions.ReportsView,
+                    Permissions.ReportsSubmit,
+                    Permissions.ReportsViewAll,
+                    Permissions.ReportsApprove
+                }
+            },
+            {
+                ZonalCoordinator, new List<string>  // "Zonal Coordinator" - same as ZoneNazim
+                {
+                    Permissions.DashboardView,
+                    Permissions.MembersView,
+                    Permissions.MembersCreate,
+                    Permissions.MembersEdit,
+                    Permissions.MembersExport,
+                    Permissions.OrganizationsView,
+                    Permissions.JamaatsView,
+                    Permissions.JamaatsMap,
+                    Permissions.JamaatsUnmap,
+                    Permissions.ReportsView,
+                    Permissions.ReportsViewAll,
+                    Permissions.ReportsApprove,
+                    Permissions.UsersView,
+                    Permissions.UsersCreate,
+                    Permissions.UsersEdit
+                }
+            }
+#pragma warning restore CS0618 // Type or member is obsolete
         };
     }
 }

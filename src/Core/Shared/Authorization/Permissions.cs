@@ -3,71 +3,71 @@ namespace ManagementApi.Shared.Authorization;
 public static class Permissions
 {
     // Dashboard
-    public const string DashboardView = "Dashboard.View";
+    public const string DashboardView = "dashboard.view";
 
     // Members
-    public const string MembersView = "Members.View";
-    public const string MembersCreate = "Members.Create";
-    public const string MembersEdit = "Members.Edit";
-    public const string MembersDelete = "Members.Delete";
-    public const string MembersExport = "Members.Export";
+    public const string MembersView = "members.view";
+    public const string MembersCreate = "members.create";
+    public const string MembersEdit = "members.edit";
+    public const string MembersDelete = "members.delete";
+    public const string MembersExport = "members.export";
 
     // Jamaats
-    public const string JamaatsView = "Jamaats.View";
-    public const string JamaatsMap = "Jamaats.Map";
-    public const string JamaatsUnmap = "Jamaats.Unmap";
-    public const string JamaatsSync = "Jamaats.Sync";
+    public const string JamaatsView = "jamaats.view";
+    public const string JamaatsMap = "jamaats.map";
+    public const string JamaatsUnmap = "jamaats.unmap";
+    public const string JamaatsSync = "jamaats.sync";
 
     // Organizations
-    public const string OrganizationsView = "Organizations.View";
-    public const string OrganizationsManage = "Organizations.Manage";
-    public const string OrganizationsCreate = "Organizations.Create";
-    public const string OrganizationsEdit = "Organizations.Edit";
-    public const string OrganizationsDelete = "Organizations.Delete";
+    public const string OrganizationsView = "organizations.view";
+    public const string OrganizationsManage = "organizations.manage";
+    public const string OrganizationsCreate = "organizations.create";
+    public const string OrganizationsEdit = "organizations.edit";
+    public const string OrganizationsDelete = "organizations.delete";
 
     // Reports
-    public const string ReportsView = "Reports.View";
-    public const string ReportsSubmit = "Reports.Submit";
-    public const string ReportsEdit = "Reports.Edit";
-    public const string ReportsDelete = "Reports.Delete";
-    public const string ReportsApprove = "Reports.Approve";
-    public const string ReportsReject = "Reports.Reject";
-    public const string ReportsViewAll = "Reports.ViewAll";
-    public const string ReportsViewAnalytics = "Reports.ViewAnalytics";
+    public const string ReportsView = "reports.view";
+    public const string ReportsSubmit = "reports.submit";
+    public const string ReportsEdit = "reports.edit";
+    public const string ReportsDelete = "reports.delete";
+    public const string ReportsApprove = "reports.approve";
+    public const string ReportsReject = "reports.reject";
+    public const string ReportsViewAll = "reports.viewall";
+    public const string ReportsViewAnalytics = "reports.viewanalytics";
 
     // Report Templates
-    public const string ReportTemplatesView = "ReportTemplates.View";
-    public const string ReportTemplatesManage = "ReportTemplates.Manage";
-    public const string ReportTemplatesCreate = "ReportTemplates.Create";
-    public const string ReportTemplatesEdit = "ReportTemplates.Edit";
-    public const string ReportTemplatesDelete = "ReportTemplates.Delete";
+    public const string ReportTemplatesView = "reporttemplates.view";
+    public const string ReportTemplatesManage = "reporttemplates.manage";
+    public const string ReportTemplatesCreate = "reporttemplates.create";
+    public const string ReportTemplatesEdit = "reporttemplates.edit";
+    public const string ReportTemplatesDelete = "reporttemplates.delete";
 
     // Submission Windows
-    public const string SubmissionWindowsView = "SubmissionWindows.View";
-    public const string SubmissionWindowsManage = "SubmissionWindows.Manage";
-    public const string SubmissionWindowsCreate = "SubmissionWindows.Create";
-    public const string SubmissionWindowsEdit = "SubmissionWindows.Edit";
-    public const string SubmissionWindowsDelete = "SubmissionWindows.Delete";
+    public const string SubmissionWindowsView = "submissionwindows.view";
+    public const string SubmissionWindowsManage = "submissionwindows.manage";
+    public const string SubmissionWindowsCreate = "submissionwindows.create";
+    public const string SubmissionWindowsEdit = "submissionwindows.edit";
+    public const string SubmissionWindowsDelete = "submissionwindows.delete";
 
     // Users & Roles
-    public const string UsersView = "Users.View";
-    public const string UsersManage = "Users.Manage";
-    public const string UsersCreate = "Users.Create";
-    public const string UsersEdit = "Users.Edit";
-    public const string UsersDelete = "Users.Delete";
-    public const string UsersAssignRoles = "Users.AssignRoles";
+    public const string UsersView = "users.view";
+    public const string UsersManage = "users.manage";
+    public const string UsersCreate = "users.create";
+    public const string UsersEdit = "users.edit";
+    public const string UsersDelete = "users.delete";
+    public const string UsersAssignRoles = "users.assignroles";
 
-    public const string RolesView = "Roles.View";
-    public const string RolesManage = "Roles.Manage";
-    public const string RolesCreate = "Roles.Create";
-    public const string RolesEdit = "Roles.Edit";
-    public const string RolesDelete = "Roles.Delete";
-    public const string RolesManagePermissions = "Roles.ManagePermissions";
+    public const string RolesView = "roles.view";
+    public const string RolesManage = "roles.manage";
+    public const string RolesCreate = "roles.create";
+    public const string RolesEdit = "roles.edit";
+    public const string RolesDelete = "roles.delete";
+    public const string RolesManagePermissions = "roles.managepermissions";
 
     // Settings
-    public const string SettingsView = "Settings.View";
-    public const string SettingsManage = "Settings.Manage";
-    public const string SettingsManageTheme = "Settings.ManageTheme";
+    public const string SettingsView = "settings.view";
+    public const string SettingsManage = "settings.manage";
+    public const string SettingsManageTheme = "settings.managetheme";
 
     public static List<string> GetAllPermissions()
     {
