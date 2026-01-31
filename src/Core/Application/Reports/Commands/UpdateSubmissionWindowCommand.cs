@@ -32,10 +32,14 @@ public class UpdateSubmissionWindowCommandValidator : AbstractValidator<UpdateSu
 public class UpdateSubmissionWindowCommandHandler : IRequestHandler<UpdateSubmissionWindowCommand, Result>
 {
     private readonly IApplicationDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public UpdateSubmissionWindowCommandHandler(IApplicationDbContext context)
+    public UpdateSubmissionWindowCommandHandler(
+        IApplicationDbContext context,
+        INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<Result> Handle(UpdateSubmissionWindowCommand request, CancellationToken cancellationToken)
@@ -48,6 +52,17 @@ public class UpdateSubmissionWindowCommandHandler : IRequestHandler<UpdateSubmis
             return Result.Failure("Submission window not found");
         }
 
+        var now = DateTime.UtcNow;
+        var originalEndDate = window.EndDate;
+        var isExtended = request.Request.EndDate > originalEndDate;
+        var isShortened = request.Request.EndDate < originalEndDate;
+
+        // US-5: VALIDATION - Cannot shorten deadline if new date is before current date
+        if (isShortened && request.Request.EndDate < now)
+        {
+            return Result.Failure("Cannot shorten the deadline to a date that has already passed. The new end date must be in the future.");
+        }
+
         window.UpdateWindow(
             request.Request.Name,
             request.Request.StartDate,
@@ -56,6 +71,51 @@ public class UpdateSubmissionWindowCommandHandler : IRequestHandler<UpdateSubmis
         );
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Send notifications if deadline was extended
+        if (isExtended)
+        {
+            try
+            {
+                // Get users who haven't submitted yet for this window
+                var submittedUserIds = await _context.ReportSubmissions
+                    .Where(s => s.SubmissionWindowId == window.Id)
+                    .Select(s => s.SubmitterId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+
+                // Get all active users (in production, filter by organization level)
+                var allUsers = await _context.Users
+                    .Where(u => u.IsActive && !submittedUserIds.Contains(u.Id))
+                    .Select(u => new { u.Id, u.UserName })
+                    .Take(1000)
+                    .ToListAsync(cancellationToken);
+
+                var pendingUsers = allUsers.Select(u => (u.Id, u.UserName ?? "User")).ToList();
+
+                if (pendingUsers.Any())
+                {
+                    // Send window extended notification
+                    var title = $"Deadline Extended: {window.Name}";
+                    var message = $"The submission deadline for '{window.Name}' has been extended to {request.Request.EndDate:MMMM dd, yyyy}.";
+
+                    await _notificationService.SendBulkNotificationsAsync(
+                        Domain.Entities.Reports.NotificationType.WindowExtended,
+                        pendingUsers,
+                        title,
+                        message,
+                        Domain.Entities.Reports.NotificationPriority.Normal,
+                        window.Id,
+                        "SubmissionWindow",
+                        cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the operation
+                // Notifications are non-critical
+            }
+        }
 
         return Result.Success("Submission window updated successfully");
     }

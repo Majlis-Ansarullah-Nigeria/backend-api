@@ -104,22 +104,36 @@ public class ReportTemplatesController : BaseApiController
     [MustHavePermission(Permissions.ReportTemplatesEdit)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ActivateTemplate(Guid templateId)
     {
-        // Implementation would go through a command
-        return Ok(new { message = "Template activated successfully" });
+        var result = await Mediator.Send(new ActivateTemplateCommand(templateId));
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Messages });
+        }
+
+        return Ok(new { message = result.Messages.FirstOrDefault() });
     }
 
     /// <summary>
-    /// Deactivate a report template
+    /// Deactivate a report template (US-3: Validates no active windows exist)
     /// </summary>
     [HttpPost("{templateId}/deactivate")]
     [MustHavePermission(Permissions.ReportTemplatesEdit)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeactivateTemplate(Guid templateId)
     {
-        // Implementation would go through a command
-        return Ok(new { message = "Template deactivated successfully" });
+        var result = await Mediator.Send(new DeactivateTemplateCommand(templateId));
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Messages });
+        }
+
+        return Ok(new { message = result.Messages.FirstOrDefault() });
     }
 }

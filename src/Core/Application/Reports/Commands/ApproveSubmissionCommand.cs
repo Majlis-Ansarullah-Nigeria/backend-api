@@ -22,16 +22,22 @@ public class ApproveSubmissionCommandHandler : IRequestHandler<ApproveSubmission
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notificationService;
 
-    public ApproveSubmissionCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public ApproveSubmissionCommandHandler(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        INotificationService notificationService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _notificationService = notificationService;
     }
 
     public async Task<Result> Handle(ApproveSubmissionCommand request, CancellationToken cancellationToken)
     {
         var submission = await _context.ReportSubmissions
+            .Include(s => s.ReportTemplate)
             .FirstOrDefaultAsync(s => s.Id == request.Request.SubmissionId, cancellationToken);
 
         if (submission == null)
@@ -47,6 +53,23 @@ public class ApproveSubmissionCommandHandler : IRequestHandler<ApproveSubmission
             submission.Approve(approverId, approverName, request.Request.Comments);
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Send notification to submitter
+            try
+            {
+                await _notificationService.NotifySubmissionApprovedAsync(
+                    submission.Id,
+                    submission.SubmitterId,
+                    submission.SubmitterName,
+                    submission.ReportTemplate?.Name ?? "Report",
+                    request.Request.Comments,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the operation
+                // Notifications are non-critical
+            }
 
             return Result.Success("Submission approved successfully");
         }

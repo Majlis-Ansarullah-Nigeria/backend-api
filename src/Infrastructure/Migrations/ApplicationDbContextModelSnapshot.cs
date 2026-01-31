@@ -75,6 +75,9 @@ namespace ManagementApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CircuitName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -325,6 +328,187 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.HasIndex("DilaId");
 
                     b.ToTable("Muqams", "Organization");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.FileAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte[]>("FileData")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ReportSubmissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("ReportSubmissionId");
+
+                    b.ToTable("FileAttachments", "Reports");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(2);
+
+                    b.Property<DateTime?>("ReadOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("RelatedEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedOn")
+                        .HasDatabaseName("IX_Notifications_CreatedOn");
+
+                    b.HasIndex("RecipientId")
+                        .HasDatabaseName("IX_Notifications_RecipientId");
+
+                    b.HasIndex("RecipientId", "IsRead")
+                        .HasDatabaseName("IX_Notifications_RecipientId_IsRead");
+
+                    b.HasIndex("RelatedEntityId", "RelatedEntityType")
+                        .HasDatabaseName("IX_Notifications_RelatedEntity");
+
+                    b.ToTable("Notifications", "Reports");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsEmailEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsInAppEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsPushEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("NotificationType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_NotificationPreferences_UserId");
+
+                    b.HasIndex("UserId", "NotificationType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_NotificationPreferences_UserId_Type");
+
+                    b.ToTable("NotificationPreferences", "Reports");
                 });
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportQuestion", b =>
@@ -578,6 +762,158 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.HasIndex("ReportSubmissionId");
 
                     b.ToTable("SubmissionApprovals");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CommenterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommenterName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEdited")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ParentCommentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ReportSubmissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommenterId")
+                        .HasDatabaseName("IX_SubmissionComments_CommenterId");
+
+                    b.HasIndex("CreatedOn")
+                        .HasDatabaseName("IX_SubmissionComments_CreatedOn");
+
+                    b.HasIndex("ParentCommentId")
+                        .HasDatabaseName("IX_SubmissionComments_ParentCommentId");
+
+                    b.HasIndex("ReportSubmissionId")
+                        .HasDatabaseName("IX_SubmissionComments_ReportSubmissionId");
+
+                    b.HasIndex("ParentCommentId", "CreatedOn")
+                        .HasDatabaseName("IX_SubmissionComments_ParentCommentId_CreatedOn");
+
+                    b.HasIndex("ReportSubmissionId", "IsDeleted")
+                        .HasDatabaseName("IX_SubmissionComments_ReportSubmissionId_IsDeleted");
+
+                    b.ToTable("SubmissionComments", "Reports");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionFlag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FlaggedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FlaggerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FlaggerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("ReportSubmissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResolutionNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("ResolvedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResolvedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("ResolvedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlaggedDate")
+                        .HasDatabaseName("IX_SubmissionFlags_FlaggedDate");
+
+                    b.HasIndex("FlaggerId")
+                        .HasDatabaseName("IX_SubmissionFlags_FlaggerId");
+
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("IX_SubmissionFlags_IsActive");
+
+                    b.HasIndex("ReportSubmissionId")
+                        .HasDatabaseName("IX_SubmissionFlags_ReportSubmissionId");
+
+                    b.HasIndex("ReportSubmissionId", "IsActive")
+                        .HasDatabaseName("IX_SubmissionFlags_ReportSubmissionId_IsActive");
+
+                    b.ToTable("SubmissionFlags", "Reports");
                 });
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionWindow", b =>
@@ -998,6 +1334,17 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Navigation("Dila");
                 });
 
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.FileAttachment", b =>
+                {
+                    b.HasOne("ManagementApi.Domain.Entities.Reports.ReportSubmission", "ReportSubmission")
+                        .WithMany("FileAttachments")
+                        .HasForeignKey("ReportSubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReportSubmission");
+                });
+
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportQuestion", b =>
                 {
                     b.HasOne("ManagementApi.Domain.Entities.Reports.ReportSection", "ReportSection")
@@ -1041,6 +1388,35 @@ namespace ManagementApi.Infrastructure.Migrations
                 {
                     b.HasOne("ManagementApi.Domain.Entities.Reports.ReportSubmission", "ReportSubmission")
                         .WithMany("Approvals")
+                        .HasForeignKey("ReportSubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReportSubmission");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionComment", b =>
+                {
+                    b.HasOne("ManagementApi.Domain.Entities.Reports.SubmissionComment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ManagementApi.Domain.Entities.Reports.ReportSubmission", "ReportSubmission")
+                        .WithMany()
+                        .HasForeignKey("ReportSubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParentComment");
+
+                    b.Navigation("ReportSubmission");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionFlag", b =>
+                {
+                    b.HasOne("ManagementApi.Domain.Entities.Reports.ReportSubmission", "ReportSubmission")
+                        .WithMany()
                         .HasForeignKey("ReportSubmissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1141,11 +1517,18 @@ namespace ManagementApi.Infrastructure.Migrations
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportSubmission", b =>
                 {
                     b.Navigation("Approvals");
+
+                    b.Navigation("FileAttachments");
                 });
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportTemplate", b =>
                 {
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionComment", b =>
+                {
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionWindow", b =>

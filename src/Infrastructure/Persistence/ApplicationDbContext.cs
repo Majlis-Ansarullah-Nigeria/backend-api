@@ -44,6 +44,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ReportSubmission> ReportSubmissions => Set<ReportSubmission>();
     public DbSet<SubmissionWindow> SubmissionWindows => Set<SubmissionWindow>();
     public DbSet<SubmissionApproval> SubmissionApprovals => Set<SubmissionApproval>();
+    public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<SubmissionFlag> SubmissionFlags => Set<SubmissionFlag>();
+    public DbSet<SubmissionComment> SubmissionComments => Set<SubmissionComment>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

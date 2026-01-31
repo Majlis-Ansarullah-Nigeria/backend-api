@@ -92,13 +92,28 @@ public class DatabaseSeeder
                 continue;
             }
 
-            // Get existing permissions for this role
-            var existingPermissions = await _context.RolePermissions
+            // Get existing permission records for this role
+            var existingPermissionRecords = await _context.RolePermissions
                 .Where(rp => rp.RoleId == role.Id)
-                .Select(rp => rp.Permission)
                 .ToListAsync();
 
-            // Add new permissions
+            var existingPermissions = existingPermissionRecords
+                .Select(rp => rp.Permission)
+                .ToList();
+
+            // REMOVE permissions that are no longer in the role's permission list
+            var permissionsToRemove = existingPermissionRecords
+                .Where(rp => !permissions.Contains(rp.Permission))
+                .ToList();
+
+            if (permissionsToRemove.Any())
+            {
+                _context.RolePermissions.RemoveRange(permissionsToRemove);
+                _logger.LogInformation("Removed {Count} obsolete permissions from role: {RoleName}",
+                    permissionsToRemove.Count, roleName);
+            }
+
+            // ADD new permissions
             foreach (var permission in permissions)
             {
                 if (!existingPermissions.Contains(permission))
@@ -114,7 +129,7 @@ public class DatabaseSeeder
             }
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Seeded {Count} permissions for role: {RoleName}", permissions.Count, roleName);
+            _logger.LogInformation("Synced {Count} permissions for role: {RoleName}", permissions.Count, roleName);
         }
     }
 

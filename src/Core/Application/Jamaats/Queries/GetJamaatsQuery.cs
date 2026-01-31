@@ -37,6 +37,7 @@ public class GetJamaatsQueryHandler : IRequestHandler<GetJamaatsQuery, Result<Li
                 JamaatId = j.JamaatId,
                 Name = j.Name,
                 Code = j.Code,
+                CircuitName = j.CircuitName,
                 MuqamId = j.MuqamId,
                 MuqamName = j.Muqam != null ? j.Muqam.Name : null,
                 CreatedOn = j.CreatedOn

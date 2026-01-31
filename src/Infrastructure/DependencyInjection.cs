@@ -59,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<INotificationService, Services.NotificationService>();
 
         // External Services
         services.AddHttpClient();

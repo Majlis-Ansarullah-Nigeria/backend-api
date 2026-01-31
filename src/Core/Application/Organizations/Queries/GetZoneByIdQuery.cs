@@ -21,8 +21,6 @@ public class GetZoneByIdQueryHandler : IRequestHandler<GetZoneByIdQuery, Result<
     {
         var zone = await _context.Zones
             .Include(z => z.Dilas)
-                .ThenInclude(d => d.Muqams)
-                    .ThenInclude(m => m.Members)
             .Where(z => z.Id == request.Id)
             .Select(z => new ZoneDto
             {
@@ -35,7 +33,14 @@ public class GetZoneByIdQueryHandler : IRequestHandler<GetZoneByIdQuery, Result<
                 Email = z.Email,
                 DilaCount = z.Dilas.Count,
                 TotalMuqams = z.Dilas.SelectMany(d => d.Muqams).Count(),
-                TotalMembers = z.Dilas.SelectMany(d => d.Muqams).SelectMany(m => m.Members).Count(),
+                // Count members directly assigned to muqams + members from jamaats mapped to muqams in this zone
+                TotalMembers = z.Dilas.SelectMany(d => d.Muqams).SelectMany(m => m.Members).Count() +
+                    _context.Members.Count(mem =>
+                        mem.JamaatId.HasValue &&
+                        _context.Jamaats.Any(j =>
+                            j.JamaatId == mem.JamaatId.Value &&
+                            j.MuqamId.HasValue &&
+                            z.Dilas.Any(d => d.Muqams.Any(m => m.Id == j.MuqamId.Value)))),
                 CreatedAt = z.CreatedOn
             })
             .FirstOrDefaultAsync(cancellationToken);

@@ -59,11 +59,12 @@ public class FetchJamaatsFromApiCommandHandler : IRequestHandler<FetchJamaatsFro
 
                     if (existingJamaat == null)
                     {
-                        // Create new jamaat
+                        // Create new jamaat with circuit name
                         var newJamaat = new Jamaat(
                             externalJamaat.JamaatId,
                             externalJamaat.JamaatName,
-                            externalJamaat.JamaatCode
+                            externalJamaat.JamaatCode,
+                            externalJamaat.CircuitName
                         );
 
                         _context.Jamaats.Add(newJamaat);
@@ -71,10 +72,11 @@ public class FetchJamaatsFromApiCommandHandler : IRequestHandler<FetchJamaatsFro
                     }
                     else
                     {
-                        // Update existing jamaat
+                        // Update existing jamaat with circuit name
                         existingJamaat.UpdateInfo(
                             externalJamaat.JamaatName,
-                            externalJamaat.JamaatCode
+                            externalJamaat.JamaatCode,
+                            externalJamaat.CircuitName
                         );
 
                         updatedJamaats++;

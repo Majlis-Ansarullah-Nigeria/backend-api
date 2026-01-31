@@ -30,6 +30,9 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
     private readonly List<SubmissionApproval> _approvals = new();
     public IReadOnlyCollection<SubmissionApproval> Approvals => _approvals.AsReadOnly();
 
+    private readonly List<FileAttachment> _fileAttachments = new();
+    public IReadOnlyCollection<FileAttachment> FileAttachments => _fileAttachments.AsReadOnly();
+
     // Navigation properties
     public ReportTemplate ReportTemplate { get; private set; } = default!;
     public SubmissionWindow? SubmissionWindow { get; private set; }
@@ -109,6 +112,21 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
             Status = SubmissionStatus.Draft;
             SubmittedAt = null;
             RejectionReason = null;
+        }
+    }
+
+    public void AddFileAttachment(Guid questionId, string fileName, string contentType, byte[] fileData, string? description = null)
+    {
+        var attachment = new FileAttachment(Id, questionId, fileName, contentType, fileData, description);
+        _fileAttachments.Add(attachment);
+    }
+
+    public void RemoveFileAttachment(Guid attachmentId)
+    {
+        var attachment = _fileAttachments.FirstOrDefault(a => a.Id == attachmentId);
+        if (attachment != null)
+        {
+            _fileAttachments.Remove(attachment);
         }
     }
 }

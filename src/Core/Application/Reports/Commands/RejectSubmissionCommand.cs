@@ -26,16 +26,22 @@ public class RejectSubmissionCommandHandler : IRequestHandler<RejectSubmissionCo
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notificationService;
 
-    public RejectSubmissionCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public RejectSubmissionCommandHandler(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        INotificationService notificationService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _notificationService = notificationService;
     }
 
     public async Task<Result> Handle(RejectSubmissionCommand request, CancellationToken cancellationToken)
     {
         var submission = await _context.ReportSubmissions
+            .Include(s => s.ReportTemplate)
             .FirstOrDefaultAsync(s => s.Id == request.Request.SubmissionId, cancellationToken);
 
         if (submission == null)
@@ -51,6 +57,23 @@ public class RejectSubmissionCommandHandler : IRequestHandler<RejectSubmissionCo
             submission.Reject(approverId, approverName, request.Request.Reason);
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Send notification to submitter
+            try
+            {
+                await _notificationService.NotifySubmissionRejectedAsync(
+                    submission.Id,
+                    submission.SubmitterId,
+                    submission.SubmitterName,
+                    submission.ReportTemplate?.Name ?? "Report",
+                    request.Request.Reason,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the operation
+                // Notifications are non-critical
+            }
 
             return Result.Success("Submission rejected successfully");
         }

@@ -6,6 +6,7 @@ public record JamaatDto
     public int JamaatId { get; init; }
     public string Name { get; init; } = default!;
     public string? Code { get; init; }
+    public string? CircuitName { get; init; }
     public Guid? MuqamId { get; init; }
     public string? MuqamName { get; init; }
     public bool IsMapped => MuqamId.HasValue;

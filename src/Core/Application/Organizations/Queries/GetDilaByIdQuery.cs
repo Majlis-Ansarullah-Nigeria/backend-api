@@ -21,8 +21,6 @@ public class GetDilaByIdQueryHandler : IRequestHandler<GetDilaByIdQuery, Result<
     {
         var dila = await _context.Dilas
             .Include(d => d.Zone)
-            .Include(d => d.Muqams)
-                .ThenInclude(m => m.Members)
             .Where(d => d.Id == request.Id)
             .Select(d => new DilaDto
             {
@@ -36,7 +34,14 @@ public class GetDilaByIdQueryHandler : IRequestHandler<GetDilaByIdQuery, Result<
                 ZoneId = d.ZoneId,
                 ZoneName = d.Zone != null ? d.Zone.Name : null,
                 MuqamCount = d.Muqams.Count,
-                TotalMembers = d.Muqams.SelectMany(m => m.Members).Count(),
+                // Count members directly assigned to muqams + members from jamaats mapped to muqams in this dila
+                TotalMembers = d.Muqams.SelectMany(m => m.Members).Count() +
+                    _context.Members.Count(mem =>
+                        mem.JamaatId.HasValue &&
+                        _context.Jamaats.Any(j =>
+                            j.JamaatId == mem.JamaatId.Value &&
+                            j.MuqamId.HasValue &&
+                            d.Muqams.Any(m => m.Id == j.MuqamId.Value))),
                 CreatedAt = d.CreatedOn
             })
             .FirstOrDefaultAsync(cancellationToken);

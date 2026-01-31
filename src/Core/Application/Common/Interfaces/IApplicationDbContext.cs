@@ -24,6 +24,11 @@ public interface IApplicationDbContext
     DbSet<ReportSubmission> ReportSubmissions { get; }
     DbSet<SubmissionWindow> SubmissionWindows { get; }
     DbSet<SubmissionApproval> SubmissionApprovals { get; }
+    DbSet<FileAttachment> FileAttachments { get; }
+    DbSet<Notification> Notifications { get; }
+    DbSet<NotificationPreference> NotificationPreferences { get; }
+    DbSet<SubmissionFlag> SubmissionFlags { get; }
+    DbSet<SubmissionComment> SubmissionComments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

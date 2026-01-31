@@ -23,8 +23,6 @@ public class GetMuqamsQueryHandler : IRequestHandler<GetMuqamsQuery, Result<List
     {
         var muqams = await _context.Muqams
             .Include(m => m.Dila)
-            .Include(m => m.Members)
-            .Include(m => m.Jamaats)
             .Select(m => new MuqamDto
             {
                 Id = m.Id,
@@ -36,7 +34,11 @@ public class GetMuqamsQueryHandler : IRequestHandler<GetMuqamsQuery, Result<List
                 Email = m.Email,
                 DilaId = m.DilaId,
                 DilaName = m.Dila != null ? m.Dila.Name : null,
-                MemberCount = m.Members.Count,
+                // Count members directly assigned + members from jamaats mapped to this muqam
+                MemberCount = m.Members.Count +
+                    _context.Members.Count(mem =>
+                        mem.JamaatId.HasValue &&
+                        _context.Jamaats.Any(j => j.JamaatId == mem.JamaatId.Value && j.MuqamId == m.Id)),
                 JamaatCount = m.Jamaats.Count,
                 CreatedAt = m.CreatedOn
             })

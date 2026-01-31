@@ -29,9 +29,10 @@ public class GetSubmissionWindowAnalyticsQueryHandler : IRequestHandler<GetSubmi
             return Result<SubmissionWindowAnalyticsDto>.Failure("Submission window not found");
         }
 
-        // Get submissions for this window
+        // Get submissions for this window with approvals
         var submissions = await _context.ReportSubmissions
             .Where(rs => rs.SubmissionWindowId == request.WindowId)
+            .Include(rs => rs.Approvals)
             .ToListAsync(cancellationToken);
 
         // Calculate analytics
@@ -42,6 +43,45 @@ public class GetSubmissionWindowAnalyticsQueryHandler : IRequestHandler<GetSubmi
         var draftSubmissions = submissions.Count(s => s.Status == Domain.Enums.SubmissionStatus.Draft);
 
         var approvalRate = totalSubmissions > 0 ? (double)approvedSubmissions / totalSubmissions * 100 : 0;
+
+        // US-24: Calculate average processing time (time from submission to approval/rejection)
+        double averageProcessingTime = 0;
+        var processedSubmissions = submissions
+            .Where(s => s.Status == Domain.Enums.SubmissionStatus.Approved ||
+                       s.Status == Domain.Enums.SubmissionStatus.Rejected)
+            .Where(s => s.Approvals != null && s.Approvals.Any())
+            .ToList();
+
+        if (processedSubmissions.Any())
+        {
+            var processingTimes = new List<double>();
+
+            foreach (var submission in processedSubmissions)
+            {
+                // Get the submission date (when status changed from Draft to Submitted)
+                // Use SubmittedAt or fallback to LastModifiedOn/CreatedOn
+                var submissionDate = submission.SubmittedAt ?? submission.LastModifiedOn ?? submission.CreatedOn;
+
+                // Get the latest approval/rejection date
+                var latestApproval = submission.Approvals
+                    .OrderByDescending(a => a.ActionDate)
+                    .FirstOrDefault();
+
+                if (latestApproval != null)
+                {
+                    var processingTime = (latestApproval.ActionDate - submissionDate).TotalDays;
+                    if (processingTime >= 0) // Only include positive values
+                    {
+                        processingTimes.Add(processingTime);
+                    }
+                }
+            }
+
+            if (processingTimes.Any())
+            {
+                averageProcessingTime = Math.Round(processingTimes.Average(), 2);
+            }
+        }
 
         // Daily trend data
         var dailyTrend = submissions
@@ -102,7 +142,7 @@ public class GetSubmissionWindowAnalyticsQueryHandler : IRequestHandler<GetSubmi
             ApprovalRate = approvalRate,
             DailyTrend = dailyTrend,
             OrganizationParticipation = organizationParticipation,
-            AverageProcessingTime = 0 // Placeholder - would need to calculate based on submission/approval times
+            AverageProcessingTime = averageProcessingTime // US-24: Calculated average time from submission to approval/rejection (in days)
         };
 
         return Result<SubmissionWindowAnalyticsDto>.Success(analyticsDto);
