@@ -25,7 +25,7 @@ public class FileAttachmentConfiguration : IEntityTypeConfiguration<FileAttachme
 
         builder.Property(f => f.FileData)
             .IsRequired()
-            .HasColumnType("varbinary(max)"); // Store as binary data in SQL Server
+            .HasColumnType("bytea"); // Store as binary data in PostgreSQL
 
         builder.Property(f => f.Description)
             .HasMaxLength(500);
