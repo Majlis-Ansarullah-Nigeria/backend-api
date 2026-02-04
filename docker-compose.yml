@@ -1,25 +1,24 @@
 version: '3.8'
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: managementapi-sqlserver
+  db:
+    image: postgres:16-alpine
+    container_name: managementapi-db
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
-      - MSSQL_PID=Express
+      - POSTGRES_DB=ManagementDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=YourStrong@Passw0rd
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sqlserver-data:/var/opt/mssql
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - management-network
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q "SELECT 1" || exit 1
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -28,23 +27,23 @@ services:
     container_name: managementapi
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ManagementDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;MultipleActiveResultSets=true
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=db;Database=ManagementDb;Username=postgres;Password=YourStrong@Passw0rd
       - JwtSettings__SecretKey=YourSuperSecretKeyThatIsAtLeast32CharactersLongForProduction!
       - JwtSettings__Issuer=ManagementApi
       - JwtSettings__Audience=ManagementClient
       - JwtSettings__ExpirationHours=24
     ports:
-      - "5100:80"
+      - "5100:8080"
     depends_on:
-      sqlserver:
+      db:
         condition: service_healthy
     networks:
       - management-network
     restart: on-failure
 
 volumes:
-  sqlserver-data:
+  postgres-data:
 
 networks:
   management-network:
