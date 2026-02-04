@@ -12,16 +12,15 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copy solution and project files for efficient caching
-COPY ["ManagementApi.sln", "./"]
+# Copy project files for efficient caching
 COPY ["src/Core/Domain/Domain.csproj", "src/Core/Domain/"]
 COPY ["src/Core/Application/Application.csproj", "src/Core/Application/"]
 COPY ["src/Core/Shared/Shared.csproj", "src/Core/Shared/"]
 COPY ["src/Infrastructure/Infrastructure.csproj", "src/Infrastructure/"]
 COPY ["src/Host/Host.csproj", "src/Host/"]
 
-# Restore dependencies
-RUN dotnet restore "ManagementApi.sln"
+# Restore dependencies for the Host project (this transitively restores dependencies)
+RUN dotnet restore "src/Host/Host.csproj"
 
 # Copy the remaining source code
 COPY . .
