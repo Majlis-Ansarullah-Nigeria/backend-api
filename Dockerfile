@@ -3,7 +3,6 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy solution and project files
-COPY ["ManagementApi.sln", "./"]
 COPY ["src/Core/Domain/Domain.csproj", "src/Core/Domain/"]
 COPY ["src/Core/Application/Application.csproj", "src/Core/Application/"]
 COPY ["src/Core/Shared/Shared.csproj", "src/Core/Shared/"]
