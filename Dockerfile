@@ -6,7 +6,29 @@ RUN mkdir -p /app/logs && chown -R app:app /app/logs
 USER app
 EXPOSE 5001
 
-# ... (build and publish stages remain the same) ...
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+
+# Copy project files for efficient caching
+COPY ["src/Core/Domain/Domain.csproj", "src/Core/Domain/"]
+COPY ["src/Core/Application/Application.csproj", "src/Core/Application/"]
+COPY ["src/Core/Shared/Shared.csproj", "src/Core/Shared/"]
+COPY ["src/Infrastructure/Infrastructure.csproj", "src/Infrastructure/"]
+COPY ["src/Host/Host.csproj", "src/Host/"]
+
+# Restore dependencies for the Host project
+RUN dotnet restore "src/Host/Host.csproj"
+
+# Copy the remaining source code
+COPY . .
+WORKDIR "/src/src/Host"
+
+# Publish stage
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "Host.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false --no-restore
 
 # Final stage
 FROM base AS final
@@ -21,4 +43,3 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 RUN mkdir -p /app/logs
 
 ENTRYPOINT ["dotnet", "ManagementApi.Host.dll"]
-
