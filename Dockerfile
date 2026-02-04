@@ -32,13 +32,27 @@ ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "Host.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false --no-restore
 
 # Final stage
+
 FROM base AS final
+
 WORKDIR /app
+
 COPY --from=publish /app/publish .
 
-# Environment variables for production
+
+
+# Default environment variables
+
 ENV ASPNETCORE_URLS=http://+:8080
+
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV DOTNET_RUN_LEVEL=Production
+
+
+
+# Ensure the logs directory exists for the app user
+
+RUN mkdir -p /app/logs
+
+
 
 ENTRYPOINT ["dotnet", "ManagementApi.Host.dll"]
