@@ -13,7 +13,17 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
+using Microsoft.AspNetCore.HttpOverrides;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Forwarded Headers for Reverse Proxy (Dokploy)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -85,18 +95,25 @@ builder.Services.AddSwaggerGen(c =>
 // CORS
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.WithOrigins(
-                    "http://localhost:3000",  // Frontend dev server
-                    "https://localhost:3000",
-                    "http://localhost:5173",  // Vite default port
-                    "https://localhost:5173"
-                  )
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
+            if (allowedOrigins.Length > 0)
+            {
+                policy.WithOrigins(allowedOrigins)
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .AllowCredentials();
+            }
+            else
+            {
+                // Fallback for development if no origins are configured
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            }
         });
 });
 
@@ -143,6 +160,8 @@ builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
 // Configure the HTTP request pipeline
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -157,12 +176,10 @@ app.UseSwaggerUI(c =>
     c.EnableValidator();
 });
 
-// Apply migrations and seed database automatically in development
-if (app.Environment.IsDevelopment())
+// Apply migrations and seed database automatically
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
-
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
@@ -179,7 +196,7 @@ if (app.Environment.IsDevelopment())
     }
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Commented out: SSL is handled by Dokploy
 
 app.UseCors("AllowAll");
 
