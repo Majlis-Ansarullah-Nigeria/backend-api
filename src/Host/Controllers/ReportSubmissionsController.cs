@@ -191,9 +191,9 @@ public class ReportSubmissionsController : BaseApiController
     [MustHavePermission(Permissions.ReportsSubmit)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadFile(Guid submissionId, [FromForm] IFormFile file, [FromForm] Guid questionId, [FromForm] string? description)
+    public async Task<IActionResult> UploadFile(Guid submissionId, [FromForm] FileUploadRequest formRequest)
     {
-        if (file == null || file.Length == 0)
+        if (formRequest.File == null || formRequest.File.Length == 0)
         {
             return BadRequest(new { errors = new[] { "File is required" } });
         }
@@ -202,18 +202,18 @@ public class ReportSubmissionsController : BaseApiController
         byte[] fileData;
         using (var memoryStream = new MemoryStream())
         {
-            await file.CopyToAsync(memoryStream);
+            await formRequest.File.CopyToAsync(memoryStream);
             fileData = memoryStream.ToArray();
         }
 
         var request = new UploadFileRequest
         {
             SubmissionId = submissionId,
-            QuestionId = questionId,
-            FileName = file.FileName,
-            ContentType = file.ContentType,
+            QuestionId = formRequest.QuestionId,
+            FileName = formRequest.File.FileName,
+            ContentType = formRequest.File.ContentType,
             FileData = fileData,
-            Description = description
+            Description = formRequest.Description
         };
 
         var result = await Mediator.Send(new UploadFileCommand(request));

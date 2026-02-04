@@ -36,6 +36,13 @@ public record UploadFileRequest
     public string? Description { get; init; }
 }
 
+public record FileUploadRequest
+{
+    public Microsoft.AspNetCore.Http.IFormFile File { get; init; } = default!;
+    public Guid QuestionId { get; init; }
+    public string? Description { get; init; }
+}
+
 public record FileDownloadDto
 {
     public string FileName { get; init; } = default!;
