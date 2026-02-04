@@ -9,6 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ManagementApi.Host.Controllers;
 
+public record FileUploadRequest
+{
+    public IFormFile File { get; init; } = default!;
+    public Guid QuestionId { get; init; }
+    public string? Description { get; init; }
+}
+
 [Authorize]
 public class ReportSubmissionsController : BaseApiController
 {
