@@ -1,0 +1,86 @@
+# Production stack for Dokploy (Docker Compose app, compose path: docker-compose.dokploy.yml).
+# - PostgreSQL is a separate Dokploy Database service (scheduled backups to S3). Put its internal
+#   connection string in DB_CONNECTION.
+# - Configure domains in Dokploy's Domains tab, all on the same host (e.g. reports.example.org):
+#     web  -> port 3000, path /
+#     api  -> port 8080, path /api     and a second entry for path /hubs
+# - Set every ${VAR} below in Dokploy's Environment tab. Never commit real values.
+# - No container_name and no published ports: Traefik reaches services over dokploy-network.
+
+services:
+  migrator:
+    build: { context: ./backend, target: migrator }
+    environment:
+      ConnectionStrings__Default: ${DB_CONNECTION}
+    networks: [dokploy-network]
+    restart: "no"
+
+  api:
+    build: { context: ./backend, target: api }
+    depends_on:
+      migrator: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+    environment: &backend_env
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: ${DB_CONNECTION}
+      ConnectionStrings__Redis: redis:6379
+      App__PublicUrl: ${APP_PUBLIC_URL}
+      App__TimeZone: ${APP_TIMEZONE:-Africa/Lagos}
+      Auth__SigningKey: ${AUTH_SIGNING_KEY}
+      Auth__DataProtectionKeysPath: /keys
+      Email__Provider: ${EMAIL_PROVIDER}
+      Email__From: ${EMAIL_FROM}
+      Email__ApiKey: ${EMAIL_API_KEY}
+      Email__SmtpHost: ${SMTP_HOST:-}
+      Storage__Endpoint: ${S3_ENDPOINT}
+      Storage__Bucket: ${S3_BUCKET}
+      Storage__AccessKey: ${S3_ACCESS_KEY}
+      Storage__SecretKey: ${S3_SECRET_KEY}
+      Storage__Region: ${S3_REGION:-auto}
+      ClamAV__Host: clamav
+      ClamAV__Port: "3310"
+      Sentry__Dsn: ${SENTRY_DSN:-}
+    volumes: [dpkeys:/keys]
+    networks: [dokploy-network, internal]
+    restart: unless-stopped
+
+  worker:
+    build: { context: ./backend, target: worker }
+    depends_on:
+      migrator: { condition: service_completed_successfully }
+    environment: *backend_env
+    volumes: [dpkeys:/keys]
+    networks: [dokploy-network, internal]
+    restart: unless-stopped
+
+  web:
+    build: { context: ./frontend }
+    depends_on: [api]
+    environment:
+      API_INTERNAL_URL: http://api:8080
+      NEXT_PUBLIC_APP_URL: ${APP_PUBLIC_URL}
+    networks: [dokploy-network, internal]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redisdata:/data]
+    networks: [internal]
+    restart: unless-stopped
+
+  clamav:
+    image: clamav/clamav:stable
+    volumes: [clamdb:/var/lib/clamav]
+    networks: [internal]
+    restart: unless-stopped
+
+volumes:
+  dpkeys:
+  redisdata:
+  clamdb:
+
+networks:
+  dokploy-network:
+    external: true
+  internal:

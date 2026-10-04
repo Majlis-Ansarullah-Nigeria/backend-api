@@ -1,0 +1,35 @@
+name: Deploy
+
+# Deploys only after CI passes on main (production) or develop (staging).
+# In Dokploy, turn OFF "Auto Deploy" for these compose apps so this workflow is the only trigger.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main, develop]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.workflow_run.head_branch == 'main' && 'production' || 'staging' }}
+    steps:
+      - name: Trigger Dokploy deployment
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}            # e.g. https://dokploy.example.org
+          DOKPLOY_TOKEN: ${{ secrets.DOKPLOY_TOKEN }}        # API token from Dokploy profile settings
+          COMPOSE_ID: ${{ vars.DOKPLOY_COMPOSE_ID }}         # per GitHub environment
+        run: |
+          curl -fsS -X POST "$DOKPLOY_URL/api/compose.deploy" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $DOKPLOY_TOKEN" \
+            -d "{\"composeId\": \"$COMPOSE_ID\"}"
+      - name: Wait for health
+        env:
+          APP_URL: ${{ vars.APP_PUBLIC_URL }}
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS "$APP_URL/api/health" | grep -qi healthy; then echo "Healthy"; exit 0; fi
+            sleep 15
+          done
+          echo "App did not become healthy in 10 minutes"; exit 1

@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.f.outputs.backend }}
+      frontend: ${{ steps.f.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: f
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend: ['backend/**', 'shared/**', 'docker-compose.dokploy.yml', '.github/workflows/**']
+            frontend: ['frontend/**', 'shared/**', 'docker-compose.dokploy.yml', '.github/workflows/**']
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - run: dotnet restore HRS.sln
+      - run: dotnet format HRS.sln --verify-no-changes --no-restore
+      - run: dotnet build HRS.sln -c Release --no-restore -warnaserror
+      - run: dotnet test HRS.sln -c Release --no-build --logger trx --collect:"XPlat Code Coverage"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: backend-test-results, path: backend/**/TestResults }
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: frontend/pnpm-lock.yaml }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test --run
+      - run: pnpm build
+
+  docker:
+    needs: [backend, frontend]
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build backend images
+        run: |
+          for t in api worker migrator; do
+            docker buildx build backend --target $t --cache-from type=gha --cache-to type=gha,mode=max -t hrs-$t:ci
+          done
+      - name: Build web image
+        run: docker buildx build frontend --cache-from type=gha --cache-to type=gha,mode=max -t hrs-web:ci
