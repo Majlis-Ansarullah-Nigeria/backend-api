@@ -1,33 +1,34 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace HRS.Api.IntegrationTests;
 
-public class HealthEndpointTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+[Collection(ApiTestCollection.Name)]
+public class HealthEndpointTests(ApiFactory factory)
 {
     [Fact]
-    public async Task HealthEndpointReportsPostgresAndRedisChecks()
+    public async Task HealthEndpointReportsPostgresAndRedisAsHealthy()
     {
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync(new Uri("/api/health", UriKind.Relative));
 
-        Assert.True(
-            response.StatusCode is HttpStatusCode.OK or HttpStatusCode.ServiceUnavailable,
-            $"Unexpected status code: {response.StatusCode}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         await using var body = await response.Content.ReadAsStreamAsync();
         using var document = await JsonDocument.ParseAsync(body);
 
-        var checkNames = document.RootElement
+        Assert.Equal("Healthy", document.RootElement.GetProperty("status").GetString());
+
+        var checks = document.RootElement
             .GetProperty("checks")
             .EnumerateArray()
-            .Select(check => check.GetProperty("name").GetString())
-            .ToList();
+            .ToDictionary(
+                check => check.GetProperty("name").GetString()!,
+                check => check.GetProperty("status").GetString());
 
-        Assert.Contains("postgres", checkNames);
-        Assert.Contains("redis", checkNames);
+        Assert.Equal("Healthy", checks["postgres"]);
+        Assert.Equal("Healthy", checks["redis"]);
     }
 
     [Fact]

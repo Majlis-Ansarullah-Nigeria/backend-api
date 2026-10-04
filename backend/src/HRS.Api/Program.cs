@@ -22,11 +22,7 @@ try
     builder.Services.AddOpenApi();
     builder.Services.AddProblemDetails();
 
-    builder.Services.AddInfrastructure(
-        postgresConnectionString: builder.Configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException("Missing ConnectionStrings:Default."),
-        redisConnectionString: builder.Configuration.GetConnectionString("Redis")
-            ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis."));
+    builder.Services.AddInfrastructure();
 
     var app = builder.Build();
 
