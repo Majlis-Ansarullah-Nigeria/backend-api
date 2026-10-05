@@ -35,6 +35,25 @@ public interface IIdentityService
     Task RevokeSessionAsync(string refreshToken, CancellationToken cancellationToken);
 
     Task<AuthenticatedUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Generates and stores a one-time code (FR-IAM-001) and queues it for email delivery if the
+    /// identifier matches an account. Always succeeds to the caller regardless of whether a match
+    /// was found, so the endpoint never reveals account existence. Per-identifier request
+    /// throttling (NFR-SEC-04) returns a RateLimited failure instead.
+    /// </summary>
+    Task<Result> RequestOtpAsync(string identifier, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Verifies a one-time code (single use), applying the same lockout policy as password
+    /// login (FR-IAM-005) for wrong attempts. Updates LastLoginAt on success, mirroring
+    /// <see cref="ValidateCredentialsAsync"/> — the caller still calls
+    /// <see cref="IssueTokensAsync"/> to start the session.
+    /// </summary>
+    Task<Result<AuthenticatedUser>> VerifyOtpAsync(
+        string identifier,
+        string code,
+        CancellationToken cancellationToken);
 }
 
 public sealed record AuthenticatedUser(Guid Id, string Name, string Email);

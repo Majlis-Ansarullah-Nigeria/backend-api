@@ -1,3 +1,4 @@
+using System.Globalization;
 using HRS.Domain.Common;
 
 namespace HRS.Api.Common;
@@ -18,13 +19,27 @@ public static class ResultExtensions
             ErrorType.NotFound => StatusCodes.Status404NotFound,
             ErrorType.Conflict => StatusCodes.Status409Conflict,
             ErrorType.Forbidden => StatusCodes.Status403Forbidden,
+            ErrorType.RateLimited => StatusCodes.Status429TooManyRequests,
             _ => StatusCodes.Status500InternalServerError,
         };
 
-        return Results.Problem(
+        var problem = Results.Problem(
             statusCode: statusCode,
             title: result.Error.Code,
             detail: result.Error.Message,
             extensions: new Dictionary<string, object?> { ["code"] = result.Error.Code });
+
+        return result.Error.RetryAfterSeconds is { } retryAfterSeconds
+            ? new RetryAfterResult(problem, retryAfterSeconds)
+            : problem;
+    }
+
+    private sealed class RetryAfterResult(IResult inner, int retryAfterSeconds) : IResult
+    {
+        public Task ExecuteAsync(HttpContext httpContext)
+        {
+            httpContext.Response.Headers.RetryAfter = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
+            return inner.ExecuteAsync(httpContext);
+        }
     }
 }

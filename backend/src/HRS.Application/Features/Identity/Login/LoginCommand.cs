@@ -1,4 +1,4 @@
-using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Models;
 using HRS.Domain.Common;
 using Mediator;
 
@@ -8,6 +8,4 @@ public sealed record LoginCommand(
     string Identifier,
     string Password,
     string? IpAddress,
-    string? UserAgent) : IRequest<Result<LoginResult>>;
-
-public sealed record LoginResult(Guid UserId, string Name, string Email, AuthTokens Tokens);
+    string? UserAgent) : IRequest<Result<AuthResult>>;

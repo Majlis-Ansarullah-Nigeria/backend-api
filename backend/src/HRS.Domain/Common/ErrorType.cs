@@ -8,5 +8,6 @@ public enum ErrorType
     NotFound,
     Conflict,
     Forbidden,
+    RateLimited,
     Unexpected,
 }

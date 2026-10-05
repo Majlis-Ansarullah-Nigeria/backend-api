@@ -31,6 +31,8 @@ services:
       Email__Provider: ${EMAIL_PROVIDER}
       Email__From: ${EMAIL_FROM}
       Email__ApiKey: ${EMAIL_API_KEY}
+      Email__SmtpHost: ${SMTP_HOST}
+      Email__SmtpPort: ${SMTP_PORT:-587}
       Email__SmtpHost: ${SMTP_HOST:-}
       Storage__Endpoint: ${S3_ENDPOINT}
       Storage__Bucket: ${S3_BUCKET}

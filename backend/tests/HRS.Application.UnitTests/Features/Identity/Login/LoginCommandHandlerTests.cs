@@ -57,5 +57,12 @@ public class LoginCommandHandlerTests
 
         public Task<AuthenticatedUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<Result> RequestOtpAsync(string identifier, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result<AuthenticatedUser>> VerifyOtpAsync(
+            string identifier, string code, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

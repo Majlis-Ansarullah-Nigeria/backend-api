@@ -1,12 +1,15 @@
+using System.Globalization;
 using HRS.Application.Common.Interfaces;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
+using HRS.Infrastructure.Email;
 using HRS.Infrastructure.Identity;
 using HRS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace HRS.Infrastructure;
 
@@ -21,6 +24,28 @@ public static class DependencyInjection
             .UseNpgsql(GetConnectionString(sp, "Default"))
             .UseSnakeCaseNamingConvention());
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(GetConnectionString(sp, "Redis")));
+
+        services.AddOptions<EmailOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                options.From = configuration["Email:From"]
+                    ?? throw new InvalidOperationException("Missing Email:From.");
+                options.SmtpHost = configuration["Email:SmtpHost"]
+                    ?? throw new InvalidOperationException("Missing Email:SmtpHost.");
+
+                var smtpPort = configuration["Email:SmtpPort"];
+                if (smtpPort is not null)
+                {
+                    options.SmtpPort = int.Parse(smtpPort, CultureInfo.InvariantCulture);
+                }
+            });
+
+        services.AddSingleton<BackgroundEmailChannel>();
+        services.AddSingleton<IEmailSender>(sp => sp.GetRequiredService<BackgroundEmailChannel>());
+        services.AddHostedService<BackgroundEmailDispatcher>();
 
         services.AddHealthChecks()
             .AddNpgSql(sp => GetConnectionString(sp, "Default"), name: "postgres")

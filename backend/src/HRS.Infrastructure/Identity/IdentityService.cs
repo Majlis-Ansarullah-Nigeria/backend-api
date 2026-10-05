@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using HRS.Application.Common.Interfaces;
@@ -7,6 +8,7 @@ using HRS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 
 namespace HRS.Infrastructure.Identity;
 
@@ -14,10 +16,16 @@ public sealed class IdentityService(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     AppDbContext db,
+    IConnectionMultiplexer redis,
+    IEmailSender emailSender,
     IAccessTokenGenerator tokenGenerator,
     IClock clock,
     IOptions<AuthOptions> authOptions) : IIdentityService
 {
+    private static readonly TimeSpan OtpCodeLifetime = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromMinutes(15);
+    private const int OtpMaxRequestsPerWindow = 3;
+
     private readonly AuthOptions _authOptions = authOptions.Value;
 
     public async Task<Result<AuthenticatedUser>> ValidateCredentialsAsync(
@@ -25,8 +33,7 @@ public sealed class IdentityService(
         string password,
         CancellationToken cancellationToken)
     {
-        var user = await userManager.FindByEmailAsync(identifier)
-            ?? await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == identifier, cancellationToken);
+        var user = await FindUserAsync(identifier, cancellationToken);
 
         if (user is null)
         {
@@ -37,8 +44,7 @@ public sealed class IdentityService(
 
         if (signInResult.IsLockedOut)
         {
-            return Result.Failure<AuthenticatedUser>(
-                Error.Forbidden("ACCOUNT_LOCKED", "Too many failed attempts. Try again in 15 minutes."));
+            return Result.Failure<AuthenticatedUser>(AccountLocked);
         }
 
         if (!signInResult.Succeeded)
@@ -135,6 +141,99 @@ public sealed class IdentityService(
         return user is null ? null : new AuthenticatedUser(user.Id, user.Name, user.Email!);
     }
 
+    public async Task<Result> RequestOtpAsync(string identifier, CancellationToken cancellationToken)
+    {
+        var redisDb = redis.GetDatabase();
+        var throttleKey = $"otp-throttle:{NormalizeIdentifier(identifier)}";
+
+        var requestCount = await redisDb.StringIncrementAsync(throttleKey);
+
+        if (requestCount == 1)
+        {
+            await redisDb.KeyExpireAsync(throttleKey, OtpRequestWindow);
+        }
+
+        if (requestCount > OtpMaxRequestsPerWindow)
+        {
+            var ttl = await redisDb.KeyTimeToLiveAsync(throttleKey) ?? OtpRequestWindow;
+            return Result.Failure(Error.RateLimited(
+                "OTP_REQUEST_RATE_LIMITED",
+                "Too many code requests. Try again later.",
+                (int)Math.Ceiling(ttl.TotalSeconds)));
+        }
+
+        var user = await FindUserAsync(identifier, cancellationToken);
+
+        if (user is null)
+        {
+            // No enumeration: behave exactly as if a code had been sent.
+            return Result.Success();
+        }
+
+        var code = GenerateOtpCode();
+        await redisDb.StringSetAsync(OtpKey(user.Id), Hash(code), OtpCodeLifetime);
+
+        await emailSender.QueueAsync(
+            new EmailMessage(
+                user.Email!,
+                "Your HRS sign-in code",
+                $"Your sign-in code is {code}. It expires in 10 minutes. If you didn't request this, ignore this email."),
+            cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result<AuthenticatedUser>> VerifyOtpAsync(
+        string identifier,
+        string code,
+        CancellationToken cancellationToken)
+    {
+        var user = await FindUserAsync(identifier, cancellationToken);
+
+        if (user is null)
+        {
+            return Result.Failure<AuthenticatedUser>(InvalidOtp);
+        }
+
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            return Result.Failure<AuthenticatedUser>(AccountLocked);
+        }
+
+        var redisDb = redis.GetDatabase();
+        var otpKey = OtpKey(user.Id);
+        var storedHash = await redisDb.StringGetAsync(otpKey);
+
+        if (storedHash.IsNull || storedHash != Hash(code))
+        {
+            await userManager.AccessFailedAsync(user);
+
+            return await userManager.IsLockedOutAsync(user)
+                ? Result.Failure<AuthenticatedUser>(AccountLocked)
+                : Result.Failure<AuthenticatedUser>(InvalidOtp);
+        }
+
+        // Single use: remove the code immediately so it cannot be replayed.
+        await redisDb.KeyDeleteAsync(otpKey);
+        await userManager.ResetAccessFailedCountAsync(user);
+
+        user.LastLoginAt = clock.UtcNow;
+        await userManager.UpdateAsync(user);
+
+        return new AuthenticatedUser(user.Id, user.Name, user.Email!);
+    }
+
+    private async Task<ApplicationUser?> FindUserAsync(string identifier, CancellationToken cancellationToken) =>
+        await userManager.FindByEmailAsync(identifier)
+            ?? await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == identifier, cancellationToken);
+
+    private static string OtpKey(Guid userId) => $"otp:{userId}";
+
+    private static string NormalizeIdentifier(string identifier) => identifier.Trim().ToLowerInvariant();
+
+    private static string GenerateOtpCode() =>
+        RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
+
     private async Task<AuthTokens> CreateSessionAsync(
         ApplicationUser user,
         string? ipAddress,
@@ -163,6 +262,12 @@ public sealed class IdentityService(
 
     private static Error InvalidCredentials =>
         Error.Unauthenticated("INVALID_CREDENTIALS", "Invalid email/phone or password.");
+
+    private static Error InvalidOtp =>
+        Error.Unauthenticated("INVALID_OTP", "That code is invalid or has expired.");
+
+    private static Error AccountLocked =>
+        Error.Forbidden("ACCOUNT_LOCKED", "Too many failed attempts. Try again in 15 minutes.");
 
     private static Error InvalidRefreshToken =>
         Error.Unauthenticated("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired.");

@@ -6,7 +6,7 @@ namespace HRS.Domain.Common;
     "Naming",
     "CA1716:Identifiers should not match keywords",
     Justification = "Error is the project's documented Result/Error convention (backend/CLAUDE.md, docs/architecture.md).")]
-public sealed record Error(string Code, string Message, ErrorType Type)
+public sealed record Error(string Code, string Message, ErrorType Type, int? RetryAfterSeconds = null)
 {
     public static readonly Error None = new(string.Empty, string.Empty, ErrorType.None);
 
@@ -19,6 +19,9 @@ public sealed record Error(string Code, string Message, ErrorType Type)
     public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
 
     public static Error Forbidden(string code, string message) => new(code, message, ErrorType.Forbidden);
+
+    public static Error RateLimited(string code, string message, int retryAfterSeconds) =>
+        new(code, message, ErrorType.RateLimited, retryAfterSeconds);
 
     public static Error Unexpected(string code, string message) => new(code, message, ErrorType.Unexpected);
 }

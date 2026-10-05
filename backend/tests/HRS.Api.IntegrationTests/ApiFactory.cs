@@ -1,8 +1,10 @@
+using HRS.Application.Common.Interfaces;
 using HRS.Infrastructure.Identity;
 using HRS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +15,8 @@ namespace HRS.Api.IntegrationTests;
 
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private readonly int? _authRateLimitPermits;
+
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("hrs")
         .WithUsername("hrs")
@@ -22,13 +26,44 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private readonly RedisContainer _redis = new RedisBuilder("redis:7-alpine")
         .Build();
 
+    public CapturingEmailSender EmailSender { get; } = new();
+
+    // xunit requires exactly one public constructor on a collection fixture, so the
+    // rate-limit override (used only by the standalone AuthRateLimitTests) is internal.
+    public ApiFactory()
+        : this(authRateLimitPermits: null)
+    {
+    }
+
+    internal ApiFactory(int? authRateLimitPermits)
+    {
+        _authRateLimitPermits = authRateLimitPermits;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureAppConfiguration((_, configBuilder) => configBuilder.AddInMemoryCollection(
-        [
-            new KeyValuePair<string, string?>("ConnectionStrings:Default", _postgres.GetConnectionString()),
-            new KeyValuePair<string, string?>("ConnectionStrings:Redis", _redis.GetConnectionString()),
-        ]));
+        builder.ConfigureAppConfiguration((_, configBuilder) =>
+        {
+            var settings = new List<KeyValuePair<string, string?>>
+            {
+                new("ConnectionStrings:Default", _postgres.GetConnectionString()),
+                new("ConnectionStrings:Redis", _redis.GetConnectionString()),
+            };
+
+            // Defaults to the production-sized limit, which is generous enough not to
+            // interfere with the rest of the suite sharing this host; a dedicated test
+            // overrides it on its own isolated factory instance (AuthRateLimitTests).
+            if (_authRateLimitPermits is { } permits)
+            {
+                settings.Add(new KeyValuePair<string, string?>(
+                    "RateLimiting:Auth:PermitLimit", permits.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            }
+
+            configBuilder.AddInMemoryCollection(settings);
+        });
+
+        // Replaces the registration from AddInfrastructure() — no live SMTP server in tests.
+        builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(EmailSender));
     }
 
     public async Task InitializeAsync()

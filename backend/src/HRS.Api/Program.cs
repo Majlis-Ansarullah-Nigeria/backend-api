@@ -1,11 +1,13 @@
 using System.Globalization;
 using System.Text;
+using System.Threading.RateLimiting;
 using HRS.Api.Common;
 using HRS.Api.Endpoints;
 using HRS.Application;
 using HRS.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
@@ -59,6 +61,37 @@ try
         });
     builder.Services.AddAuthorization();
 
+    // NFR-SEC-04: rate limiting on auth endpoints. A single API instance today (see
+    // docker-compose.dokploy.yml), so an in-memory limiter is enough; the per-identifier
+    // OTP request throttle in IdentityService uses Redis separately since it must key
+    // off the request body, which runs before this middleware.
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        options.OnRejected = (context, cancellationToken) =>
+        {
+            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            {
+                context.HttpContext.Response.Headers.RetryAfter =
+                    ((int)retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
+            }
+
+            return ValueTask.CompletedTask;
+        };
+
+        var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 100;
+
+        options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                Window = TimeSpan.FromMinutes(5),
+                PermitLimit = authPermitLimit,
+                QueueLimit = 0,
+            }));
+    });
+
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
@@ -66,6 +99,7 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseRateLimiter();
 
     app.MapOpenApi();
     app.MapScalarApiReference();
