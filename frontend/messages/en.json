@@ -1,0 +1,9 @@
+{
+  "App": {
+    "name": "HRS"
+  },
+  "Home": {
+    "title": "HRS — Hierarchical Reporting Service",
+    "description": "Scaffold is live. The app shell lands in M0.5."
+  }
+}

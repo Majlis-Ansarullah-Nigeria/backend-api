@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --color-forest-900: var(--color-forest-900);
+  --color-green-700: var(--color-green-700);
+  --color-green-600: var(--color-green-600);
+  --color-green-500: var(--color-green-500);
+  --color-lime: var(--color-lime);
+  --color-mint: var(--color-mint);
+  --color-ground: var(--color-ground);
+  --color-surface: var(--color-surface);
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
+  --color-danger: var(--color-danger);
+
+  --color-status-not-started-bg: var(--status-not-started-bg);
+  --color-status-not-started-fg: var(--status-not-started-fg);
+  --color-status-draft-bg: var(--status-draft-bg);
+  --color-status-draft-fg: var(--status-draft-fg);
+  --color-status-submitted-bg: var(--status-submitted-bg);
+  --color-status-submitted-fg: var(--status-submitted-fg);
+  --color-status-in-review-bg: var(--status-in-review-bg);
+  --color-status-in-review-fg: var(--status-in-review-fg);
+  --color-status-late-bg: var(--status-late-bg);
+  --color-status-late-fg: var(--status-late-fg);
+  --color-status-returned-bg: var(--status-returned-bg);
+  --color-status-returned-fg: var(--status-returned-fg);
+  --color-status-acknowledged-bg: var(--status-acknowledged-bg);
+  --color-status-acknowledged-fg: var(--status-acknowledged-fg);
+  --color-status-missed-bg: var(--status-missed-bg);
+  --color-status-missed-fg: var(--status-missed-fg);
+  --color-status-overdue-bg: var(--status-overdue-bg);
+  --color-status-overdue-fg: var(--status-overdue-fg);
+  --color-status-upcoming-bg: var(--status-upcoming-bg);
+  --color-status-upcoming-fg: var(--status-upcoming-fg);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

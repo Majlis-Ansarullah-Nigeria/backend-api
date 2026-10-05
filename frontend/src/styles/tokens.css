@@ -1,0 +1,32 @@
+:root {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-forest-900: #053D27;  /* sidebar, dark surfaces */
+  --color-green-700:  #075C39;  /* primary text on mint, links */
+  --color-green-600:  #0B7A4B;  /* primary actions */
+  --color-green-500:  #12A15F;  /* charts, success */
+  --color-lime:       #B7F171;  /* highlights, active marks */
+  --color-mint:       #DDF6E8;  /* selected, soft fills */
+  --color-ground:     #F3F8F4;  /* app background */
+  --color-surface:    #FFFFFF;
+  --color-ink:        #0F1F17;  /* text */
+  --color-ink-muted:  #4F6157;  /* secondary text */
+  --color-line:       #E1EAE4;
+  --color-line-strong:#CFDCD3;
+  --color-danger:     #B42318;
+
+  /* status chips: background / text (always with an icon and a word) */
+  --status-not-started-bg: #EEF2F0; --status-not-started-fg: #46524C;
+  --status-draft-bg:       #EEF2F0; --status-draft-fg:       #33403A;
+  --status-submitted-bg:   #E5EDFF; --status-submitted-fg:   #1D44B8;
+  --status-in-review-bg:   #EEE8FF; --status-in-review-fg:   #5427C2;
+  --status-late-bg:        #FFF1DB; --status-late-fg:        #8A4300;
+  --status-returned-bg:    #FDE8E7; --status-returned-fg:    #A11C12;
+  --status-acknowledged-bg:#D9F5E5; --status-acknowledged-fg:#075C39;
+  --status-missed-bg:      #F1E4E4; --status-missed-fg:      #6E1D1D;
+  --status-overdue-bg:     #FFE6D3; --status-overdue-fg:     #8F3700;
+  --status-upcoming-bg:    #E9F2FB; --status-upcoming-fg:    #24527F;
+
+  --radius-sm: 10px; --radius-md: 14px; --radius-lg: 16px;
+}

@@ -6,7 +6,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M0.1 Backend solution: `HRS.sln` with Domain, Application, Infrastructure, Api, Worker and the four test projects; `Directory.Build.props` (net10.0, nullable, warnings as errors, analyzers); `global.json`; central package management (`Directory.Packages.props`).
 - [x] M0.2 Architecture tests (NetArchTest) for the dependency rule; `Result`/`Error`; `IClock`; ProblemDetails mapping; Serilog; OpenAPI + Scalar UI; `/api/health` (DB, Redis).
 - [x] M0.3 EF Core + Npgsql + snake_case naming + first empty migration; Testcontainers-based `ApiFactory` for integration tests.
-- [ ] M0.4 Frontend scaffold: create the Next.js app in a temp folder and move it into `frontend/` (keep the existing `CLAUDE.md` and `Dockerfile`); Tailwind, shadcn/ui, tokens from `docs/design/README.md`, next-intl, Vitest, Playwright, orval config, `output: 'standalone'`, dev rewrite of `/api/*` to :8080.
+- [x] M0.4 Frontend scaffold: create the Next.js app in a temp folder and move it into `frontend/` (keep the existing `CLAUDE.md` and `Dockerfile`); Tailwind, shadcn/ui, tokens from `docs/design/README.md`, next-intl, Vitest, Playwright, orval config, `output: 'standalone'`, dev rewrite of `/api/*` to :8080.
 - [ ] M0.5 App shell from the mockups: sidebar (desktop), bottom tabs (mobile), unit switcher, `StatusChip`, `SaveIndicator`, `EmptyState`, `ErrorState`, `ReadOnlyBanner`.
 - [ ] M0.6 Docker: confirm `docker compose up` dev stack, build all images, CI green on a PR.
 
