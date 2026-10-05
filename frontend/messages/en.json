@@ -5,5 +5,42 @@
   "Home": {
     "title": "HRS — Hierarchical Reporting Service",
     "description": "Scaffold is live. The app shell lands in M0.5."
+  },
+  "Shell": {
+    "appName": "Reporting Service",
+    "orgPlaceholder": "[ORGANIZATION NAME]",
+    "actingAs": "Acting as",
+    "switchUnit": "Switch unit",
+    "signedIn": "Signed in",
+    "signOut": "Sign out",
+    "search": "Search units, reports, people",
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {count} unread",
+    "nav": {
+      "home": "Home",
+      "homeShort": "Home",
+      "reports": "My reports",
+      "reportsShort": "Reports",
+      "history": "History",
+      "historyShort": "History",
+      "notifications": "Notifications",
+      "notificationsShort": "Alerts",
+      "profile": "Profile",
+      "profileShort": "Me"
+    }
+  },
+  "HomePlaceholder": {
+    "greeting": "Good morning, {name}",
+    "subtitle": "This is a scaffold preview of the shared components — the real Head home screen lands in M5.2.",
+    "componentsHeading": "Shared components",
+    "statusChipsLabel": "Status chips",
+    "saveIndicatorLabel": "Save indicator",
+    "readOnlyLabel": "Read-only banner",
+    "emptyStateLabel": "Empty state",
+    "errorStateLabel": "Error state",
+    "emptyStateTitle": "You're all caught up",
+    "emptyStateDescription": "No reports are due right now. The October window opens on 1 Nov.",
+    "errorStateTitle": "We couldn't load your reports",
+    "errorStateDescription": "Check your connection. Your drafts are safe on this device."
   }
 }
