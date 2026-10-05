@@ -19,8 +19,8 @@ Backend (anything under `backend/`):
 
 Frontend (anything under `frontend/`):
 1. `pnpm -C frontend lint`
-2. `pnpm -C frontend typecheck`
-3. `pnpm -C frontend test --run`
-4. If routes or layouts changed: `pnpm -C frontend build` and check first-load JS of report pages stays under 200 KB
+2. `pnpm -C frontend build` (must run before typecheck — Next.js generates the ambient `LayoutProps`/`PageProps` types into `.next/types` during build, and typecheck fails without them on a clean checkout). If routes or layouts changed, also check first-load JS of report pages stays under 200 KB.
+3. `pnpm -C frontend typecheck`
+4. `pnpm -C frontend test` (the `test` script already runs `vitest run`, non-watch; don't append `--run` — pnpm's CLI parses a bare `--run` as its own flag and errors with "Unknown option: 'run'" instead of forwarding it)
 
 Report each step as pass or fail. On a failure, fix the cause and rerun that step; never skip or disable a test, lint rule or type check to get green.

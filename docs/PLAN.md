@@ -8,7 +8,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M0.3 EF Core + Npgsql + snake_case naming + first empty migration; Testcontainers-based `ApiFactory` for integration tests.
 - [x] M0.4 Frontend scaffold: create the Next.js app in a temp folder and move it into `frontend/` (keep the existing `CLAUDE.md` and `Dockerfile`); Tailwind, shadcn/ui, tokens from `docs/design/README.md`, next-intl, Vitest, Playwright, orval config, `output: 'standalone'`, dev rewrite of `/api/*` to :8080.
 - [x] M0.5 App shell from the mockups: sidebar (desktop), bottom tabs (mobile), unit switcher, `StatusChip`, `SaveIndicator`, `EmptyState`, `ErrorState`, `ReadOnlyBanner`.
-- [ ] M0.6 Docker: confirm `docker compose up` dev stack, build all images, CI green on a PR.
+- [x] M0.6 Docker: confirm `docker compose up` dev stack, build all images, CI green on a PR.
 
 ## M1 — Identity and access (FR-IAM, FR-AC, NFR-SEC)
 - [ ] M1.1 Users + ASP.NET Core Identity, password login, lockout, httpOnly cookie session with refresh rotation (FR-IAM-001, FR-IAM-005, NFR-SEC-02).

@@ -38,7 +38,7 @@ Tips: start each milestone in a fresh session (`/clear`), use plan mode for anyt
 
 ## 3. Run locally
 ```
-docker compose up -d                       # Postgres, Redis, Mailpit, MinIO, ClamAV
+docker compose up -d                       # Postgres, Redis, Mailpit, RustFS, ClamAV
 dotnet run --project backend/src/HRS.Api   # http://localhost:8080
 pnpm -C frontend install && pnpm -C frontend dev   # http://localhost:3000
 ```
