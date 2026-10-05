@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Domain.Access;
 using HRS.Domain.Invitations;
 using HRS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +14,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UserSession> UserSessions => Set<UserSession>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -48,6 +51,29 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             invitation.Property(i => i.TokenHash).IsRequired();
             invitation.HasIndex(i => i.TokenHash).IsUnique();
             invitation.HasIndex(i => i.Email);
+        });
+
+        builder.Entity<RoleAssignment>(assignment =>
+        {
+            assignment.ToTable("role_assignments");
+            assignment.HasKey(a => a.Id);
+            assignment.HasIndex(a => a.UserId);
+            assignment.HasIndex(a => a.UnitId);
+            assignment
+                .HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // UnitId intentionally has no foreign key: Units don't exist until M2.1.
+        });
+
+        builder.Entity<ApplicationUser>(user =>
+        {
+            user
+                .HasOne<RoleAssignment>()
+                .WithMany()
+                .HasForeignKey(u => u.ActiveRoleAssignmentId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

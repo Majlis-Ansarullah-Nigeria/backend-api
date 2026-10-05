@@ -70,9 +70,12 @@ public interface IIdentityService
         string? phone,
         string password,
         CancellationToken cancellationToken);
+
+    /// <summary>Sets which role assignment the unit switcher shows (FR-AC-002). Account-wide.</summary>
+    Task SetActiveRoleAssignmentAsync(Guid userId, Guid roleAssignmentId, CancellationToken cancellationToken);
 }
 
-public sealed record AuthenticatedUser(Guid Id, string Name, string Email);
+public sealed record AuthenticatedUser(Guid Id, string Name, string Email, Guid? ActiveRoleAssignmentId = null);
 
 public sealed record AuthTokens(
     string AccessToken,

@@ -55,7 +55,7 @@ public sealed class IdentityService(
         user.LastLoginAt = clock.UtcNow;
         await userManager.UpdateAsync(user);
 
-        return new AuthenticatedUser(user.Id, user.Name, user.Email!);
+        return new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId);
     }
 
     public async Task<AuthTokens> IssueTokensAsync(
@@ -138,7 +138,7 @@ public sealed class IdentityService(
     public async Task<AuthenticatedUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        return user is null ? null : new AuthenticatedUser(user.Id, user.Name, user.Email!);
+        return user is null ? null : new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId);
     }
 
     public async Task<Result> RequestOtpAsync(string identifier, CancellationToken cancellationToken)
@@ -220,7 +220,7 @@ public sealed class IdentityService(
         user.LastLoginAt = clock.UtcNow;
         await userManager.UpdateAsync(user);
 
-        return new AuthenticatedUser(user.Id, user.Name, user.Email!);
+        return new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId);
     }
 
     public async Task<bool> EmailIsRegisteredAsync(string email, CancellationToken cancellationToken) =>
@@ -260,6 +260,15 @@ public sealed class IdentityService(
         }
 
         return new AuthenticatedUser(user.Id, user.Name, user.Email!);
+    }
+
+    public async Task SetActiveRoleAssignmentAsync(Guid userId, Guid roleAssignmentId, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new InvalidOperationException($"User {userId} not found when setting the active role assignment.");
+
+        user.ActiveRoleAssignmentId = roleAssignmentId;
+        await userManager.UpdateAsync(user);
     }
 
     private async Task<ApplicationUser?> FindUserAsync(string identifier, CancellationToken cancellationToken) =>

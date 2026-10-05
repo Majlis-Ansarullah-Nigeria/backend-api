@@ -22,6 +22,53 @@ namespace HRS.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("HRS.Domain.Access.RoleAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AppointedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointed_by");
+
+                    b.Property<int?>("DelegateScope")
+                        .HasColumnType("integer")
+                        .HasColumnName("delegate_scope");
+
+                    b.Property<DateTimeOffset?>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer")
+                        .HasColumnName("role");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_role_assignments");
+
+                    b.HasIndex("UnitId")
+                        .HasDatabaseName("ix_role_assignments_unit_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_role_assignments_user_id");
+
+                    b.ToTable("role_assignments", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Invitations.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -83,6 +130,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer")
                         .HasColumnName("access_failed_count");
+
+                    b.Property<Guid?>("ActiveRoleAssignmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("active_role_assignment_id");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -152,6 +203,9 @@ namespace HRS.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_users");
+
+                    b.HasIndex("ActiveRoleAssignmentId")
+                        .HasDatabaseName("ix_users_active_role_assignment_id");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -295,6 +349,25 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasName("pk_user_tokens");
 
                     b.ToTable("user_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Access.RoleAssignment", b =>
+                {
+                    b.HasOne("HRS.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_role_assignments_users_user_id");
+                });
+
+            modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>
+                {
+                    b.HasOne("HRS.Domain.Access.RoleAssignment", null)
+                        .WithMany()
+                        .HasForeignKey("ActiveRoleAssignmentId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_users_role_assignments_active_role_assignment_id");
                 });
 
             modelBuilder.Entity("HRS.Infrastructure.Identity.UserSession", b =>

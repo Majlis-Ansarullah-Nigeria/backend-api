@@ -1,6 +1,7 @@
 using System.Globalization;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Infrastructure.Access;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
 using HRS.Infrastructure.Email;
@@ -90,6 +91,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAccessTokenGenerator, JwtAccessTokenGenerator>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IAccessPolicy, AccessPolicy>();
 
         return services;
     }

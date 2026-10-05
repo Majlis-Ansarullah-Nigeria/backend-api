@@ -71,5 +71,8 @@ public class VerifyOtpCommandHandlerTests
         public Task<Result<AuthenticatedUser>> CreateUserAsync(
             string email, string name, string? phone, string password, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task SetActiveRoleAssignmentAsync(Guid userId, Guid roleAssignmentId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

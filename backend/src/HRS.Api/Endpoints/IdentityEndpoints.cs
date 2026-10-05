@@ -135,21 +135,35 @@ public static class IdentityEndpoints
             })
             .WithName("Logout");
 
-        app.MapGet("/api/v1/me", async (
+        var me = app.MapGroup("/api/v1/me").WithTags("Identity").RequireAuthorization();
+
+        me.MapGet("/", async (
                 System.Security.Claims.ClaimsPrincipal user,
                 ISender sender,
                 CancellationToken cancellationToken) =>
             {
                 var result = await sender.Send(new GetMeQuery(user.GetUserId()), cancellationToken);
 
-                return result.IsSuccess
-                    ? Results.Ok(new MeResponse(result.Value.Id, result.Value.Name, result.Value.Email))
-                    : result.ToProblemDetails();
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
             })
             .WithName("GetMe")
-            .WithTags("Identity")
-            .RequireAuthorization()
+            .Produces<MeProfile>()
             .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        me.MapPut("/active-assignment", async (
+                [FromBody] SetActiveAssignmentRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new SetActiveAssignmentCommand(user.GetUserId(), request.RoleAssignmentId);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("SetActiveAssignment")
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound);
     }
 }
 
@@ -160,3 +174,5 @@ public sealed record OtpRequest(string Identifier);
 public sealed record OtpVerifyRequest(string Identifier, string Code);
 
 public sealed record MeResponse(Guid Id, string Name, string Email);
+
+public sealed record SetActiveAssignmentRequest(Guid RoleAssignmentId);

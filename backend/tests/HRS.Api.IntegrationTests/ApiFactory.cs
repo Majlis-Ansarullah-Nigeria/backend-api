@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Domain.Access;
 using HRS.Infrastructure.Identity;
 using HRS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
@@ -120,5 +121,37 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         }
 
         return user.Id;
+    }
+
+    /// <summary>
+    /// Seeds a role assignment directly — there's no HTTP endpoint for this yet
+    /// (assigning a head is M2.4's POST /units/{id}/assignments).
+    /// </summary>
+    public async Task<Guid> CreateRoleAssignmentAsync(
+        Guid userId,
+        Guid unitId,
+        RoleName role,
+        DelegateScope? delegateScope = null,
+        DateTimeOffset? startsAt = null,
+        DateTimeOffset? endsAt = null)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+
+        var assignment = new RoleAssignment(
+            Guid.CreateVersion7(),
+            userId,
+            unitId,
+            role,
+            delegateScope,
+            startsAt ?? clock.UtcNow,
+            endsAt,
+            appointedBy: null);
+
+        db.RoleAssignments.Add(assignment);
+        await db.SaveChangesAsync();
+
+        return assignment.Id;
     }
 }
