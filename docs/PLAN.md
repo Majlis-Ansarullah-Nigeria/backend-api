@@ -11,7 +11,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M0.6 Docker: confirm `docker compose up` dev stack, build all images, CI green on a PR.
 
 ## M1 — Identity and access (FR-IAM, FR-AC, NFR-SEC)
-- [ ] M1.1 Users + ASP.NET Core Identity, password login, lockout, httpOnly cookie session with refresh rotation (FR-IAM-001, FR-IAM-005, NFR-SEC-02).
+- [x] M1.1 Users + ASP.NET Core Identity, password login, lockout, httpOnly cookie session with refresh rotation (FR-IAM-001, FR-IAM-005, NFR-SEC-02).
 - [ ] M1.2 Email one-time code login (FR-IAM-001) with rate limits.
 - [ ] M1.3 Invitations and set-password flow (FR-IAM-002) + Invite screen.
 - [ ] M1.4 Role assignments with term dates, active assignment switching, `IAccessPolicy` skeleton (FR-AC-001..003).

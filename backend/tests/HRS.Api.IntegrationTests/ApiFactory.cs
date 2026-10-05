@@ -1,5 +1,7 @@
+using HRS.Infrastructure.Identity;
 using HRS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -43,5 +45,45 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await _postgres.DisposeAsync();
         await _redis.DisposeAsync();
         await base.DisposeAsync();
+    }
+
+    /// <summary>
+    /// A client that actually round-trips cookies on subsequent requests. Our auth cookies are
+    /// marked Secure, and CookieContainer (correctly) withholds Secure cookies from plain-http
+    /// requests — TestServer's default base address is http://localhost. Pointing the client at
+    /// an https:// base address satisfies that check without any real TLS being involved.
+    /// </summary>
+    public HttpClient CreateAuthenticatedClient(bool handleCookies = true) =>
+        CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            HandleCookies = handleCookies,
+        });
+
+    /// <summary>Seeds a user directly via UserManager — no registration endpoint exists yet (M1.3).</summary>
+    public async Task<Guid> CreateUserAsync(string email, string password, string? phoneNumber = null, string name = "Test User")
+    {
+        using var scope = Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var user = new ApplicationUser
+        {
+            Id = Guid.CreateVersion7(),
+            Name = name,
+            UserName = email,
+            Email = email,
+            PhoneNumber = phoneNumber,
+            EmailConfirmed = true,
+        };
+
+        var result = await userManager.CreateAsync(user, password);
+
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"Failed to seed test user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        }
+
+        return user.Id;
     }
 }
