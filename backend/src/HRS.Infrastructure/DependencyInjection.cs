@@ -1,5 +1,6 @@
 using System.Globalization;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Options;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
 using HRS.Infrastructure.Email;
@@ -28,6 +29,10 @@ public static class DependencyInjection
         services.AddSingleton<IConnectionMultiplexer>(sp =>
             ConnectionMultiplexer.Connect(GetConnectionString(sp, "Redis")));
 
+        services.AddOptions<AppOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+                options.PublicUrl = configuration["App:PublicUrl"] ?? "http://localhost:3000");
+
         services.AddOptions<EmailOptions>()
             .Configure<IConfiguration>((options, configuration) =>
             {
@@ -55,7 +60,14 @@ public static class DependencyInjection
             .AddIdentityCore<ApplicationUser>(options =>
             {
                 // NFR-SEC-02: PBKDF2 100k+ iterations (set below via PasswordHasherOptions).
-                options.Password.RequiredLength = 10;
+                // Policy matches the set-password mockup's criteria chips exactly (FR-IAM-002):
+                // length + a digit + not a common password — no forced case/symbol mix, per
+                // current NIST 800-63B guidance that length beats composition rules.
+                options.Password.RequiredLength = 12;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
 
                 // FR-IAM-005: lockout after 5 failed attempts for 15 minutes.
                 options.Lockout.MaxFailedAccessAttempts = 5;
@@ -66,6 +78,7 @@ public static class DependencyInjection
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders()
+            .AddPasswordValidator<CommonPasswordValidator>()
             .AddSignInManager();
 
         services.Configure<PasswordHasherOptions>(options => options.IterationCount = 100_000);

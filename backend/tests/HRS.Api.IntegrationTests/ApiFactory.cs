@@ -95,7 +95,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             HandleCookies = handleCookies,
         });
 
-    /// <summary>Seeds a user directly via UserManager — no registration endpoint exists yet (M1.3).</summary>
+    /// <summary>Seeds a user directly via UserManager, bypassing the invitation accept flow.</summary>
     public async Task<Guid> CreateUserAsync(string email, string password, string? phoneNumber = null, string name = "Test User")
     {
         using var scope = Services.CreateScope();

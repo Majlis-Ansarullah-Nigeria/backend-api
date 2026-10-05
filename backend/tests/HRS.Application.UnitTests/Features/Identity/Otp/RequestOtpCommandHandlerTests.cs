@@ -58,5 +58,12 @@ public class RequestOtpCommandHandlerTests
         public Task<Result<AuthenticatedUser>> VerifyOtpAsync(
             string identifier, string code, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<bool> EmailIsRegisteredAsync(string email, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result<AuthenticatedUser>> CreateUserAsync(
+            string email, string name, string? phone, string password, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

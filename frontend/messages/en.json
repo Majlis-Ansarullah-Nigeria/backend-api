@@ -42,5 +42,33 @@
     "emptyStateDescription": "No reports are due right now. The October window opens on 1 Nov.",
     "errorStateTitle": "We couldn't load your reports",
     "errorStateDescription": "Check your connection. Your drafts are safe on this device."
+  },
+  "AcceptInvitation": {
+    "appName": "Reporting Service",
+    "welcomeBadge": "You've been invited",
+    "welcomeHeading": "Welcome to HRS",
+    "title": "Set up your account",
+    "subtitle": "Welcome, {name}. Create a password to start submitting reports.",
+    "fullNameLabel": "Full name",
+    "phoneLabel": "Phone (optional)",
+    "emailLabel": "Email",
+    "emailHelp": "Verified by your invitation link",
+    "passwordLabel": "Create password",
+    "passwordCriteriaLength": "12+ characters",
+    "passwordCriteriaDigit": "A number",
+    "passwordCriteriaNotCommon": "Not a common password",
+    "privacyNotice": "I have read the privacy notice and agree to how my data is used.",
+    "submit": "Create account and continue",
+    "submitting": "Creating your account…",
+    "expiresOn": "This invitation expires on {date}.",
+    "loading": "Checking your invitation…",
+    "invalidTitle": "This invitation link isn't valid",
+    "invalidDescription": "Ask your administrator to send you a new invitation.",
+    "expiredTitle": "This invitation has expired",
+    "expiredDescription": "Ask your administrator to resend it.",
+    "alreadyAcceptedTitle": "This invitation has already been used",
+    "alreadyAcceptedDescription": "If this is your account, sign in instead.",
+    "genericErrorTitle": "We couldn't create your account",
+    "genericErrorDescription": "Check the form and try again."
   }
 }

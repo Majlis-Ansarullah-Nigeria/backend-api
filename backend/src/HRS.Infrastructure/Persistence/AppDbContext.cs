@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Domain.Invitations;
 using HRS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -10,6 +11,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityUserContext<ApplicationUser, Guid>(options), IAppDbContext
 {
     public DbSet<UserSession> UserSessions => Set<UserSession>();
+
+    public DbSet<Invitation> Invitations => Set<Invitation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -34,6 +37,17 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Invitation>(invitation =>
+        {
+            invitation.ToTable("invitations");
+            invitation.HasKey(i => i.Id);
+            invitation.Property(i => i.Email).IsRequired();
+            invitation.Property(i => i.Name).IsRequired();
+            invitation.Property(i => i.TokenHash).IsRequired();
+            invitation.HasIndex(i => i.TokenHash).IsUnique();
+            invitation.HasIndex(i => i.Email);
         });
     }
 }

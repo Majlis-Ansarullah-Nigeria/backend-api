@@ -223,6 +223,45 @@ public sealed class IdentityService(
         return new AuthenticatedUser(user.Id, user.Name, user.Email!);
     }
 
+    public async Task<bool> EmailIsRegisteredAsync(string email, CancellationToken cancellationToken) =>
+        await userManager.FindByEmailAsync(email) is not null;
+
+    public async Task<Result<AuthenticatedUser>> CreateUserAsync(
+        string email,
+        string name,
+        string? phone,
+        string password,
+        CancellationToken cancellationToken)
+    {
+        var user = new ApplicationUser
+        {
+            Id = Guid.CreateVersion7(),
+            Name = name,
+            UserName = email,
+            Email = email,
+            PhoneNumber = phone,
+            // Possession of the invite link already proves the email, per FR-IAM-002.
+            EmailConfirmed = true,
+        };
+
+        var result = await userManager.CreateAsync(user, password);
+
+        if (!result.Succeeded)
+        {
+            var isDuplicate = result.Errors.Any(e =>
+                e.Code == nameof(IdentityErrorDescriber.DuplicateEmail)
+                || e.Code == nameof(IdentityErrorDescriber.DuplicateUserName));
+
+            return isDuplicate
+                ? Result.Failure<AuthenticatedUser>(
+                    Error.Conflict("USER_ALREADY_EXISTS", "An account with this email already exists."))
+                : Result.Failure<AuthenticatedUser>(
+                    Error.Validation("WEAK_PASSWORD", string.Join(" ", result.Errors.Select(e => e.Description))));
+        }
+
+        return new AuthenticatedUser(user.Id, user.Name, user.Email!);
+    }
+
     private async Task<ApplicationUser?> FindUserAsync(string identifier, CancellationToken cancellationToken) =>
         await userManager.FindByEmailAsync(identifier)
             ?? await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == identifier, cancellationToken);

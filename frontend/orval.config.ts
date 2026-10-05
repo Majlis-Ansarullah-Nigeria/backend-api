@@ -16,10 +16,11 @@ export default defineConfig({
           path: "src/lib/api/client.ts",
           name: "customFetch",
         },
-        query: {
-          useQuery: true,
-          useSuspenseQuery: true,
-          useMutation: true,
+        fetch: {
+          // customFetch() already resolves with the parsed body alone (throwing ApiError on
+          // a non-2xx response) — without this, orval assumes a {data, status, headers}
+          // envelope that customFetch never actually produces.
+          includeHttpResponseReturnType: false,
         },
       },
     },

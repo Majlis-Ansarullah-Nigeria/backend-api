@@ -54,6 +54,22 @@ public interface IIdentityService
         string identifier,
         string code,
         CancellationToken cancellationToken);
+
+    /// <summary>Whether an account already exists for this email (FR-IAM-002 invite dedup).</summary>
+    Task<bool> EmailIsRegisteredAsync(string email, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Creates a new account with a password already set (used by invitation accept —
+    /// FR-IAM-002). Email is pre-confirmed since possession of the invite link proves it.
+    /// Fails with Conflict on a duplicate email or Validation if the password fails Identity's
+    /// policy (length, required digit, common-password denylist).
+    /// </summary>
+    Task<Result<AuthenticatedUser>> CreateUserAsync(
+        string email,
+        string name,
+        string? phone,
+        string password,
+        CancellationToken cancellationToken);
 }
 
 public sealed record AuthenticatedUser(Guid Id, string Name, string Email);

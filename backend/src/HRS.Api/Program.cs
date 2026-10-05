@@ -111,6 +111,7 @@ try
     });
 
     app.MapIdentityEndpoints();
+    app.MapInvitationsEndpoints();
 
     app.MapGet("/", () => "HRS API");
 
