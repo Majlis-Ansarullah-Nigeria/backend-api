@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Models;
 using HRS.Application.Features.Identity.Otp;
 using HRS.Domain.Common;
 
@@ -7,7 +8,7 @@ namespace HRS.Application.UnitTests.Features.Identity.Otp;
 public class VerifyOtpCommandHandlerTests
 {
     [Fact]
-    public async Task ReturnsAuthResultWhenTheCodeIsValid()
+    public async Task ReturnsLoggedInWhenTheCodeIsValidAndMfaIsNotEnabled()
     {
         var user = new AuthenticatedUser(Guid.NewGuid(), "Head", "head@example.org");
         var tokens = new AuthTokens("access", DateTimeOffset.UtcNow.AddMinutes(15), "refresh", DateTimeOffset.UtcNow.AddDays(30));
@@ -17,8 +18,27 @@ public class VerifyOtpCommandHandlerTests
         var result = await handler.Handle(new VerifyOtpCommand("head@example.org", "123456", null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(user.Id, result.Value.UserId);
-        Assert.Equal(tokens, result.Value.Tokens);
+        var loggedIn = Assert.IsType<LoggedIn>(result.Value);
+        Assert.Equal(user.Id, loggedIn.Result.UserId);
+        Assert.Equal(tokens, loggedIn.Result.Tokens);
+    }
+
+    [Fact]
+    public async Task ReturnsMfaChallengeRequiredWhenTheUserHasTotpEnabled()
+    {
+        var user = new AuthenticatedUser(Guid.NewGuid(), "Head", "head@example.org", TwoFactorEnabled: true);
+        var identityService = new StubIdentityService
+        {
+            VerifyResult = Result.Success(user),
+            ChallengeToken = "a-challenge-token",
+        };
+        var handler = new VerifyOtpCommandHandler(identityService);
+
+        var result = await handler.Handle(new VerifyOtpCommand("head@example.org", "123456", null, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var challenge = Assert.IsType<MfaChallengeRequired>(result.Value);
+        Assert.Equal("a-challenge-token", challenge.ChallengeToken);
     }
 
     [Fact]
@@ -39,6 +59,8 @@ public class VerifyOtpCommandHandlerTests
         public required Result<AuthenticatedUser> VerifyResult { get; init; }
 
         public AuthTokens? Tokens { get; init; }
+
+        public string? ChallengeToken { get; init; }
 
         public Task<Result<AuthenticatedUser>> ValidateCredentialsAsync(
             string identifier, string password, CancellationToken cancellationToken) =>
@@ -73,6 +95,34 @@ public class VerifyOtpCommandHandlerTests
             throw new NotSupportedException();
 
         public Task SetActiveRoleAssignmentAsync(Guid userId, Guid roleAssignmentId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<string> CreateMfaChallengeAsync(Guid userId, CancellationToken cancellationToken) =>
+            Task.FromResult(ChallengeToken!);
+
+        public Task<Result<AuthenticatedUser>> VerifyMfaChallengeAsync(
+            string challengeToken, string code, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<TotpEnrollment> BeginTotpEnrollmentAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result<IReadOnlyList<string>>> ConfirmTotpEnrollmentAsync(
+            Guid userId, string code, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task DisableTotpAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<IReadOnlyList<SessionSummary>> GetActiveSessionsAsync(
+            Guid userId, Guid currentSessionId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result> RevokeSessionByIdAsync(
+            Guid userId, Guid sessionId, Guid currentSessionId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task RevokeOtherSessionsAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
     }
 }

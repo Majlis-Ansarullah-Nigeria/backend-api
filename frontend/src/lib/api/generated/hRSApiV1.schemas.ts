@@ -12,6 +12,14 @@ export interface AcceptInvitationRequest {
   agreedToPrivacyNotice: boolean;
 }
 
+export interface ConfirmTotpEnrollmentRequest {
+  code: string;
+}
+
+export interface ConfirmTotpEnrollmentResponse {
+  recoveryCodes: string[];
+}
+
 export interface CreateInvitationRequest {
   email: string;
   name: string;
@@ -22,6 +30,8 @@ export interface CreateInvitationResult {
   email: string;
   expiresAt: string;
 }
+
+export type DelegateScope = number;
 
 export interface InvitationPreview {
   name: string;
@@ -34,10 +44,42 @@ export interface LoginRequest {
   password: string;
 }
 
+export type RoleName = number;
+
+export interface RoleAssignmentSummary {
+  id: string;
+  unitId: string;
+  role: RoleName;
+  delegateScope: null | DelegateScope;
+  startsAt: string;
+  /** @nullable */
+  endsAt: string | null;
+}
+
+export interface MeProfile {
+  id: string;
+  name: string;
+  email: string;
+  /** @nullable */
+  activeRoleAssignmentId: string | null;
+  roleAssignments: RoleAssignmentSummary[];
+  mfaEnabled: boolean;
+  mfaRequiredByRole: boolean;
+}
+
 export interface MeResponse {
   id: string;
   name: string;
   email: string;
+}
+
+export interface MfaChallengeResponse {
+  challengeToken: string;
+}
+
+export interface MfaVerifyRequest {
+  challengeToken: string;
+  code: string;
 }
 
 export interface OtpRequest {
@@ -63,5 +105,25 @@ export interface ProblemDetails {
   detail?: string | null;
   /** @nullable */
   instance?: string | null;
+}
+
+export interface SessionSummary {
+  id: string;
+  createdAt: string;
+  expiresAt: string;
+  /** @nullable */
+  createdByIp: string | null;
+  /** @nullable */
+  userAgent: string | null;
+  isCurrent: boolean;
+}
+
+export interface SetActiveAssignmentRequest {
+  roleAssignmentId: string;
+}
+
+export interface TotpEnrollment {
+  sharedKey: string;
+  authenticatorUri: string;
 }
 

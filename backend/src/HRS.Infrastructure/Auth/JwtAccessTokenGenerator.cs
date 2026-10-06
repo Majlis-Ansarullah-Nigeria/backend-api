@@ -11,7 +11,7 @@ public sealed class JwtAccessTokenGenerator(IOptions<AuthOptions> options, TimeP
 {
     private readonly AuthOptions _options = options.Value;
 
-    public AccessToken Generate(Guid userId, string email, string name)
+    public AccessToken Generate(Guid userId, string email, string name, Guid sessionId)
     {
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.Add(_options.AccessTokenLifetime);
@@ -26,6 +26,7 @@ public sealed class JwtAccessTokenGenerator(IOptions<AuthOptions> options, TimeP
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, email),
                 new Claim(JwtRegisteredClaimNames.Name, name),
+                new Claim(JwtRegisteredClaimNames.Sid, sessionId.ToString()),
             ]),
             IssuedAt = now.UtcDateTime,
             NotBefore = now.UtcDateTime,

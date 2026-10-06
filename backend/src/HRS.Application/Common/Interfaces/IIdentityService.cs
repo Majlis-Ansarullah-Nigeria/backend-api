@@ -73,12 +73,72 @@ public interface IIdentityService
 
     /// <summary>Sets which role assignment the unit switcher shows (FR-AC-002). Account-wide.</summary>
     Task SetActiveRoleAssignmentAsync(Guid userId, Guid roleAssignmentId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Mints a short-lived, single-use challenge for a user who passed their first factor but
+    /// has TOTP enabled (FR-IAM-003). The caller still has to present it to
+    /// <see cref="VerifyMfaChallengeAsync"/> with a code before a session is issued.
+    /// </summary>
+    Task<string> CreateMfaChallengeAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Verifies a TOTP code (falling back to a recovery code) against the user behind a
+    /// challenge token, applying the same lockout policy as password/OTP login for wrong
+    /// attempts. The caller still calls <see cref="IssueTokensAsync"/> to start the session.
+    /// </summary>
+    Task<Result<AuthenticatedUser>> VerifyMfaChallengeAsync(
+        string challengeToken,
+        string code,
+        CancellationToken cancellationToken);
+
+    /// <summary>Generates (or regenerates) a TOTP secret, not yet enabled until confirmed.</summary>
+    Task<TotpEnrollment> BeginTotpEnrollmentAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>Verifies the just-issued secret and turns MFA on, returning one-time recovery codes.</summary>
+    Task<Result<IReadOnlyList<string>>> ConfirmTotpEnrollmentAsync(
+        Guid userId,
+        string code,
+        CancellationToken cancellationToken);
+
+    /// <summary>Turns MFA off. Callers must check FR-IAM-003's mandatory-role rule first — this doesn't.</summary>
+    Task DisableTotpAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>Every active (unrevoked, unexpired) session for the user, most recent first.</summary>
+    Task<IReadOnlyList<SessionSummary>> GetActiveSessionsAsync(
+        Guid userId,
+        Guid currentSessionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>Revokes one session. Rejects revoking the caller's own current session — use logout instead.</summary>
+    Task<Result> RevokeSessionByIdAsync(
+        Guid userId,
+        Guid sessionId,
+        Guid currentSessionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>"Sign out other devices" (FR-IAM-006) — every active session except the current one.</summary>
+    Task RevokeOtherSessionsAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken);
 }
 
-public sealed record AuthenticatedUser(Guid Id, string Name, string Email, Guid? ActiveRoleAssignmentId = null);
+public sealed record AuthenticatedUser(
+    Guid Id,
+    string Name,
+    string Email,
+    Guid? ActiveRoleAssignmentId = null,
+    bool TwoFactorEnabled = false);
 
 public sealed record AuthTokens(
     string AccessToken,
     DateTimeOffset AccessTokenExpiresAt,
     string RefreshToken,
     DateTimeOffset RefreshTokenExpiresAt);
+
+public sealed record TotpEnrollment(string SharedKey, string AuthenticatorUri);
+
+public sealed record SessionSummary(
+    Guid Id,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset ExpiresAt,
+    string? CreatedByIp,
+    string? UserAgent,
+    bool IsCurrent);

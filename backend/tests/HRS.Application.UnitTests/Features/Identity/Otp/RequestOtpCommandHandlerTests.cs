@@ -68,5 +68,33 @@ public class RequestOtpCommandHandlerTests
 
         public Task SetActiveRoleAssignmentAsync(Guid userId, Guid roleAssignmentId, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<string> CreateMfaChallengeAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result<AuthenticatedUser>> VerifyMfaChallengeAsync(
+            string challengeToken, string code, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<TotpEnrollment> BeginTotpEnrollmentAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result<IReadOnlyList<string>>> ConfirmTotpEnrollmentAsync(
+            Guid userId, string code, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task DisableTotpAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<IReadOnlyList<SessionSummary>> GetActiveSessionsAsync(
+            Guid userId, Guid currentSessionId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result> RevokeSessionByIdAsync(
+            Guid userId, Guid sessionId, Guid currentSessionId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task RevokeOtherSessionsAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

@@ -13,4 +13,13 @@ public static class ClaimsPrincipalExtensions
             ? userId
             : throw new InvalidOperationException("Authenticated principal has no valid 'sub' claim.");
     }
+
+    public static Guid GetSessionId(this ClaimsPrincipal principal)
+    {
+        var value = principal.FindFirstValue(JwtRegisteredClaimNames.Sid);
+
+        return value is not null && Guid.TryParse(value, out var sessionId)
+            ? sessionId
+            : throw new InvalidOperationException("Authenticated principal has no valid 'sid' claim.");
+    }
 }

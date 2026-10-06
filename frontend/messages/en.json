@@ -70,5 +70,17 @@
     "alreadyAcceptedDescription": "If this is your account, sign in instead.",
     "genericErrorTitle": "We couldn't create your account",
     "genericErrorDescription": "Check the form and try again."
+  },
+  "Profile": {
+    "title": "Profile and settings",
+    "sessionsHeading": "Signed-in devices",
+    "signOutOthers": "Sign out others",
+    "signOut": "Sign out",
+    "current": "Current",
+    "thisDevice": "this device",
+    "sessionsLoading": "Loading your devices…",
+    "sessionsErrorTitle": "We couldn't load your devices",
+    "sessionsErrorDescription": "Check your connection and try again.",
+    "unknownDevice": "Unknown device"
   }
 }

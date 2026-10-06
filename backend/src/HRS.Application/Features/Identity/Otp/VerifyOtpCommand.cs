@@ -8,4 +8,4 @@ public sealed record VerifyOtpCommand(
     string Identifier,
     string Code,
     string? IpAddress,
-    string? UserAgent) : IRequest<Result<AuthResult>>;
+    string? UserAgent) : IRequest<Result<LoginOutcome>>;

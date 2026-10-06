@@ -13,7 +13,9 @@ public sealed record MeProfile(
     string Name,
     string Email,
     Guid? ActiveRoleAssignmentId,
-    IReadOnlyList<RoleAssignmentSummary> RoleAssignments);
+    IReadOnlyList<RoleAssignmentSummary> RoleAssignments,
+    bool MfaEnabled,
+    bool MfaRequiredByRole);
 
 public sealed record RoleAssignmentSummary(
     Guid Id,
@@ -23,7 +25,7 @@ public sealed record RoleAssignmentSummary(
     DateTimeOffset StartsAt,
     DateTimeOffset? EndsAt);
 
-public sealed class GetMeQueryHandler(IIdentityService identityService, IAppDbContext db, IClock clock)
+public sealed class GetMeQueryHandler(IIdentityService identityService, IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetMeQuery, Result<MeProfile>>
 {
     public async ValueTask<Result<MeProfile>> Handle(GetMeQuery request, CancellationToken cancellationToken)
@@ -46,6 +48,13 @@ public sealed class GetMeQueryHandler(IIdentityService identityService, IAppDbCo
             .Select(a => new RoleAssignmentSummary(a.Id, a.UnitId, a.Role, a.DelegateScope, a.StartsAt, a.EndsAt))
             .ToListAsync(cancellationToken);
 
-        return new MeProfile(user.Id, user.Name, user.Email, user.ActiveRoleAssignmentId, assignments);
+        // FR-IAM-003: mandatory for Secretariat/Admin. A user who hasn't enrolled yet still
+        // logs in normally (see DisableTotpCommandHandler) — the frontend uses this flag to
+        // force them to the setup screen instead of blocking them out entirely.
+        var mfaRequiredByRole = await accessPolicy.HasRoleAsync(request.UserId, RoleName.Secretariat, cancellationToken)
+            || await accessPolicy.HasRoleAsync(request.UserId, RoleName.SysAdmin, cancellationToken);
+
+        return new MeProfile(
+            user.Id, user.Name, user.Email, user.ActiveRoleAssignmentId, assignments, user.TwoFactorEnabled, mfaRequiredByRole);
     }
 }

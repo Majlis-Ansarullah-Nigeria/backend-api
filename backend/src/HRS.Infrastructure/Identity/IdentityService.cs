@@ -26,6 +26,10 @@ public sealed class IdentityService(
     private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromMinutes(15);
     private const int OtpMaxRequestsPerWindow = 3;
 
+    private static readonly TimeSpan MfaChallengeLifetime = TimeSpan.FromMinutes(5);
+    private const int RecoveryCodeCount = 10;
+    private const string TotpIssuer = "HRS Reporting Service";
+
     private readonly AuthOptions _authOptions = authOptions.Value;
 
     public async Task<Result<AuthenticatedUser>> ValidateCredentialsAsync(
@@ -55,7 +59,7 @@ public sealed class IdentityService(
         user.LastLoginAt = clock.UtcNow;
         await userManager.UpdateAsync(user);
 
-        return new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId);
+        return new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId, user.TwoFactorEnabled);
     }
 
     public async Task<AuthTokens> IssueTokensAsync(
@@ -138,7 +142,9 @@ public sealed class IdentityService(
     public async Task<AuthenticatedUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
-        return user is null ? null : new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId);
+        return user is null
+            ? null
+            : new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId, user.TwoFactorEnabled);
     }
 
     public async Task<Result> RequestOtpAsync(string identifier, CancellationToken cancellationToken)
@@ -220,7 +226,7 @@ public sealed class IdentityService(
         user.LastLoginAt = clock.UtcNow;
         await userManager.UpdateAsync(user);
 
-        return new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId);
+        return new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId, user.TwoFactorEnabled);
     }
 
     public async Task<bool> EmailIsRegisteredAsync(string email, CancellationToken cancellationToken) =>
@@ -271,11 +277,202 @@ public sealed class IdentityService(
         await userManager.UpdateAsync(user);
     }
 
+    public async Task<string> CreateMfaChallengeAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var challengeToken = GenerateRefreshTokenValue();
+        var redisDb = redis.GetDatabase();
+        await redisDb.StringSetAsync(MfaChallengeKey(Hash(challengeToken)), userId.ToString(), MfaChallengeLifetime);
+
+        return challengeToken;
+    }
+
+    public async Task<Result<AuthenticatedUser>> VerifyMfaChallengeAsync(
+        string challengeToken,
+        string code,
+        CancellationToken cancellationToken)
+    {
+        var redisDb = redis.GetDatabase();
+        var challengeKey = MfaChallengeKey(Hash(challengeToken));
+        var userIdValue = await redisDb.StringGetAsync(challengeKey);
+
+        if (userIdValue.IsNull || !Guid.TryParse(userIdValue.ToString(), out var userId))
+        {
+            return Result.Failure<AuthenticatedUser>(InvalidMfaChallenge);
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return Result.Failure<AuthenticatedUser>(InvalidMfaChallenge);
+        }
+
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            return Result.Failure<AuthenticatedUser>(AccountLocked);
+        }
+
+        var isValidCode = await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, code)
+            || (await userManager.RedeemTwoFactorRecoveryCodeAsync(user, code)).Succeeded;
+
+        if (!isValidCode)
+        {
+            await userManager.AccessFailedAsync(user);
+
+            return await userManager.IsLockedOutAsync(user)
+                ? Result.Failure<AuthenticatedUser>(AccountLocked)
+                : Result.Failure<AuthenticatedUser>(InvalidMfaChallenge);
+        }
+
+        // Single use: remove the challenge immediately so it cannot be replayed.
+        await redisDb.KeyDeleteAsync(challengeKey);
+        await userManager.ResetAccessFailedCountAsync(user);
+
+        user.LastLoginAt = clock.UtcNow;
+        await userManager.UpdateAsync(user);
+
+        return new AuthenticatedUser(user.Id, user.Name, user.Email!, user.ActiveRoleAssignmentId, user.TwoFactorEnabled);
+    }
+
+    public async Task<TotpEnrollment> BeginTotpEnrollmentAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new InvalidOperationException($"User {userId} not found when beginning TOTP enrollment.");
+
+        // Resets (not just reads) the key: a user who abandons setup and starts again gets a
+        // fresh secret rather than one that may already be sitting in a stale QR screenshot.
+        await userManager.ResetAuthenticatorKeyAsync(user);
+        var unformattedKey = await userManager.GetAuthenticatorKeyAsync(user)
+            ?? throw new InvalidOperationException("Authenticator key was not generated.");
+
+        return new TotpEnrollment(FormatKeyForDisplay(unformattedKey), BuildAuthenticatorUri(user.Email!, unformattedKey));
+    }
+
+    public async Task<Result<IReadOnlyList<string>>> ConfirmTotpEnrollmentAsync(
+        Guid userId,
+        string code,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new InvalidOperationException($"User {userId} not found when confirming TOTP enrollment.");
+
+        var isValid = await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, code);
+
+        if (!isValid)
+        {
+            return Result.Failure<IReadOnlyList<string>>(InvalidTotpCode);
+        }
+
+        await userManager.SetTwoFactorEnabledAsync(user, true);
+        var recoveryCodes = await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, RecoveryCodeCount);
+
+        return Result.Success<IReadOnlyList<string>>((recoveryCodes ?? []).ToList());
+    }
+
+    public async Task DisableTotpAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString())
+            ?? throw new InvalidOperationException($"User {userId} not found when disabling TOTP.");
+
+        await userManager.SetTwoFactorEnabledAsync(user, false);
+        await userManager.ResetAuthenticatorKeyAsync(user);
+    }
+
+    public async Task<IReadOnlyList<SessionSummary>> GetActiveSessionsAsync(
+        Guid userId,
+        Guid currentSessionId,
+        CancellationToken cancellationToken)
+    {
+        var now = clock.UtcNow;
+
+        var sessions = await db.UserSessions
+            .Where(s => s.UserId == userId && s.RevokedAt == null && s.ExpiresAt > now)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return sessions
+            .Select(s => new SessionSummary(s.Id, s.CreatedAt, s.ExpiresAt, s.CreatedByIp, s.UserAgent, s.Id == currentSessionId))
+            .ToList();
+    }
+
+    public async Task<Result> RevokeSessionByIdAsync(
+        Guid userId,
+        Guid sessionId,
+        Guid currentSessionId,
+        CancellationToken cancellationToken)
+    {
+        if (sessionId == currentSessionId)
+        {
+            return Result.Failure(
+                Error.Validation("CANNOT_REVOKE_CURRENT_SESSION", "Use logout to end your current session."));
+        }
+
+        var now = clock.UtcNow;
+        var session = await db.UserSessions.FirstOrDefaultAsync(
+            s => s.Id == sessionId && s.UserId == userId && s.RevokedAt == null && s.ExpiresAt > now,
+            cancellationToken);
+
+        if (session is null)
+        {
+            return Result.Failure(Error.NotFound("SESSION_NOT_FOUND", "That session isn't available to you."));
+        }
+
+        session.Revoke(now);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task RevokeOtherSessionsAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken)
+    {
+        var now = clock.UtcNow;
+        var sessions = await db.UserSessions
+            .Where(s => s.UserId == userId && s.Id != currentSessionId && s.RevokedAt == null && s.ExpiresAt > now)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in sessions)
+        {
+            session.Revoke(now);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static string BuildAuthenticatorUri(string email, string unformattedKey) =>
+        string.Format(
+            CultureInfo.InvariantCulture,
+            "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6",
+            Uri.EscapeDataString(TotpIssuer),
+            Uri.EscapeDataString(email),
+            unformattedKey);
+
+    /// <summary>Groups the raw base32 secret into 4-character blocks for manual entry (e.g. "ABCD EFGH").</summary>
+    private static string FormatKeyForDisplay(string unformattedKey)
+    {
+        var result = new StringBuilder();
+        var position = 0;
+
+        while (position + 4 < unformattedKey.Length)
+        {
+            result.Append(unformattedKey.AsSpan(position, 4)).Append(' ');
+            position += 4;
+        }
+
+        if (position < unformattedKey.Length)
+        {
+            result.Append(unformattedKey.AsSpan(position));
+        }
+
+        return result.ToString().ToUpperInvariant();
+    }
+
     private async Task<ApplicationUser?> FindUserAsync(string identifier, CancellationToken cancellationToken) =>
         await userManager.FindByEmailAsync(identifier)
             ?? await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == identifier, cancellationToken);
 
     private static string OtpKey(Guid userId) => $"otp:{userId}";
+
+    private static string MfaChallengeKey(string challengeTokenHash) => $"mfa-challenge:{challengeTokenHash}";
 
     private static string NormalizeIdentifier(string identifier) => identifier.Trim().ToLowerInvariant();
 
@@ -288,13 +485,14 @@ public sealed class IdentityService(
         string? userAgent,
         CancellationToken cancellationToken)
     {
-        var accessToken = tokenGenerator.Generate(user.Id, user.Email!, user.Name);
+        var sessionId = Guid.CreateVersion7();
+        var accessToken = tokenGenerator.Generate(user.Id, user.Email!, user.Name, sessionId);
         var refreshTokenValue = GenerateRefreshTokenValue();
         var now = clock.UtcNow;
         var expiresAt = now.Add(_authOptions.RefreshTokenLifetime);
 
         var session = new UserSession(
-            Guid.CreateVersion7(),
+            sessionId,
             user.Id,
             Hash(refreshTokenValue),
             now,
@@ -313,6 +511,12 @@ public sealed class IdentityService(
 
     private static Error InvalidOtp =>
         Error.Unauthenticated("INVALID_OTP", "That code is invalid or has expired.");
+
+    private static Error InvalidMfaChallenge =>
+        Error.Unauthenticated("INVALID_MFA_CHALLENGE", "That code is invalid or the challenge has expired. Log in again.");
+
+    private static Error InvalidTotpCode =>
+        Error.Validation("INVALID_TOTP_CODE", "That code is incorrect. Check your authenticator app and try again.");
 
     private static Error AccountLocked =>
         Error.Forbidden("ACCOUNT_LOCKED", "Too many failed attempts. Try again in 15 minutes.");
