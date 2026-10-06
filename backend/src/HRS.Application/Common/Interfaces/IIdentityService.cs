@@ -118,6 +118,14 @@ public interface IIdentityService
 
     /// <summary>"Sign out other devices" (FR-IAM-006) — every active session except the current one.</summary>
     Task RevokeOtherSessionsAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Display names for a set of users, keyed by Id. Missing ids (e.g. a deleted account) are
+    /// simply absent from the result. Used to resolve unit heads for the organization tree
+    /// (M2.2) without exposing ApplicationUser (an Infrastructure type) to Application.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, string>> GetUserNamesAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken);
 }
 
 public sealed record AuthenticatedUser(

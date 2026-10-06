@@ -31,6 +31,29 @@ export interface CreateInvitationResult {
   expiresAt: string;
 }
 
+export interface CreateUnitRequest {
+  code: string;
+  name: string;
+  levelId: string;
+  parentId: string;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  contactPhone: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  latitude: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  longitude: number | string | null;
+}
+
 export type DelegateScope = number;
 
 export interface InvitationPreview {
@@ -126,4 +149,94 @@ export interface TotpEnrollment {
   sharedKey: string;
   authenticatorUri: string;
 }
+
+export type UnitLevelCode = number;
+
+export interface UnitLevelSummary {
+  id: string;
+  code: UnitLevelCode;
+  name: string;
+  pluralName: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  depth: number | string;
+}
+
+export interface UnitSummary {
+  id: string;
+  code: string;
+  displayCode: string;
+  name: string;
+  levelId: string;
+  levelCode: UnitLevelCode;
+  /** @nullable */
+  parentId: string | null;
+  path: string;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  contactPhone: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  latitude: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  longitude: number | string | null;
+  createdAt: string;
+  /** @nullable */
+  archivedAt: string | null;
+}
+
+export interface UnitTreeNode {
+  id: string;
+  code: string;
+  displayCode: string;
+  name: string;
+  levelId: string;
+  levelCode: UnitLevelCode;
+  /** @nullable */
+  parentId: string | null;
+  path: string;
+  /** @nullable */
+  archivedAt: string | null;
+  /** @nullable */
+  headName: string | null;
+  hasVacantHead: boolean;
+}
+
+export interface UpdateUnitRequest {
+  name: string;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  contactPhone: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  latitude: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  longitude: number | string | null;
+}
+
+export type GetOrganizationTreeParams = {
+includeArchived?: boolean;
+};
+
+export type GetUnitsParams = {
+parentId?: string;
+levelId?: string;
+q?: string;
+includeArchived?: boolean;
+};
 

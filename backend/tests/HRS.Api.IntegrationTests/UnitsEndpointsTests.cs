@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using HRS.Api.Endpoints;
+using HRS.Application.Features.Organization.Levels;
 using HRS.Application.Features.Organization.Units;
 using HRS.Domain.Access;
 using HRS.Domain.Organization;
@@ -215,5 +216,68 @@ public class UnitsEndpointsTests(ApiFactory factory)
         var response = await client.DeleteAsync(new Uri($"/api/v1/units/{OrganizationSeedIds.NationalUnitId}", UriKind.Relative));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUnitLevelsReturnsAllFiveLevelsOrderedByDepth()
+    {
+        using var client = await CreatePlainUserClientAsync();
+
+        var response = await client.GetAsync(new Uri("/api/v1/unit-levels", UriKind.Relative));
+        var levels = await response.Content.ReadFromJsonAsync<List<UnitLevelSummary>>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(5, levels!.Count);
+        Assert.Equal(UnitLevelCode.National, levels[0].Code);
+        Assert.True(levels.SequenceEqual(levels.OrderBy(l => l.Depth)));
+    }
+
+    [Fact]
+    public async Task GetOrganizationTreeMarksANewlyCreatedUnitAsVacant()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var zone = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z10", "Zone 10")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        var response = await client.GetAsync(new Uri("/api/v1/units/tree", UriKind.Relative));
+        var tree = await response.Content.ReadFromJsonAsync<List<UnitTreeNode>>();
+
+        var node = Assert.Single(tree!, n => n.Id == zone!.Id);
+        Assert.True(node.HasVacantHead);
+        Assert.Null(node.HeadName);
+    }
+
+    [Fact]
+    public async Task GetOrganizationTreeShowsTheActiveHeadsName()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var zone = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z11", "Zone 11")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var headUserId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Head1", name: "Amina Yusuf");
+        await factory.CreateRoleAssignmentAsync(headUserId, zone!.Id, RoleName.UnitHead);
+
+        var response = await client.GetAsync(new Uri("/api/v1/units/tree", UriKind.Relative));
+        var tree = await response.Content.ReadFromJsonAsync<List<UnitTreeNode>>();
+
+        var node = Assert.Single(tree!, n => n.Id == zone.Id);
+        Assert.False(node.HasVacantHead);
+        Assert.Equal("Amina Yusuf", node.HeadName);
+    }
+
+    [Fact]
+    public async Task GetOrganizationTreeExcludesArchivedUnitsUnlessIncluded()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var zone = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z12", "Zone 12")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        await client.DeleteAsync(new Uri($"/api/v1/units/{zone!.Id}", UriKind.Relative));
+
+        var defaultTree = await (await client.GetAsync(new Uri("/api/v1/units/tree", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<List<UnitTreeNode>>();
+        Assert.DoesNotContain(defaultTree!, n => n.Id == zone.Id);
+
+        var fullTree = await (await client.GetAsync(new Uri("/api/v1/units/tree?includeArchived=true", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<List<UnitTreeNode>>();
+        Assert.Contains(fullTree!, n => n.Id == zone.Id);
     }
 }

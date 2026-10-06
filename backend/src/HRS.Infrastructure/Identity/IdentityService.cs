@@ -438,6 +438,20 @@ public sealed class IdentityService(
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, string>> GetUserNamesAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<Guid, string>();
+        }
+
+        return await db.Users
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Name, cancellationToken);
+    }
+
     private static string BuildAuthenticatorUri(string email, string unformattedKey) =>
         string.Format(
             CultureInfo.InvariantCulture,

@@ -127,5 +127,9 @@ public class DisableTotpCommandHandlerTests
 
         public Task RevokeOtherSessionsAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<IReadOnlyDictionary<Guid, string>> GetUserNamesAsync(
+            IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

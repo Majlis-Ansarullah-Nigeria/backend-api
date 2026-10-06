@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { BottomTabs } from "./BottomTabs";
-import { PRIMARY_NAV_ITEMS } from "./nav-items";
+import { PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS } from "./nav-items";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import type { UnitOption } from "./UnitSwitcher";
@@ -21,13 +21,16 @@ export function AppShell({ children, user, unit, orgName, notificationCount }: A
   const pathname = usePathname();
   const t = useTranslations("Shell.nav");
 
-  const activeItem = PRIMARY_NAV_ITEMS.find(
+  const isSecretariat = pathname?.startsWith("/secretariat") ?? false;
+  const navItems = isSecretariat ? SECRETARIAT_NAV_ITEMS : PRIMARY_NAV_ITEMS;
+
+  const activeItem = navItems.find(
     (item) => pathname === item.href || pathname?.startsWith(`${item.href}/`),
   );
 
   return (
     <div className="flex min-h-dvh">
-      <Sidebar orgName={orgName} user={user} unit={unit} />
+      <Sidebar orgName={orgName} user={user} unit={unit} navItems={navItems} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           title={activeItem ? t(activeItem.key) : "HRS"}
@@ -36,7 +39,7 @@ export function AppShell({ children, user, unit, orgName, notificationCount }: A
         />
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">{children}</main>
       </div>
-      <BottomTabs />
+      {isSecretariat ? null : <BottomTabs />}
     </div>
   );
 }

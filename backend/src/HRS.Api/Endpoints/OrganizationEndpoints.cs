@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Organization.Levels;
 using HRS.Application.Features.Organization.Units;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,31 @@ public static class OrganizationEndpoints
     public static void MapOrganizationEndpoints(this IEndpointRouteBuilder app)
     {
         var units = app.MapGroup("/api/v1/units").WithTags("Organization").RequireAuthorization();
+
+        units.MapGet("/tree", async (
+                ISender sender,
+                CancellationToken cancellationToken,
+                [FromQuery] bool includeArchived = false) =>
+            {
+                var result = await sender.Send(new GetOrganizationTreeQuery(includeArchived), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetOrganizationTree")
+            .Produces<IReadOnlyList<UnitTreeNode>>();
+
+        app.MapGet("/api/v1/unit-levels", async (
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetUnitLevelsQuery(), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetUnitLevels")
+            .WithTags("Organization")
+            .RequireAuthorization()
+            .Produces<IReadOnlyList<UnitLevelSummary>>();
 
         units.MapPost("/", async (
                 [FromBody] CreateUnitRequest request,
