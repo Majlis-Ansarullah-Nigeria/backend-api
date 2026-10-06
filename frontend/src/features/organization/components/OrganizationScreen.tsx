@@ -1,7 +1,8 @@
 "use client";
 
-import { Network, Plus, Search } from "lucide-react";
+import { Network, Plus, Search, Upload } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -112,15 +113,23 @@ export function OrganizationScreen() {
           <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
           <p className="mt-1 text-sm text-ink-muted">{summary.map((entry) => `${entry.count} ${entry.label}`).join(" · ")}</p>
         </div>
-        <Button
-          onClick={() => {
-            setIsAdding(true);
-            setSelectedId(null);
-          }}
-        >
-          <Plus aria-hidden="true" />
-          {t("addUnit")}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/secretariat/organization/import">
+              <Upload aria-hidden="true" />
+              {t("bulkImport")}
+            </Link>
+          </Button>
+          <Button
+            onClick={() => {
+              setIsAdding(true);
+              setSelectedId(null);
+            }}
+          >
+            <Plus aria-hidden="true" />
+            {t("addUnit")}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

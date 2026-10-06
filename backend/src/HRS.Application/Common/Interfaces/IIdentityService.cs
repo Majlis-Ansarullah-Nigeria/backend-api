@@ -58,6 +58,9 @@ public interface IIdentityService
     /// <summary>Whether an account already exists for this email (FR-IAM-002 invite dedup).</summary>
     Task<bool> EmailIsRegisteredAsync(string email, CancellationToken cancellationToken);
 
+    /// <summary>The existing user's id for this email, or null if no account is registered (bulk import, FR-ORG-003).</summary>
+    Task<Guid?> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken);
+
     /// <summary>
     /// Creates a new account with a password already set (used by invitation accept —
     /// FR-IAM-002). Email is pre-confirmed since possession of the invite link proves it.

@@ -98,6 +98,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<Guid?>("PendingHeadOfUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pending_head_of_unit_id");
+
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
@@ -112,6 +116,9 @@ namespace HRS.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Email")
                         .HasDatabaseName("ix_invitations_email");
+
+                    b.HasIndex("PendingHeadOfUnitId")
+                        .HasDatabaseName("ix_invitations_pending_head_of_unit_id");
 
                     b.HasIndex("TokenHash")
                         .IsUnique()
@@ -528,6 +535,15 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_role_assignments_users_user_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Invitations.Invitation", b =>
+                {
+                    b.HasOne("HRS.Domain.Organization.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("PendingHeadOfUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_invitations_units_pending_head_of_unit_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Organization.Unit", b =>

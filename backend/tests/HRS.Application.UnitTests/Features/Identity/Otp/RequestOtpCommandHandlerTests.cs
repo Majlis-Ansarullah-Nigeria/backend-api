@@ -100,5 +100,8 @@ public class RequestOtpCommandHandlerTests
         public Task<IReadOnlyDictionary<Guid, string>> GetUserNamesAsync(
             IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<Guid?> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

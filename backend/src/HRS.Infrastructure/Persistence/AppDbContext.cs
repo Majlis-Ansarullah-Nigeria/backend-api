@@ -56,6 +56,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             invitation.Property(i => i.TokenHash).IsRequired();
             invitation.HasIndex(i => i.TokenHash).IsUnique();
             invitation.HasIndex(i => i.Email);
+            invitation
+                .HasOne<Unit>()
+                .WithMany()
+                .HasForeignKey(i => i.PendingHeadOfUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<RoleAssignment>(assignment =>

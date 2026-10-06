@@ -24,9 +24,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BulkImportCommitResult,
+  BulkImportSummary,
+  CommitBulkImportBody,
   CreateUnitRequest,
   GetOrganizationTreeParams,
   GetUnitsParams,
+  PreviewBulkImportBody,
   ProblemDetails,
   UnitLevelSummary,
   UnitSummary,
@@ -251,7 +255,239 @@ export function useGetOrganizationTree<TData = Awaited<ReturnType<typeof getOrga
 
 
 
-export const getCreateUnitUrl = () => {
+export const getGetBulkImportTemplateUrl = () => {
+
+
+
+
+  return `/api/v1/units/bulk-import/template`
+}
+
+export const getBulkImportTemplate = async ( options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+  return customFetch<unknown>(getGetBulkImportTemplateUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBulkImportTemplateQueryKey = () => {
+    return [
+    `/api/v1/units/bulk-import/template`
+    ] as const;
+    }
+
+
+export const getGetBulkImportTemplateQueryOptions = <TData = Awaited<ReturnType<typeof getBulkImportTemplate>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBulkImportTemplate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBulkImportTemplateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBulkImportTemplate>>> = ({ signal }) => getBulkImportTemplate({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBulkImportTemplate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetBulkImportTemplateQueryResult = NonNullable<Awaited<ReturnType<typeof getBulkImportTemplate>>>
+export type GetBulkImportTemplateQueryError = ProblemDetails
+
+
+export function useGetBulkImportTemplate<TData = Awaited<ReturnType<typeof getBulkImportTemplate>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBulkImportTemplate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBulkImportTemplate>>,
+          TError,
+          Awaited<ReturnType<typeof getBulkImportTemplate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBulkImportTemplate<TData = Awaited<ReturnType<typeof getBulkImportTemplate>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBulkImportTemplate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBulkImportTemplate>>,
+          TError,
+          Awaited<ReturnType<typeof getBulkImportTemplate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBulkImportTemplate<TData = Awaited<ReturnType<typeof getBulkImportTemplate>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBulkImportTemplate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetBulkImportTemplate<TData = Awaited<ReturnType<typeof getBulkImportTemplate>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBulkImportTemplate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetBulkImportTemplateQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPreviewBulkImportUrl = () => {
+
+
+
+
+  return `/api/v1/units/bulk-import/preview`
+}
+
+export const previewBulkImport = async (previewBulkImportBody: PreviewBulkImportBody, options?: Parameters<typeof customFetch>[1]): Promise<BulkImportSummary> => {
+    const formData = new FormData();
+formData.append(`file`, previewBulkImportBody.file);
+
+  return customFetch<BulkImportSummary>(getPreviewBulkImportUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPreviewBulkImportMutationKey = () => ['previewBulkImport'] as const;
+
+export const getPreviewBulkImportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewBulkImport>>, TError,PreviewBulkImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewBulkImport>>, TError,PreviewBulkImportMutationVariables, TContext> => {
+
+const mutationKey = getPreviewBulkImportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewBulkImport>>, PreviewBulkImportMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  previewBulkImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewBulkImportMutationResult = NonNullable<Awaited<ReturnType<typeof previewBulkImport>>>
+    export type PreviewBulkImportMutationBody = PreviewBulkImportBody
+    export type PreviewBulkImportMutationError = ProblemDetails
+    export type PreviewBulkImportMutationVariables = {data: PreviewBulkImportBody}
+
+    export const usePreviewBulkImport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewBulkImport>>, TError,PreviewBulkImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof previewBulkImport>>,
+        TError,
+        PreviewBulkImportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPreviewBulkImportMutationOptions(options), queryClient);
+    }
+    export const getCommitBulkImportUrl = () => {
+
+
+
+
+  return `/api/v1/units/bulk-import/commit`
+}
+
+export const commitBulkImport = async (commitBulkImportBody: CommitBulkImportBody, options?: Parameters<typeof customFetch>[1]): Promise<BulkImportCommitResult> => {
+    const formData = new FormData();
+formData.append(`file`, commitBulkImportBody.file);
+
+  return customFetch<BulkImportCommitResult>(getCommitBulkImportUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getCommitBulkImportMutationKey = () => ['commitBulkImport'] as const;
+
+export const getCommitBulkImportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitBulkImport>>, TError,CommitBulkImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof commitBulkImport>>, TError,CommitBulkImportMutationVariables, TContext> => {
+
+const mutationKey = getCommitBulkImportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof commitBulkImport>>, CommitBulkImportMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  commitBulkImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CommitBulkImportMutationResult = NonNullable<Awaited<ReturnType<typeof commitBulkImport>>>
+    export type CommitBulkImportMutationBody = CommitBulkImportBody
+    export type CommitBulkImportMutationError = ProblemDetails
+    export type CommitBulkImportMutationVariables = {data: CommitBulkImportBody}
+
+    export const useCommitBulkImport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commitBulkImport>>, TError,CommitBulkImportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof commitBulkImport>>,
+        TError,
+        CommitBulkImportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCommitBulkImportMutationOptions(options), queryClient);
+    }
+    export const getCreateUnitUrl = () => {
 
 
 

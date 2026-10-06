@@ -6,6 +6,7 @@ using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
 using HRS.Infrastructure.Email;
 using HRS.Infrastructure.Identity;
+using HRS.Infrastructure.Organization;
 using HRS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -92,6 +93,8 @@ public static class DependencyInjection
         services.AddScoped<IAccessTokenGenerator, JwtAccessTokenGenerator>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<IAccessPolicy, AccessPolicy>();
+        services.AddScoped<IBulkImportFileReader, BulkImportFileReader>();
+        services.AddScoped<IBulkImportTemplateGenerator, BulkImportTemplateGenerator>();
 
         return services;
     }

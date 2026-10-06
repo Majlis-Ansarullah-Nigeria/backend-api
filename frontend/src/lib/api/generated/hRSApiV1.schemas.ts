@@ -12,6 +12,46 @@ export interface AcceptInvitationRequest {
   agreedToPrivacyNotice: boolean;
 }
 
+export interface BulkImportCommitResult {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  createdCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  updatedCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  skippedErrorCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  invitedCount: number | string;
+}
+
+export type BulkImportOutcome = number;
+
+export interface BulkImportRow {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  rowNumber: number | string;
+  outcome: BulkImportOutcome;
+  level: string;
+  code: string;
+  name: string;
+  parentCode: string;
+  headEmail: string;
+  /** @nullable */
+  issue: string | null;
+}
+
+export interface BulkImportSummary {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  totalRows: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  newCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  updateCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  warningCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  errorCount: number | string;
+  rows: BulkImportRow[];
+}
+
 export interface ConfirmTotpEnrollmentRequest {
   code: string;
 }
@@ -55,6 +95,8 @@ export interface CreateUnitRequest {
 }
 
 export type DelegateScope = number;
+
+export type IFormFile = Blob;
 
 export interface InvitationPreview {
   name: string;
@@ -231,6 +273,14 @@ export interface UpdateUnitRequest {
 
 export type GetOrganizationTreeParams = {
 includeArchived?: boolean;
+};
+
+export type PreviewBulkImportBody = {
+  file: IFormFile;
+};
+
+export type CommitBulkImportBody = {
+  file: IFormFile;
 };
 
 export type GetUnitsParams = {

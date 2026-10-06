@@ -62,5 +62,12 @@ export async function customFetch<T>(url: string, options: RequestInit = {}): Pr
     return undefined as T;
   }
 
+  // Binary downloads (the bulk-import template, FR-ORG-003; PDF/Excel exports later) aren't
+  // JSON — orval still types these endpoints' return as unknown, so the caller casts the Blob.
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    return response.blob() as Promise<T>;
+  }
+
   return response.json() as Promise<T>;
 }

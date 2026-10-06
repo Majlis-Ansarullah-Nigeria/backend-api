@@ -232,6 +232,9 @@ public sealed class IdentityService(
     public async Task<bool> EmailIsRegisteredAsync(string email, CancellationToken cancellationToken) =>
         await userManager.FindByEmailAsync(email) is not null;
 
+    public async Task<Guid?> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken) =>
+        (await userManager.FindByEmailAsync(email))?.Id;
+
     public async Task<Result<AuthenticatedUser>> CreateUserAsync(
         string email,
         string name,

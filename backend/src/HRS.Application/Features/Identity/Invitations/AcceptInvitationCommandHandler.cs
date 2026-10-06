@@ -1,6 +1,7 @@
 using HRS.Application.Common;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Models;
+using HRS.Domain.Access;
 using HRS.Domain.Common;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,14 @@ public sealed class AcceptInvitationCommandHandler(
         }
 
         invitation.Accept(now);
+
+        if (invitation.PendingHeadOfUnitId is { } unitId)
+        {
+            db.RoleAssignments.Add(new RoleAssignment(
+                Guid.CreateVersion7(), created.Value.Id, unitId, RoleName.UnitHead,
+                delegateScope: null, startsAt: now, endsAt: null, appointedBy: null));
+        }
+
         await db.SaveChangesAsync(cancellationToken);
 
         var tokens = await identityService.IssueTokensAsync(created.Value.Id, request.IpAddress, request.UserAgent, cancellationToken);
