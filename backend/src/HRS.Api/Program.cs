@@ -80,7 +80,10 @@ try
             return ValueTask.CompletedTask;
         };
 
-        var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 100;
+        // 300/5min per IP: still a meaningful anti-abuse ceiling (well below credential-stuffing
+        // rates) but with headroom for the growing integration-test suite, which shares one
+        // in-memory limiter across every test in the "Api" collection (ApiFactory.cs).
+        var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 300;
 
         options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -112,6 +115,7 @@ try
 
     app.MapIdentityEndpoints();
     app.MapInvitationsEndpoints();
+    app.MapOrganizationEndpoints();
 
     app.MapGet("/", () => "HRS API");
 

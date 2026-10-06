@@ -53,6 +53,9 @@ public class DisableTotpCommandHandlerTests
 
         public Task<bool> HasRoleForUnitAsync(Guid userId, Guid unitId, RoleName role, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<bool> IsOrganizationAdminAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 
     private sealed class RecordingIdentityService : IIdentityService

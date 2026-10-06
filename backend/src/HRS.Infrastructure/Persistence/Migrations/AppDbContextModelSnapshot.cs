@@ -120,6 +120,168 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("invitations", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Organization.Unit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text")
+                        .HasColumnName("address");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code");
+
+                    b.Property<string>("ContactEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("contact_email");
+
+                    b.Property<string>("ContactPhone")
+                        .HasColumnType("text")
+                        .HasColumnName("contact_phone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<Guid>("LevelId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("level_id");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("path");
+
+                    b.HasKey("Id")
+                        .HasName("pk_units");
+
+                    b.HasIndex("LevelId")
+                        .HasDatabaseName("ix_units_level_id");
+
+                    b.HasIndex("Path")
+                        .HasDatabaseName("ix_units_path");
+
+                    b.HasIndex("ParentId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_units_parent_id_code");
+
+                    b.ToTable("units", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000010"),
+                            Code = "NAT",
+                            CreatedAt = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            LevelId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            Name = "National",
+                            Path = "nat"
+                        });
+                });
+
+            modelBuilder.Entity("HRS.Domain.Organization.UnitLevel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Code")
+                        .HasColumnType("integer")
+                        .HasColumnName("code");
+
+                    b.Property<int>("Depth")
+                        .HasColumnType("integer")
+                        .HasColumnName("depth");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PluralName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("plural_name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_unit_levels");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_unit_levels_code");
+
+                    b.ToTable("unit_levels", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000001"),
+                            Code = 0,
+                            Depth = 0,
+                            Name = "National",
+                            PluralName = "National"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000002"),
+                            Code = 1,
+                            Depth = 1,
+                            Name = "Zone",
+                            PluralName = "Zones"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000003"),
+                            Code = 2,
+                            Depth = 2,
+                            Name = "Dila",
+                            PluralName = "Dilaat"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000004"),
+                            Code = 3,
+                            Depth = 3,
+                            Name = "Muqam",
+                            PluralName = "Muqamaat"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000005"),
+                            Code = 4,
+                            Depth = 1,
+                            Name = "Department",
+                            PluralName = "Departments"
+                        });
+                });
+
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -353,12 +515,35 @@ namespace HRS.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HRS.Domain.Access.RoleAssignment", b =>
                 {
+                    b.HasOne("HRS.Domain.Organization.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_role_assignments_units_unit_id");
+
                     b.HasOne("HRS.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_role_assignments_users_user_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Organization.Unit", b =>
+                {
+                    b.HasOne("HRS.Domain.Organization.UnitLevel", null)
+                        .WithMany()
+                        .HasForeignKey("LevelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_units_unit_levels_level_id");
+
+                    b.HasOne("HRS.Domain.Organization.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_units_units_parent_id");
                 });
 
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>

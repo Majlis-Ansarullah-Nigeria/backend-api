@@ -1,6 +1,7 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Invitations;
+using HRS.Domain.Organization;
 using HRS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -16,6 +17,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
     public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();
+
+    public DbSet<UnitLevel> UnitLevels => Set<UnitLevel>();
+
+    public DbSet<Unit> Units => Set<Unit>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -64,7 +69,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
-            // UnitId intentionally has no foreign key: Units don't exist until M2.1.
+            assignment
+                .HasOne<Unit>()
+                .WithMany()
+                .HasForeignKey(a => a.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<ApplicationUser>(user =>
@@ -74,6 +83,60 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(u => u.ActiveRoleAssignmentId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<UnitLevel>(level =>
+        {
+            level.ToTable("unit_levels");
+            level.HasKey(l => l.Id);
+            level.Property(l => l.Name).IsRequired();
+            level.Property(l => l.PluralName).IsRequired();
+            level.HasIndex(l => l.Code).IsUnique();
+
+            level.HasData(
+                new { Id = OrganizationSeedIds.NationalLevelId, Code = UnitLevelCode.National, Name = "National", PluralName = "National", Depth = 0 },
+                new { Id = OrganizationSeedIds.ZoneLevelId, Code = UnitLevelCode.Zone, Name = "Zone", PluralName = "Zones", Depth = 1 },
+                new { Id = OrganizationSeedIds.DilaLevelId, Code = UnitLevelCode.Dila, Name = "Dila", PluralName = "Dilaat", Depth = 2 },
+                new { Id = OrganizationSeedIds.MuqamLevelId, Code = UnitLevelCode.Muqam, Name = "Muqam", PluralName = "Muqamaat", Depth = 3 },
+                new { Id = OrganizationSeedIds.DepartmentLevelId, Code = UnitLevelCode.Department, Name = "Department", PluralName = "Departments", Depth = 1 });
+        });
+
+        builder.Entity<Unit>(unit =>
+        {
+            unit.ToTable("units");
+            unit.HasKey(u => u.Id);
+            unit.Property(u => u.Code).IsRequired();
+            unit.Property(u => u.Name).IsRequired();
+            unit.Property(u => u.Path).IsRequired();
+            unit.HasIndex(u => new { u.ParentId, u.Code }).IsUnique();
+            unit.HasIndex(u => u.Path);
+            unit
+                .HasOne<UnitLevel>()
+                .WithMany()
+                .HasForeignKey(u => u.LevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+            unit
+                .HasOne<Unit>()
+                .WithMany()
+                .HasForeignKey(u => u.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            unit.HasData(new
+            {
+                Id = OrganizationSeedIds.NationalUnitId,
+                Code = "NAT",
+                Name = "National",
+                LevelId = OrganizationSeedIds.NationalLevelId,
+                ParentId = (Guid?)null,
+                Path = "nat",
+                Address = (string?)null,
+                ContactPhone = (string?)null,
+                ContactEmail = (string?)null,
+                Latitude = (double?)null,
+                Longitude = (double?)null,
+                CreatedAt = OrganizationSeedIds.SeedTimestamp,
+                ArchivedAt = (DateTimeOffset?)null,
+            });
         });
     }
 }

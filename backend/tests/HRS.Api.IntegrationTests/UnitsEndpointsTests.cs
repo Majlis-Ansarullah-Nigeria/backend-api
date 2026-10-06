@@ -1,0 +1,219 @@
+using System.Net;
+using System.Net.Http.Json;
+using HRS.Api.Endpoints;
+using HRS.Application.Features.Organization.Units;
+using HRS.Domain.Access;
+using HRS.Domain.Organization;
+
+namespace HRS.Api.IntegrationTests;
+
+[Collection(ApiTestCollection.Name)]
+public class UnitsEndpointsTests(ApiFactory factory)
+{
+    private static string UniqueEmail() => $"{Guid.NewGuid():N}@example.org";
+
+    private static CreateUnitRequest ZoneRequest(string code = "Z01", string name = "Zone 1") =>
+        new(code, name, OrganizationSeedIds.ZoneLevelId, OrganizationSeedIds.NationalUnitId, null, null, null, null, null);
+
+    private async Task<HttpClient> CreateOrgAdminClientAsync()
+    {
+        var email = UniqueEmail();
+        const string password = "Correct-Horse-Org1";
+        var userId = await factory.CreateUserAsync(email, password);
+        await factory.CreateRoleAssignmentAsync(userId, OrganizationSeedIds.NationalUnitId, RoleName.Secretariat);
+
+        var client = factory.CreateAuthenticatedClient();
+        await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(email, password));
+
+        return client;
+    }
+
+    private async Task<HttpClient> CreatePlainUserClientAsync()
+    {
+        var email = UniqueEmail();
+        const string password = "Correct-Horse-Org2";
+        await factory.CreateUserAsync(email, password);
+
+        var client = factory.CreateAuthenticatedClient();
+        await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(email, password));
+
+        return client;
+    }
+
+    [Fact]
+    public async Task CreatingAUnitRequiresOrgAdmin()
+    {
+        using var client = await CreatePlainUserClientAsync();
+
+        var response = await client.PostAsJsonAsync("/api/v1/units", ZoneRequest());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task OrgAdminCanCreateAZoneUnderNational()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+
+        var response = await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z02", "Zone 2"));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var zone = await response.Content.ReadFromJsonAsync<UnitSummary>();
+        Assert.Equal("Z02", zone!.Code);
+        Assert.Equal("nat.z02", zone.Path);
+        Assert.Equal(OrganizationSeedIds.NationalUnitId, zone.ParentId);
+        Assert.Equal(UnitLevelCode.Zone, zone.LevelCode);
+    }
+
+    [Fact]
+    public async Task CreatingAUnitWithAMismatchedParentLevelFails()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+
+        // A Dila can't be created directly under National — it must be under a Zone.
+        var request = new CreateUnitRequest(
+            "D99", "Dila 99", OrganizationSeedIds.DilaLevelId, OrganizationSeedIds.NationalUnitId, null, null, null, null, null);
+
+        var response = await client.PostAsJsonAsync("/api/v1/units", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreatingADuplicateCodeUnderTheSameParentFails()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z03", "Zone 3"));
+
+        var response = await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("z03", "Zone 3 Duplicate"));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreatingAUnitUnderAnArchivedParentFails()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var zoneResponse = await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z04", "Zone 4"));
+        var zone = await zoneResponse.Content.ReadFromJsonAsync<UnitSummary>();
+        await client.DeleteAsync(new Uri($"/api/v1/units/{zone!.Id}", UriKind.Relative));
+
+        var dilaRequest = new CreateUnitRequest("D01", "Dila 1", OrganizationSeedIds.DilaLevelId, zone.Id, null, null, null, null, null);
+        var response = await client.PostAsJsonAsync("/api/v1/units", dilaRequest);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUnitReturnsTheCreatedUnit()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var created = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z05", "Zone 5")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        var response = await client.GetAsync(new Uri($"/api/v1/units/{created!.Id}", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var unit = await response.Content.ReadFromJsonAsync<UnitSummary>();
+        Assert.Equal("Z05", unit!.Code);
+        Assert.Equal("Z05", unit.DisplayCode);
+    }
+
+    [Fact]
+    public async Task GetUnitForAnUnknownIdReturnsNotFound()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+
+        var response = await client.GetAsync(new Uri($"/api/v1/units/{Guid.NewGuid()}", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUnitsFiltersByParentId()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var zone = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z06", "Zone 6")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var dilaRequest = new CreateUnitRequest("D02", "Dila 2", OrganizationSeedIds.DilaLevelId, zone!.Id, null, null, null, null, null);
+        await client.PostAsJsonAsync("/api/v1/units", dilaRequest);
+
+        var response = await client.GetAsync(new Uri($"/api/v1/units?parentId={zone.Id}", UriKind.Relative));
+        var units = await response.Content.ReadFromJsonAsync<List<UnitSummary>>();
+
+        var dila = Assert.Single(units!);
+        Assert.Equal("D02", dila.Code);
+    }
+
+    [Fact]
+    public async Task GetUnitsSearchesByName()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z07", "Searchable Zone Seven"));
+
+        var response = await client.GetAsync(new Uri("/api/v1/units?q=searchable%20zone", UriKind.Relative));
+        var units = await response.Content.ReadFromJsonAsync<List<UnitSummary>>();
+
+        Assert.Contains(units!, u => u.Code == "Z07");
+    }
+
+    [Fact]
+    public async Task UpdateUnitChangesNameAndContactButNotCodeOrPath()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var zone = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z08", "Zone 8")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        var update = new UpdateUnitRequest("Zone Eight Renamed", "1 Main St", "+2348030000000", "zone8@example.org", 6.5, 3.4);
+        var response = await client.PutAsJsonAsync($"/api/v1/units/{zone!.Id}", update);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var updated = await response.Content.ReadFromJsonAsync<UnitSummary>();
+        Assert.Equal("Zone Eight Renamed", updated!.Name);
+        Assert.Equal("Z08", updated.Code);
+        Assert.Equal("nat.z08", updated.Path);
+        Assert.Equal("1 Main St", updated.Address);
+        Assert.Equal(6.5, updated.Latitude);
+    }
+
+    [Fact]
+    public async Task ArchiveThenRestoreRoundTrips()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var zone = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest("Z09", "Zone 9")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        var archive = await client.DeleteAsync(new Uri($"/api/v1/units/{zone!.Id}", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.NoContent, archive.StatusCode);
+
+        var afterArchive = await (await client.GetAsync(new Uri($"/api/v1/units/{zone.Id}", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        Assert.NotNull(afterArchive!.ArchivedAt);
+
+        var defaultList = await (await client.GetAsync(new Uri($"/api/v1/units?parentId={OrganizationSeedIds.NationalUnitId}", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<List<UnitSummary>>();
+        Assert.DoesNotContain(defaultList!, u => u.Id == zone.Id);
+
+        var includeArchivedList = await (await client.GetAsync(
+                new Uri($"/api/v1/units?parentId={OrganizationSeedIds.NationalUnitId}&includeArchived=true", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<List<UnitSummary>>();
+        Assert.Contains(includeArchivedList!, u => u.Id == zone.Id);
+
+        var restore = await client.PostAsync(new Uri($"/api/v1/units/{zone.Id}/restore", UriKind.Relative), null);
+        Assert.Equal(HttpStatusCode.NoContent, restore.StatusCode);
+
+        var afterRestore = await (await client.GetAsync(new Uri($"/api/v1/units/{zone.Id}", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        Assert.Null(afterRestore!.ArchivedAt);
+    }
+
+    [Fact]
+    public async Task ArchivingTheNationalRootIsRejected()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+
+        var response = await client.DeleteAsync(new Uri($"/api/v1/units/{OrganizationSeedIds.NationalUnitId}", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+}

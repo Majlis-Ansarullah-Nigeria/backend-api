@@ -19,7 +19,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [ ] M1.6 Login, code, reset, MFA screens per mockups.
 
 ## M2 — Organization (FR-ORG)
-- [ ] M2.1 Unit levels, units with materialized path, CRUD + archive (FR-ORG-001).
+- [x] M2.1 Unit levels, units with materialized path, CRUD + archive (FR-ORG-001).
 - [ ] M2.2 Organization tree API + screen with vacant-head badges (FR-ORG-002).
 - [ ] M2.3 Bulk import: template download, dry run, row errors, idempotent upsert (FR-ORG-003) + wizard screen.
 - [ ] M2.4 Assign heads, delegates (FR-ORG-004, FR-AC-004); users list (FR-ADM-002).

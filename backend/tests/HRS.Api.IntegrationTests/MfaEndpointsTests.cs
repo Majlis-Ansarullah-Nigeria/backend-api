@@ -177,7 +177,7 @@ public class MfaEndpointsTests(ApiFactory factory)
         var me = await meResponse.Content.ReadFromJsonAsync<MeProfile>();
 
         await EnrollTotpAsync(client);
-        await factory.CreateRoleAssignmentAsync(me!.Id, Guid.NewGuid(), RoleName.Secretariat);
+        await factory.CreateRoleAssignmentAsync(me!.Id, HRS.Domain.Organization.OrganizationSeedIds.NationalUnitId, RoleName.Secretariat);
 
         var disable = await client.PostAsync(new Uri("/api/v1/me/mfa/totp/disable", UriKind.Relative), null);
 

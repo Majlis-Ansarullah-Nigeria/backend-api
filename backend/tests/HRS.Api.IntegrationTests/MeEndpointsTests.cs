@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using HRS.Api.Endpoints;
 using HRS.Application.Features.Identity.CurrentUser;
 using HRS.Domain.Access;
+using HRS.Domain.Organization;
 
 namespace HRS.Api.IntegrationTests;
 
@@ -39,12 +40,12 @@ public class MeEndpointsTests(ApiFactory factory)
     public async Task GetMeIncludesOnlyCurrentlyActiveAssignments()
     {
         var (client, userId) = await CreateLoggedInClientAsync();
-        var unitId = Guid.NewGuid();
+        var unitId = OrganizationSeedIds.NationalUnitId;
         var now = DateTimeOffset.UtcNow;
 
         var activeId = await factory.CreateRoleAssignmentAsync(userId, unitId, RoleName.UnitHead, startsAt: now.AddDays(-30));
-        await factory.CreateRoleAssignmentAsync(userId, Guid.NewGuid(), RoleName.UnitHead, startsAt: now.AddDays(10)); // future
-        await factory.CreateRoleAssignmentAsync(userId, Guid.NewGuid(), RoleName.UnitHead, startsAt: now.AddDays(-60), endsAt: now.AddDays(-1)); // ended
+        await factory.CreateRoleAssignmentAsync(userId, unitId, RoleName.UnitHead, startsAt: now.AddDays(10)); // future
+        await factory.CreateRoleAssignmentAsync(userId, unitId, RoleName.UnitHead, startsAt: now.AddDays(-60), endsAt: now.AddDays(-1)); // ended
 
         var response = await client.GetAsync(new Uri("/api/v1/me", UriKind.Relative));
         var profile = await response.Content.ReadFromJsonAsync<MeProfile>();
@@ -59,7 +60,7 @@ public class MeEndpointsTests(ApiFactory factory)
     public async Task SetActiveAssignmentToOwnActiveAssignmentSucceedsAndPersists()
     {
         var (client, userId) = await CreateLoggedInClientAsync();
-        var assignmentId = await factory.CreateRoleAssignmentAsync(userId, Guid.NewGuid(), RoleName.Secretariat);
+        var assignmentId = await factory.CreateRoleAssignmentAsync(userId, OrganizationSeedIds.NationalUnitId, RoleName.Secretariat);
 
         var response = await client.PutAsJsonAsync(
             "/api/v1/me/active-assignment",
@@ -77,7 +78,7 @@ public class MeEndpointsTests(ApiFactory factory)
     {
         var (client, _) = await CreateLoggedInClientAsync();
         var otherUserId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Me2");
-        var otherUsersAssignment = await factory.CreateRoleAssignmentAsync(otherUserId, Guid.NewGuid(), RoleName.UnitHead);
+        var otherUsersAssignment = await factory.CreateRoleAssignmentAsync(otherUserId, OrganizationSeedIds.NationalUnitId, RoleName.UnitHead);
 
         var response = await client.PutAsJsonAsync(
             "/api/v1/me/active-assignment",
@@ -92,7 +93,7 @@ public class MeEndpointsTests(ApiFactory factory)
         var (client, userId) = await CreateLoggedInClientAsync();
         var now = DateTimeOffset.UtcNow;
         var expired = await factory.CreateRoleAssignmentAsync(
-            userId, Guid.NewGuid(), RoleName.UnitHead, startsAt: now.AddDays(-60), endsAt: now.AddDays(-1));
+            userId, OrganizationSeedIds.NationalUnitId, RoleName.UnitHead, startsAt: now.AddDays(-60), endsAt: now.AddDays(-1));
 
         var response = await client.PutAsJsonAsync(
             "/api/v1/me/active-assignment",

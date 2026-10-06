@@ -27,4 +27,8 @@ public sealed class AccessPolicy(IAppDbContext db, IClock clock) : IAccessPolicy
                 && (a.EndsAt == null || a.EndsAt > now),
             cancellationToken);
     }
+
+    public async Task<bool> IsOrganizationAdminAsync(Guid userId, CancellationToken cancellationToken) =>
+        await HasRoleAsync(userId, RoleName.Secretariat, cancellationToken)
+            || await HasRoleAsync(userId, RoleName.SysAdmin, cancellationToken);
 }
