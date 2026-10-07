@@ -21,6 +21,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();
 
+    public DbSet<TemplateVersion> TemplateVersions => Set<TemplateVersion>();
+
     public DbSet<UnitLevel> UnitLevels => Set<UnitLevel>();
 
     public DbSet<Unit> Units => Set<Unit>();
@@ -157,6 +159,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             reportType.PrimitiveCollection(r => r.ApplicableLevels)
                 .HasField("_applicableLevels")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<TemplateVersion>(version =>
+        {
+            version.ToTable("template_versions");
+            version.HasKey(v => v.Id);
+            version.Property(v => v.SchemaJson).HasColumnType("jsonb").IsRequired();
+            version.HasIndex(v => v.ReportTypeId);
+            version.HasIndex(v => new { v.ReportTypeId, v.VersionNumber }).IsUnique();
+            version
+                .HasOne<ReportType>()
+                .WithMany()
+                .HasForeignKey(v => v.ReportTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

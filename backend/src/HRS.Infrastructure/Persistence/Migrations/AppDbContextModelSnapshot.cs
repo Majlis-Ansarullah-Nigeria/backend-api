@@ -364,6 +364,55 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("report_types", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Templates.TemplateVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<Guid>("ReportTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_type_id");
+
+                    b.Property<DateTimeOffset?>("RetiredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("retired_at");
+
+                    b.Property<string>("SchemaJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("schema_json");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_template_versions");
+
+                    b.HasIndex("ReportTypeId")
+                        .HasDatabaseName("ix_template_versions_report_type_id");
+
+                    b.HasIndex("ReportTypeId", "VersionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_template_versions_report_type_id_version_number");
+
+                    b.ToTable("template_versions", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -639,6 +688,16 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_units_units_parent_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Templates.TemplateVersion", b =>
+                {
+                    b.HasOne("HRS.Domain.Templates.ReportType", null)
+                        .WithMany()
+                        .HasForeignKey("ReportTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_template_versions_report_types_report_type_id");
                 });
 
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>

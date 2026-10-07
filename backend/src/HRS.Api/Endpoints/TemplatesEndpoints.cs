@@ -1,5 +1,6 @@
 using HRS.Api.Common;
 using HRS.Application.Features.Templates.ReportTypes;
+using HRS.Application.Features.Templates.TemplateVersions;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
 using Mediator;
@@ -122,6 +123,74 @@ public static class TemplatesEndpoints
             .WithName("RestoreReportType")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        var templateVersions = app.MapGroup("/api/v1/report-types/{reportTypeId:guid}/template-versions")
+            .WithTags("Templates")
+            .RequireAuthorization();
+
+        templateVersions.MapGet("/", async (
+                Guid reportTypeId,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetTemplateVersionsQuery(reportTypeId), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetTemplateVersions")
+            .Produces<IReadOnlyList<TemplateVersionSummary>>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        templateVersions.MapGet("/{versionId:guid}", async (
+                Guid reportTypeId,
+                Guid versionId,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetTemplateVersionQuery(reportTypeId, versionId), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetTemplateVersion")
+            .Produces<TemplateVersionDetail>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        templateVersions.MapPost("/", async (
+                Guid reportTypeId,
+                [FromBody] UpdateTemplateSchemaRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new UpdateTemplateSchemaCommand(user.GetUserId(), reportTypeId, request.Schema);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("UpdateTemplateSchema")
+            .Produces<TemplateVersionSummary>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        templateVersions.MapPost("/{versionId:guid}/publish", async (
+                Guid reportTypeId,
+                Guid versionId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new PublishTemplateVersionCommand(user.GetUserId(), reportTypeId, versionId);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("PublishTemplateVersion")
+            .Produces<TemplateVersionSummary>()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 }
 
@@ -144,3 +213,5 @@ public sealed record UpdateReportTypeRequest(
     UnitLevelCode RecipientLevel,
     int ObserverDepth,
     bool AllowAttachments);
+
+public sealed record UpdateTemplateSchemaRequest(TemplateSchema Schema);

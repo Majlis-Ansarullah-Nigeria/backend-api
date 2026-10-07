@@ -14,6 +14,8 @@ public interface IAppDbContext
 
     DbSet<RoleAssignment> RoleAssignments { get; }
 
+    DbSet<TemplateVersion> TemplateVersions { get; }
+
     DbSet<UnitLevel> UnitLevels { get; }
 
     DbSet<Unit> Units { get; }
