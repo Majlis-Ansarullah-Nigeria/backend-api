@@ -30,7 +30,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M3.2 Template schema model + JSON validation + versioning draft/publish/immutable (FR-TPL-007, FR-TPL-008).
 - [x] M3.3 Shared expression language: C# + TS evaluators + `shared/expression-fixtures.json` parity tests (FR-TPL-005).
 - [x] M3.4 Frontend form engine: all field types, conditional logic, computed fields, per-level visibility (FR-TPL-002..004).
-- [ ] M3.5 Template builder screen (palette, canvas, properties, logic, versions) + preview by level (FR-TPL-009).
+- [x] M3.5 Template builder screen (palette, canvas, properties, logic, versions) + preview by level (FR-TPL-009).
 
 ## M4 — Windows and schedules (FR-WIN, BR-WIN)
 - [ ] M4.1 Submission windows with per-level due dates set by the Secretariat, grace, close; parent-before-child warning (FR-WIN-001, FR-WIN-003).

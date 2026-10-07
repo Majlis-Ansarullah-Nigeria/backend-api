@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { Button } from "@/components/ui/button";
@@ -81,7 +82,11 @@ function ReportTypeDetailForm({ reportType }: { reportType: ReportTypeSummary })
           <p className="mt-2 inline-flex rounded-full bg-status-missed-bg px-2 py-0.5 text-xs font-medium text-status-missed-fg">
             {t("archived")}
           </p>
-        ) : null}
+        ) : (
+          <Link href={`/secretariat/templates/${reportType.id}`} className="mt-2 inline-flex text-sm font-medium text-green-700 hover:underline">
+            {t("editTemplate")}
+          </Link>
+        )}
       </div>
 
       <ReportTypeForm
