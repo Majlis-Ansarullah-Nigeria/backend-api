@@ -32,6 +32,7 @@ import type {
   CreateUnitRequest,
   GetOrganizationTreeParams,
   GetUnitsParams,
+  MoveUnitRequest,
   PreviewBulkImportBody,
   ProblemDetails,
   UnitLevelSummary,
@@ -980,6 +981,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRestoreUnitMutationOptions(options), queryClient);
+    }
+    export const getMoveUnitUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/units/${id}/move`
+}
+
+export const moveUnit = async (id: string,
+    moveUnitRequest: MoveUnitRequest, options?: Parameters<typeof customFetch>[1]): Promise<UnitSummary> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<UnitSummary>(getMoveUnitUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moveUnitRequest)
+  }
+);}
+
+
+
+
+
+export const getMoveUnitMutationKey = () => ['moveUnit'] as const;
+
+export const getMoveUnitMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveUnit>>, TError,MoveUnitMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof moveUnit>>, TError,MoveUnitMutationVariables, TContext> => {
+
+const mutationKey = getMoveUnitMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof moveUnit>>, MoveUnitMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  moveUnit(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MoveUnitMutationResult = NonNullable<Awaited<ReturnType<typeof moveUnit>>>
+    export type MoveUnitMutationBody = MoveUnitRequest
+    export type MoveUnitMutationError = ProblemDetails
+    export type MoveUnitMutationVariables = {id: string;data: MoveUnitRequest}
+
+    export const useMoveUnit = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveUnit>>, TError,MoveUnitMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof moveUnit>>,
+        TError,
+        MoveUnitMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMoveUnitMutationOptions(options), queryClient);
     }
     export const getCreateRoleAssignmentUrl = (id: string,) => {
 

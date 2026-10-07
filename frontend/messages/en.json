@@ -251,6 +251,12 @@
     "assignAndInvite": "Assign and send invite",
     "headAssigned": "Head assigned.",
     "headInvited": "Invitation sent — the role is granted once they accept.",
+    "moveUnit": "Move to another parent",
+    "moveUnitTo": "Move {unit}",
+    "newParentLabel": "New parent",
+    "moving": "Moving…",
+    "confirmMove": "Move",
+    "unitMoved": "Unit moved.",
     "import": {
       "breadcrumb": "Organization / Bulk import",
       "title": "Bulk import units and heads",

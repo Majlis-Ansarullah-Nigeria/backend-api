@@ -280,4 +280,131 @@ public class UnitsEndpointsTests(ApiFactory factory)
             .Content.ReadFromJsonAsync<List<UnitTreeNode>>();
         Assert.Contains(fullTree!, n => n.Id == zone.Id);
     }
+
+    private static async Task<(UnitSummary Zone, UnitSummary Dila)> CreateZoneWithDilaAsync(HttpClient client, string zoneCode, string dilaCode)
+    {
+        var zone = await (await client.PostAsJsonAsync("/api/v1/units", ZoneRequest(zoneCode, $"Zone {zoneCode}")))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var dilaRequest = new CreateUnitRequest(
+            dilaCode, $"Dila {dilaCode}", OrganizationSeedIds.DilaLevelId, zone!.Id, null, null, null, null, null);
+        var dila = await (await client.PostAsJsonAsync("/api/v1/units", dilaRequest)).Content.ReadFromJsonAsync<UnitSummary>();
+
+        return (zone, dila!);
+    }
+
+    [Fact]
+    public async Task MovingAUnitRequiresOrgAdmin()
+    {
+        using var adminClient = await CreateOrgAdminClientAsync();
+        var (_, dila) = await CreateZoneWithDilaAsync(adminClient, "M01", "D10");
+        var (otherZone, _) = await CreateZoneWithDilaAsync(adminClient, "M02", "D11");
+
+        using var plainClient = await CreatePlainUserClientAsync();
+        var response = await plainClient.PostAsJsonAsync($"/api/v1/units/{dila.Id}/move", new MoveUnitRequest(otherZone.Id));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MovingADilaToAnotherZoneUpdatesItsPathAndParent()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (_, dila) = await CreateZoneWithDilaAsync(client, "M03", "D12");
+        var (otherZone, _) = await CreateZoneWithDilaAsync(client, "M04", "D13");
+
+        var response = await client.PostAsJsonAsync($"/api/v1/units/{dila.Id}/move", new MoveUnitRequest(otherZone.Id));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var moved = await response.Content.ReadFromJsonAsync<UnitSummary>();
+        Assert.Equal(otherZone.Id, moved!.ParentId);
+        Assert.Equal($"{otherZone.Path}.d12", moved.Path);
+    }
+
+    [Fact]
+    public async Task MovingAUnitRebasesItsDescendantsPaths()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (_, dila) = await CreateZoneWithDilaAsync(client, "M05", "D14");
+        var muqamRequest = new CreateUnitRequest(
+            "MQ01", "Muqam 1", OrganizationSeedIds.MuqamLevelId, dila.Id, null, null, null, null, null);
+        var muqam = await (await client.PostAsJsonAsync("/api/v1/units", muqamRequest)).Content.ReadFromJsonAsync<UnitSummary>();
+        var (otherZone, _) = await CreateZoneWithDilaAsync(client, "M06", "D15");
+
+        await client.PostAsJsonAsync($"/api/v1/units/{dila.Id}/move", new MoveUnitRequest(otherZone.Id));
+
+        var movedMuqam = await (await client.GetAsync(new Uri($"/api/v1/units/{muqam!.Id}", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        Assert.Equal($"{otherZone.Path}.d14.mq01", movedMuqam!.Path);
+    }
+
+    [Fact]
+    public async Task MovingAUnitIntoItsOwnDescendantIsRejected()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (zone, dila) = await CreateZoneWithDilaAsync(client, "M07", "D16");
+
+        var response = await client.PostAsJsonAsync($"/api/v1/units/{zone.Id}/move", new MoveUnitRequest(dila.Id));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MovingAUnitToAMismatchedParentLevelFails()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (zone, dila) = await CreateZoneWithDilaAsync(client, "M08", "D17");
+
+        // A Zone can only go under National — not under a Dila.
+        var response = await client.PostAsJsonAsync($"/api/v1/units/{zone.Id}/move", new MoveUnitRequest(dila.Id));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MovingAUnitUnderAnArchivedParentFails()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (_, dila) = await CreateZoneWithDilaAsync(client, "M09", "D18");
+        var (otherZone, _) = await CreateZoneWithDilaAsync(client, "M10", "D19");
+        await client.DeleteAsync(new Uri($"/api/v1/units/{otherZone.Id}", UriKind.Relative));
+
+        var response = await client.PostAsJsonAsync($"/api/v1/units/{dila.Id}/move", new MoveUnitRequest(otherZone.Id));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MovingAUnitToItsCurrentParentIsRejected()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (zone, dila) = await CreateZoneWithDilaAsync(client, "M11", "D20");
+
+        var response = await client.PostAsJsonAsync($"/api/v1/units/{dila.Id}/move", new MoveUnitRequest(zone.Id));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MovingTheNationalRootIsRejected()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (otherZone, _) = await CreateZoneWithDilaAsync(client, "M12", "D21");
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/units/{OrganizationSeedIds.NationalUnitId}/move", new MoveUnitRequest(otherZone.Id));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task MovingAUnitWithADuplicateCodeUnderTheNewParentFails()
+    {
+        using var client = await CreateOrgAdminClientAsync();
+        var (_, dila) = await CreateZoneWithDilaAsync(client, "M13", "D22");
+        var (otherZone, _) = await CreateZoneWithDilaAsync(client, "M14", "D22");
+
+        var response = await client.PostAsJsonAsync($"/api/v1/units/{dila.Id}/move", new MoveUnitRequest(otherZone.Id));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
 }

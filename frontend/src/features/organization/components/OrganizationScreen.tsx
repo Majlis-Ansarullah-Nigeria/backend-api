@@ -189,6 +189,7 @@ export function OrganizationScreen() {
               breadcrumb={breadcrumb}
               levelName={levelNameByCode[selectedNode.levelCode]}
               node={selectedNode}
+              units={nodes}
             />
           ) : (
             <div className="rounded-lg border border-line bg-surface p-6 text-sm text-ink-muted">{t("selectPrompt")}</div>

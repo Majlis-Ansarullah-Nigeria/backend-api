@@ -21,15 +21,17 @@ import {
 } from "@/lib/api/generated/organization/organization";
 import { updateUnitSchema, type UpdateUnitFormValues } from "@/features/organization/schemas/unit-form";
 import { AssignHeadPanel } from "./AssignHeadPanel";
+import { MoveUnitPanel } from "./MoveUnitPanel";
 
 export interface UnitDetailPanelProps {
   unitId: string;
   breadcrumb: UnitTreeNode[];
   levelName?: string;
   node: UnitTreeNode;
+  units: UnitTreeNode[];
 }
 
-export function UnitDetailPanel({ unitId, breadcrumb, levelName, node }: UnitDetailPanelProps) {
+export function UnitDetailPanel({ unitId, breadcrumb, levelName, node, units }: UnitDetailPanelProps) {
   const t = useTranslations("Organization");
   const unit = useGetUnit<UnitSummary, ApiError>(unitId);
 
@@ -47,7 +49,9 @@ export function UnitDetailPanel({ unitId, breadcrumb, levelName, node }: UnitDet
     );
   }
 
-  return <UnitDetailForm key={unit.data.id} unit={unit.data} breadcrumb={breadcrumb} levelName={levelName} node={node} />;
+  return (
+    <UnitDetailForm key={unit.data.id} unit={unit.data} breadcrumb={breadcrumb} levelName={levelName} node={node} units={units} />
+  );
 }
 
 function UnitDetailForm({
@@ -55,11 +59,13 @@ function UnitDetailForm({
   breadcrumb,
   levelName,
   node,
+  units,
 }: {
   unit: UnitSummary;
   breadcrumb: UnitTreeNode[];
   levelName?: string;
   node: UnitTreeNode;
+  units: UnitTreeNode[];
 }) {
   const t = useTranslations("Organization");
   const queryClient = useQueryClient();
@@ -178,6 +184,10 @@ function UnitDetailForm({
           </Button>
         ) : null}
       </form>
+
+      {!unit.archivedAt && !isRoot ? (
+        <MoveUnitPanel unitId={unit.id} unitName={unit.name} parentId={unit.parentId} path={unit.path} units={units} />
+      ) : null}
 
       {!unit.archivedAt ? (
         <AssignHeadPanel unitId={unit.id} unitName={unit.name} headName={node.headName} hasVacantHead={node.hasVacantHead} />

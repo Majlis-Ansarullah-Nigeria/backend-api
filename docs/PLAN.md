@@ -23,7 +23,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M2.2 Organization tree API + screen with vacant-head badges (FR-ORG-002).
 - [x] M2.3 Bulk import: template download, dry run, row errors, idempotent upsert (FR-ORG-003) + wizard screen.
 - [x] M2.4 Assign heads, delegates (FR-ORG-004, FR-AC-004); users list (FR-ADM-002).
-- [ ] M2.5 Move unit to a new parent keeping history (FR-ORG-005).
+- [x] M2.5 Move unit to a new parent keeping history (FR-ORG-005).
 
 ## M3 — Report types and templates (FR-TPL)
 - [ ] M3.1 Report types with routing rule data (FR-TPL-001).

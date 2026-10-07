@@ -208,6 +208,24 @@ public static class OrganizationEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        units.MapPost("/{id:guid}/move", async (
+                Guid id,
+                [FromBody] MoveUnitRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new MoveUnitCommand(user.GetUserId(), id, request.NewParentId), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("MoveUnit")
+            .Produces<UnitSummary>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         units.MapPost("/{id:guid}/assignments", async (
                 Guid id,
                 [FromBody] CreateRoleAssignmentRequest request,
@@ -254,6 +272,8 @@ public sealed record CreateUnitRequest(
     string? ContactEmail,
     double? Latitude,
     double? Longitude);
+
+public sealed record MoveUnitRequest(Guid NewParentId);
 
 public sealed record UpdateUnitRequest(
     string Name,

@@ -167,6 +167,10 @@ export interface MfaVerifyRequest {
   code: string;
 }
 
+export interface MoveUnitRequest {
+  newParentId: string;
+}
+
 export interface OtpRequest {
   identifier: string;
 }

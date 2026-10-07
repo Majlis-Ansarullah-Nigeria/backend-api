@@ -110,6 +110,18 @@ public sealed class Unit
         Longitude = longitude;
     }
 
+    /// <summary>Moves this unit under a new parent (FR-ORG-005). Descendants keep their own
+    /// ParentId but need their Path rebased too — see <see cref="RebasePath"/>.</summary>
+    public void MoveTo(Unit newParent)
+    {
+        ParentId = newParent.Id;
+        Path = BuildPath(newParent.Path, Code);
+    }
+
+    /// <summary>Updates a descendant's materialized path after an ancestor moved. ParentId is
+    /// unchanged — only the prefix contributed by the moved ancestor shifts.</summary>
+    public void RebasePath(string newPath) => Path = newPath;
+
     public void Archive(DateTimeOffset now) => ArchivedAt = now;
 
     public void Restore() => ArchivedAt = null;
