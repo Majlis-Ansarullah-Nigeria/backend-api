@@ -3,6 +3,7 @@ using HRS.Domain.Access;
 using HRS.Domain.Invitations;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
+using HRS.Domain.Windows;
 using HRS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -20,6 +21,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
 
     public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();
+
+    public DbSet<SubmissionWindow> SubmissionWindows => Set<SubmissionWindow>();
 
     public DbSet<TemplateVersion> TemplateVersions => Set<TemplateVersion>();
 
@@ -173,6 +176,29 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(v => v.ReportTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<SubmissionWindow>(window =>
+        {
+            window.ToTable("submission_windows");
+            window.HasKey(w => w.Id);
+            window.Property(w => w.PeriodLabel).IsRequired();
+            window.HasIndex(w => w.ReportTypeId);
+            window
+                .HasOne<ReportType>()
+                .WithMany()
+                .HasForeignKey(w => w.ReportTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            window.OwnsMany(w => w.DueDates, dueDate =>
+            {
+                dueDate.ToTable("submission_window_due_dates");
+                dueDate.WithOwner().HasForeignKey("submission_window_id");
+                dueDate.Property<int>("id");
+                dueDate.HasKey("id");
+                dueDate.HasIndex("submission_window_id", nameof(WindowLevelDueDate.Level)).IsUnique();
+            });
+            window.Navigation(w => w.DueDates).HasField("_dueDates").UsePropertyAccessMode(PropertyAccessMode.Field);
         });
     }
 }

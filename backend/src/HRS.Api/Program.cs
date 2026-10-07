@@ -118,6 +118,7 @@ try
     app.MapOrganizationEndpoints();
     app.MapAdminEndpoints();
     app.MapTemplatesEndpoints();
+    app.MapWindowsEndpoints();
 
     app.MapGet("/", () => "HRS API");
 

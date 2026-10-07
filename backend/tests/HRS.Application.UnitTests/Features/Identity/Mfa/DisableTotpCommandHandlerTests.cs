@@ -59,6 +59,9 @@ public class DisableTotpCommandHandlerTests
 
         public Task<bool> IsTemplateAdminAsync(Guid userId, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<bool> IsWindowAdminAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 
     private sealed class RecordingIdentityService : IIdentityService

@@ -33,7 +33,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M3.5 Template builder screen (palette, canvas, properties, logic, versions) + preview by level (FR-TPL-009).
 
 ## M4 — Windows and schedules (FR-WIN, BR-WIN)
-- [ ] M4.1 Submission windows with per-level due dates set by the Secretariat, grace, close; parent-before-child warning (FR-WIN-001, FR-WIN-003).
+- [x] M4.1 Submission windows with per-level due dates set by the Secretariat, grace, close; parent-before-child warning (FR-WIN-001, FR-WIN-003).
 - [ ] M4.2 Schedule rules generating windows 12 months ahead (FR-WIN-002); ad-hoc requests (FR-WIN-004).
 - [ ] M4.3 Extensions and reopen (FR-WIN-005, FR-WIN-006).
 - [ ] M4.4 Hangfire worker: open, remind, close, mark missed — idempotent (BR-WIN-04, BR-WIN-08).

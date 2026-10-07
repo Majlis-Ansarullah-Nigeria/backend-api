@@ -27,4 +27,11 @@ public interface IAccessPolicy
     /// management, SysAdmin does NOT get this; kept separate from <see cref="IsOrganizationAdminAsync"/>.
     /// </summary>
     Task<bool> IsTemplateAdminAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Secretariat only — "open, close, extend windows" (SRS 3.2 role table). Same role check as
+    /// <see cref="IsTemplateAdminAsync"/> today, but named and kept separate so the two can diverge
+    /// if window and template permissions are ever split.
+    /// </summary>
+    Task<bool> IsWindowAdminAsync(Guid userId, CancellationToken cancellationToken);
 }

@@ -2,6 +2,7 @@ using HRS.Domain.Access;
 using HRS.Domain.Invitations;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
+using HRS.Domain.Windows;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Application.Common.Interfaces;
@@ -13,6 +14,8 @@ public interface IAppDbContext
     DbSet<ReportType> ReportTypes { get; }
 
     DbSet<RoleAssignment> RoleAssignments { get; }
+
+    DbSet<SubmissionWindow> SubmissionWindows { get; }
 
     DbSet<TemplateVersion> TemplateVersions { get; }
 

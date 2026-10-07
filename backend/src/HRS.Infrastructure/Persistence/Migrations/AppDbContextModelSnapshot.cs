@@ -413,6 +413,47 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("template_versions", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Windows.SubmissionWindow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ClosesAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closes_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("GraceDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("grace_days");
+
+                    b.Property<DateTimeOffset>("OpensAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("opens_at");
+
+                    b.Property<string>("PeriodLabel")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("period_label");
+
+                    b.Property<Guid>("ReportTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_type_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_submission_windows");
+
+                    b.HasIndex("ReportTypeId")
+                        .HasDatabaseName("ix_submission_windows_report_type_id");
+
+                    b.ToTable("submission_windows", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -698,6 +739,53 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_template_versions_report_types_report_type_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Windows.SubmissionWindow", b =>
+                {
+                    b.HasOne("HRS.Domain.Templates.ReportType", null)
+                        .WithMany()
+                        .HasForeignKey("ReportTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_submission_windows_report_types_report_type_id");
+
+                    b.OwnsMany("HRS.Domain.Windows.WindowLevelDueDate", "DueDates", b1 =>
+                        {
+                            b1.Property<int>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasColumnName("id");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("id"));
+
+                            b1.Property<DateTimeOffset>("DueAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("due_at");
+
+                            b1.Property<int>("Level")
+                                .HasColumnType("integer")
+                                .HasColumnName("level");
+
+                            b1.Property<Guid>("submission_window_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("submission_window_id");
+
+                            b1.HasKey("id")
+                                .HasName("pk_submission_window_due_dates");
+
+                            b1.HasIndex("submission_window_id", "Level")
+                                .IsUnique()
+                                .HasDatabaseName("ix_submission_window_due_dates_submission_window_id_level");
+
+                            b1.ToTable("submission_window_due_dates", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("submission_window_id")
+                                .HasConstraintName("fk_submission_window_due_dates_submission_windows_submission_w");
+                        });
+
+                    b.Navigation("DueDates");
                 });
 
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>
