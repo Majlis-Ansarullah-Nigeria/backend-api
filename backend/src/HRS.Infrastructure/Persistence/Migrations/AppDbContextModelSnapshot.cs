@@ -812,6 +812,63 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_submission_windows_window_schedules_schedule_id");
 
+                    b.OwnsMany("HRS.Domain.Windows.WindowExtension", "Extensions", b1 =>
+                        {
+                            b1.Property<int>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasColumnName("id");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("id"));
+
+                            b1.Property<DateTimeOffset>("GrantedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("granted_at");
+
+                            b1.Property<DateTimeOffset>("NewClosesAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("new_closes_at");
+
+                            b1.Property<DateTimeOffset>("NewDueAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("new_due_at");
+
+                            b1.Property<string>("Reason")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("reason");
+
+                            b1.Property<Guid>("UnitId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("unit_id");
+
+                            b1.Property<Guid>("submission_window_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("submission_window_id");
+
+                            b1.HasKey("id")
+                                .HasName("pk_window_extensions");
+
+                            b1.HasIndex("UnitId")
+                                .HasDatabaseName("ix_window_extensions_unit_id");
+
+                            b1.HasIndex("submission_window_id", "UnitId")
+                                .HasDatabaseName("ix_window_extensions_submission_window_id_unit_id");
+
+                            b1.ToTable("window_extensions", (string)null);
+
+                            b1.HasOne("HRS.Domain.Organization.Unit", null)
+                                .WithMany()
+                                .HasForeignKey("UnitId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired()
+                                .HasConstraintName("fk_window_extensions_units_unit_id");
+
+                            b1.WithOwner()
+                                .HasForeignKey("submission_window_id")
+                                .HasConstraintName("fk_window_extensions_submission_windows_submission_window_id");
+                        });
+
                     b.OwnsMany("HRS.Domain.Windows.WindowLevelDueDate", "DueDates", b1 =>
                         {
                             b1.Property<int>("id")
@@ -847,7 +904,64 @@ namespace HRS.Infrastructure.Persistence.Migrations
                                 .HasConstraintName("fk_submission_window_due_dates_submission_windows_submission_w");
                         });
 
+                    b.OwnsMany("HRS.Domain.Windows.WindowReopen", "Reopens", b1 =>
+                        {
+                            b1.Property<int>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasColumnName("id");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("id"));
+
+                            b1.Property<string>("Reason")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("reason");
+
+                            b1.Property<DateTimeOffset>("ReopenedAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("reopened_at");
+
+                            b1.Property<DateTimeOffset>("ReopenedUntil")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("reopened_until");
+
+                            b1.Property<Guid>("UnitId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("unit_id");
+
+                            b1.Property<Guid>("submission_window_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("submission_window_id");
+
+                            b1.HasKey("id")
+                                .HasName("pk_window_reopens");
+
+                            b1.HasIndex("UnitId")
+                                .HasDatabaseName("ix_window_reopens_unit_id");
+
+                            b1.HasIndex("submission_window_id", "UnitId")
+                                .HasDatabaseName("ix_window_reopens_submission_window_id_unit_id");
+
+                            b1.ToTable("window_reopens", (string)null);
+
+                            b1.HasOne("HRS.Domain.Organization.Unit", null)
+                                .WithMany()
+                                .HasForeignKey("UnitId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired()
+                                .HasConstraintName("fk_window_reopens_units_unit_id");
+
+                            b1.WithOwner()
+                                .HasForeignKey("submission_window_id")
+                                .HasConstraintName("fk_window_reopens_submission_windows_submission_window_id");
+                        });
+
                     b.Navigation("DueDates");
+
+                    b.Navigation("Extensions");
+
+                    b.Navigation("Reopens");
                 });
 
             modelBuilder.Entity("HRS.Domain.Windows.WindowSchedule", b =>

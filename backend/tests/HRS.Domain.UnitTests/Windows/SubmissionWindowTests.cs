@@ -108,4 +108,94 @@ public class SubmissionWindowTests
         Assert.Null(window.DueAtFor(UnitLevelCode.Muqam));
         Assert.Equal(newDueAt, window.DueAtFor(UnitLevelCode.Dila));
     }
+
+    [Fact]
+    public void GrantExtensionOverridesDueAtForOnlyTheGrantedUnit()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(30), Now.AddDays(10));
+        var unitId = Guid.NewGuid();
+        var otherUnitId = Guid.NewGuid();
+        var newDueAt = Now.AddDays(20);
+
+        window.GrantExtension([unitId], newDueAt, Now.AddDays(25), "Flooding delayed the count.", Now);
+
+        Assert.Equal(newDueAt, window.DueAtFor(UnitLevelCode.Muqam, unitId));
+        Assert.Equal(Now.AddDays(10), window.DueAtFor(UnitLevelCode.Muqam, otherUnitId));
+        Assert.Equal(Now.AddDays(10), window.DueAtFor(UnitLevelCode.Muqam));
+    }
+
+    [Fact]
+    public void GrantExtensionOverridesEffectiveCloseForOnlyTheGrantedUnit()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(30), Now.AddDays(10));
+        var unitId = Guid.NewGuid();
+        var otherUnitId = Guid.NewGuid();
+        var newClosesAt = Now.AddDays(40);
+
+        window.GrantExtension([unitId], Now.AddDays(20), newClosesAt, "Reason", Now);
+
+        Assert.Equal(newClosesAt, window.EffectiveClosesAtFor(unitId));
+        Assert.Equal(Now.AddDays(30), window.EffectiveClosesAtFor(otherUnitId));
+    }
+
+    [Fact]
+    public void TheLatestExtensionForAUnitWins()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(30), Now.AddDays(10));
+        var unitId = Guid.NewGuid();
+
+        window.GrantExtension([unitId], Now.AddDays(15), Now.AddDays(20), "First", Now);
+        window.GrantExtension([unitId], Now.AddDays(25), Now.AddDays(35), "Second, later", Now.AddDays(1));
+
+        Assert.Equal(Now.AddDays(25), window.DueAtFor(UnitLevelCode.Muqam, unitId));
+        Assert.Equal(Now.AddDays(35), window.EffectiveClosesAtFor(unitId));
+    }
+
+    [Fact]
+    public void StatusForIsLateForAUnitWithinItsExtendedGracePeriod()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(12), Now.AddDays(10));
+        var unitId = Guid.NewGuid();
+
+        window.GrantExtension([unitId], Now.AddDays(20), Now.AddDays(25), "Reason", Now);
+
+        // Day 21 is past the window's original hard close (day 12) and past the extended due
+        // date (day 20), but still within the extended grace (day 20 + 3).
+        Assert.Equal(WindowLevelStatus.Late, window.StatusFor(UnitLevelCode.Muqam, Now.AddDays(21), unitId));
+    }
+
+    [Fact]
+    public void StatusForIsClosedForAUnitWithNoReopenAfterItsEffectiveClose()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(12), Now.AddDays(10));
+        var unitId = Guid.NewGuid();
+
+        Assert.Equal(WindowLevelStatus.Closed, window.StatusFor(UnitLevelCode.Muqam, Now.AddDays(13), unitId));
+    }
+
+    [Fact]
+    public void ReopenAllowsLateSubmissionForOnlyTheReopenedUnitUntilTheNewDeadline()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(12), Now.AddDays(10));
+        var unitId = Guid.NewGuid();
+        var otherUnitId = Guid.NewGuid();
+        var reopenedUntil = Now.AddDays(20);
+
+        window.Reopen([unitId], reopenedUntil, "Late due to a connectivity outage.", Now.AddDays(13));
+
+        Assert.Equal(WindowLevelStatus.Late, window.StatusFor(UnitLevelCode.Muqam, Now.AddDays(15), unitId));
+        Assert.Equal(WindowLevelStatus.Closed, window.StatusFor(UnitLevelCode.Muqam, Now.AddDays(15), otherUnitId));
+    }
+
+    [Fact]
+    public void ReopenNoLongerAppliesAfterItsOwnDeadlinePasses()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(12), Now.AddDays(10));
+        var unitId = Guid.NewGuid();
+        var reopenedUntil = Now.AddDays(20);
+
+        window.Reopen([unitId], reopenedUntil, "Reason", Now.AddDays(13));
+
+        Assert.Equal(WindowLevelStatus.Closed, window.StatusFor(UnitLevelCode.Muqam, Now.AddDays(21), unitId));
+    }
 }

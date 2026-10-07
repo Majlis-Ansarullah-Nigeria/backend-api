@@ -19,6 +19,8 @@ public sealed class SubmissionWindow
 {
     private readonly List<WindowLevelDueDate> _dueDates = [];
     private readonly List<Guid> _targetUnitIds = [];
+    private readonly List<WindowExtension> _extensions = [];
+    private readonly List<WindowReopen> _reopens = [];
 
     private SubmissionWindow()
     {
@@ -68,6 +70,10 @@ public sealed class SubmissionWindow
 
     public IReadOnlyList<Guid> TargetUnitIds => _targetUnitIds;
 
+    public IReadOnlyList<WindowExtension> Extensions => _extensions;
+
+    public IReadOnlyList<WindowReopen> Reopens => _reopens;
+
     public static SubmissionWindow Create(
         Guid id,
         Guid reportTypeId,
@@ -99,35 +105,48 @@ public sealed class SubmissionWindow
         _targetUnitIds.AddRange(targetUnitIds ?? []);
     }
 
-    public DateTimeOffset? DueAtFor(UnitLevelCode level) =>
-        _dueDates.FirstOrDefault(d => d.Level == level)?.DueAt;
+    /// <summary>A unit's own due date for its level — an active extension (BR-WIN-05) overrides
+    /// the level's default for that unit only.</summary>
+    public DateTimeOffset? DueAtFor(UnitLevelCode level, Guid? unitId = null)
+    {
+        var extensionDueAt = unitId is null ? null : LatestExtensionFor(unitId.Value)?.NewDueAt;
+        return extensionDueAt ?? _dueDates.FirstOrDefault(d => d.Level == level)?.DueAt;
+    }
+
+    /// <summary>A unit's own hard close — an active extension overrides the window-wide ClosesAt
+    /// for that unit only (BR-WIN-05).</summary>
+    public DateTimeOffset EffectiveClosesAtFor(Guid unitId) => LatestExtensionFor(unitId)?.NewClosesAt ?? ClosesAt;
 
     /// <summary>The last moment a late submission is still accepted for this level — the level's
-    /// own due date plus the grace duration, but never later than the window's hard close.</summary>
-    public DateTimeOffset? GraceEndFor(UnitLevelCode level)
+    /// own due date plus the grace duration, but never later than the unit's effective hard
+    /// close.</summary>
+    public DateTimeOffset? GraceEndFor(UnitLevelCode level, Guid? unitId = null)
     {
-        var dueAt = DueAtFor(level);
+        var dueAt = DueAtFor(level, unitId);
         if (dueAt is null)
         {
             return null;
         }
 
+        var closesAt = unitId is null ? ClosesAt : EffectiveClosesAtFor(unitId.Value);
         var graceEnd = dueAt.Value.AddDays(GraceDays);
-        return graceEnd < ClosesAt ? graceEnd : ClosesAt;
+        return graceEnd < closesAt ? graceEnd : closesAt;
     }
 
-    public WindowLevelStatus StatusFor(UnitLevelCode level, DateTimeOffset now)
+    public WindowLevelStatus StatusFor(UnitLevelCode level, DateTimeOffset now, Guid? unitId = null)
     {
-        var dueAt = DueAtFor(level);
+        var dueAt = DueAtFor(level, unitId);
+        var closesAt = unitId is null ? ClosesAt : EffectiveClosesAtFor(unitId.Value);
 
         if (now < OpensAt)
         {
             return WindowLevelStatus.BeforeOpen;
         }
 
-        if (dueAt is null || now >= ClosesAt)
+        if (dueAt is null || now >= closesAt)
         {
-            return WindowLevelStatus.Closed;
+            var reopen = unitId is null ? null : LatestReopenFor(unitId.Value);
+            return reopen is not null && now < reopen.ReopenedUntil ? WindowLevelStatus.Late : WindowLevelStatus.Closed;
         }
 
         if (now < dueAt.Value)
@@ -135,7 +154,33 @@ public sealed class SubmissionWindow
             return WindowLevelStatus.OnTime;
         }
 
-        var graceEnd = GraceEndFor(level)!.Value;
+        var graceEnd = GraceEndFor(level, unitId)!.Value;
         return now < graceEnd ? WindowLevelStatus.Late : WindowLevelStatus.Closed;
     }
+
+    /// <summary>Grants a new due date and close date to one unit or a group (FR-WIN-005). Each
+    /// unit gets its own record so a later extension to one unit never touches another's.</summary>
+    public void GrantExtension(IEnumerable<Guid> unitIds, DateTimeOffset newDueAt, DateTimeOffset newClosesAt, string reason, DateTimeOffset now)
+    {
+        foreach (var unitId in unitIds)
+        {
+            _extensions.Add(new WindowExtension(unitId, newDueAt, newClosesAt, reason, now));
+        }
+    }
+
+    /// <summary>Reopens this window for one unit or a group after it has already closed, allowing
+    /// a late submission up to a new deadline (FR-WIN-006).</summary>
+    public void Reopen(IEnumerable<Guid> unitIds, DateTimeOffset reopenedUntil, string reason, DateTimeOffset now)
+    {
+        foreach (var unitId in unitIds)
+        {
+            _reopens.Add(new WindowReopen(unitId, reopenedUntil, reason, now));
+        }
+    }
+
+    private WindowExtension? LatestExtensionFor(Guid unitId) =>
+        _extensions.Where(e => e.UnitId == unitId).MaxBy(e => e.GrantedAt);
+
+    private WindowReopen? LatestReopenFor(Guid unitId) =>
+        _reopens.Where(r => r.UnitId == unitId).MaxBy(r => r.ReopenedAt);
 }

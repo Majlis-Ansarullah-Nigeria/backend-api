@@ -215,6 +215,38 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             window.PrimitiveCollection(w => w.TargetUnitIds)
                 .HasField("_targetUnitIds")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            window.OwnsMany(w => w.Extensions, extension =>
+            {
+                extension.ToTable("window_extensions");
+                extension.WithOwner().HasForeignKey("submission_window_id");
+                extension.Property<int>("id");
+                extension.HasKey("id");
+                extension.HasIndex("submission_window_id", nameof(WindowExtension.UnitId));
+                // Restrict, not Cascade: units are only ever archived, never hard-deleted, so this
+                // can never actually fire — it documents the invariant rather than guarding it.
+                extension
+                    .HasOne<Unit>()
+                    .WithMany()
+                    .HasForeignKey(e => e.UnitId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+            window.Navigation(w => w.Extensions).HasField("_extensions").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            window.OwnsMany(w => w.Reopens, reopen =>
+            {
+                reopen.ToTable("window_reopens");
+                reopen.WithOwner().HasForeignKey("submission_window_id");
+                reopen.Property<int>("id");
+                reopen.HasKey("id");
+                reopen.HasIndex("submission_window_id", nameof(WindowReopen.UnitId));
+                reopen
+                    .HasOne<Unit>()
+                    .WithMany()
+                    .HasForeignKey(r => r.UnitId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+            window.Navigation(w => w.Reopens).HasField("_reopens").UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         builder.Entity<WindowSchedule>(schedule =>

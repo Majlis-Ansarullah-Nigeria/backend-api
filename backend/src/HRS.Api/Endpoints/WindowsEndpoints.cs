@@ -98,6 +98,60 @@ public static class WindowsEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        windows.MapPost("/{windowId:guid}/extensions", async (
+                Guid reportTypeId,
+                Guid windowId,
+                [FromBody] GrantWindowExtensionRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new GrantWindowExtensionCommand(
+                    user.GetUserId(),
+                    reportTypeId,
+                    windowId,
+                    request.UnitIds,
+                    request.NewDueAt,
+                    request.NewClosesAt,
+                    request.Reason);
+
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GrantWindowExtension")
+            .Produces<SubmissionWindowSummary>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        windows.MapPost("/{windowId:guid}/reopen", async (
+                Guid reportTypeId,
+                Guid windowId,
+                [FromBody] ReopenWindowRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new ReopenWindowCommand(
+                    user.GetUserId(),
+                    reportTypeId,
+                    windowId,
+                    request.UnitIds,
+                    request.ReopenedUntil,
+                    request.Reason);
+
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("ReopenWindow")
+            .Produces<SubmissionWindowSummary>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 }
 
@@ -116,3 +170,14 @@ public sealed record UpdateSubmissionWindowRequest(
     DateTimeOffset ClosesAt,
     IReadOnlyList<WindowDueDate> DueDates,
     IReadOnlyList<Guid>? TargetUnitIds = null);
+
+public sealed record GrantWindowExtensionRequest(
+    IReadOnlyList<Guid> UnitIds,
+    DateTimeOffset NewDueAt,
+    DateTimeOffset NewClosesAt,
+    string Reason);
+
+public sealed record ReopenWindowRequest(
+    IReadOnlyList<Guid> UnitIds,
+    DateTimeOffset ReopenedUntil,
+    string Reason);

@@ -66,6 +66,15 @@ public class WindowsEndpointsTests(ApiFactory factory)
         Now.AddDays(30),
         dueDates);
 
+    // Opens/closes relative to the real current time (not the test-wide `Now` offset, which is
+    // always a day ahead), so the window has genuinely already hit its hard close.
+    private static CreateSubmissionWindowRequest AlreadyClosedWindow(params WindowDueDate[] dueDates) => new(
+        "A Closed Period",
+        DateTimeOffset.UtcNow.AddDays(-30),
+        3,
+        DateTimeOffset.UtcNow.AddDays(-1),
+        dueDates);
+
     // "W"-prefixed codes (WZ/WD/WM), not the plain Z/D/M codes other integration test files use —
     // every test in HRS.Api.IntegrationTests shares one Testcontainers Postgres, so unit codes
     // must be namespaced per file to avoid (ParentId, Code) collisions across files.
@@ -310,6 +319,167 @@ public class WindowsEndpointsTests(ApiFactory factory)
         var request = new CreateSubmissionWindowRequest(
             "Flood Survey", Now, 3, Now.AddDays(30), [new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10))], [muqamId]);
         var response = await client.PostAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GrantingAnExtensionRequiresSecretariat()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Extension Gate Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "04");
+        var created = await (await secretariat.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                ValidWindow(new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        using var client = await CreatePlainUserClientAsync();
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/extensions",
+            new GrantWindowExtensionRequest([muqamId], Now.AddDays(20), Now.AddDays(25), "Reason"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SecretariatCanGrantAnExtensionToAUnit()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Extendable Window Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "05");
+        var created = await (await client.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                ValidWindow(new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var newDueAt = Now.AddDays(20);
+        var newClosesAt = Now.AddDays(25);
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/extensions",
+            new GrantWindowExtensionRequest([muqamId], newDueAt, newClosesAt, "Flooding delayed the count."));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<SubmissionWindowSummary>();
+        var extension = Assert.Single(result!.Extensions);
+        Assert.Equal(muqamId, extension.UnitId);
+        Assert.Equal(newDueAt, extension.NewDueAt);
+        Assert.Equal(newClosesAt, extension.NewClosesAt);
+    }
+
+    [Fact]
+    public async Task ExtensionNewClosesAtBeforeNewDueAtFails()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Invalid Extension Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "06");
+        var created = await (await client.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                ValidWindow(new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/extensions",
+            new GrantWindowExtensionRequest([muqamId], Now.AddDays(25), Now.AddDays(20), "Reason"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ExtensionForAUnitNotTargetedByTheWindowFails()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Scoped Extension Report", UnitLevelCode.Muqam);
+        var targetedMuqamId = await CreateMuqamUnitAsync(client, "07a");
+        var otherMuqamId = await CreateMuqamUnitAsync(client, "07b");
+        var created = await (await client.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                new CreateSubmissionWindowRequest(
+                    "Flood Survey", Now, 3, Now.AddDays(30), [new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10))], [targetedMuqamId])))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/extensions",
+            new GrantWindowExtensionRequest([otherMuqamId], Now.AddDays(20), Now.AddDays(25), "Reason"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReopeningRequiresSecretariat()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Reopen Gate Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "08");
+        var created = await (await secretariat.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                AlreadyClosedWindow(new WindowDueDate(UnitLevelCode.Muqam, DateTimeOffset.UtcNow.AddDays(-20)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        using var client = await CreatePlainUserClientAsync();
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/reopen",
+            new ReopenWindowRequest([muqamId], DateTimeOffset.UtcNow.AddDays(5), "Reason"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SecretariatCanReopenAClosedWindowForAUnit()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Reopenable Window Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "09");
+        var created = await (await client.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                AlreadyClosedWindow(new WindowDueDate(UnitLevelCode.Muqam, DateTimeOffset.UtcNow.AddDays(-20)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var reopenedUntil = DateTimeOffset.UtcNow.AddDays(5);
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/reopen",
+            new ReopenWindowRequest([muqamId], reopenedUntil, "Late due to a connectivity outage."));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<SubmissionWindowSummary>();
+        var reopen = Assert.Single(result!.Reopens);
+        Assert.Equal(muqamId, reopen.UnitId);
+        Assert.Equal(reopenedUntil, reopen.ReopenedUntil);
+    }
+
+    [Fact]
+    public async Task ReopeningAWindowThatHasNotClosedYetFails()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Not Yet Closed Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "10");
+        var created = await (await client.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                ValidWindow(new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/reopen",
+            new ReopenWindowRequest([muqamId], Now.AddDays(40), "Reason"));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReopenedUntilBeforeTheCurrentCloseFails()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Insufficient Reopen Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "11");
+        var closesAt = DateTimeOffset.UtcNow.AddDays(-1);
+        var created = await (await client.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                AlreadyClosedWindow(new WindowDueDate(UnitLevelCode.Muqam, DateTimeOffset.UtcNow.AddDays(-20)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/reopen",
+            new ReopenWindowRequest([muqamId], closesAt.AddDays(-1), "Reason"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
