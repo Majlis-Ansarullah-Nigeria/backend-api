@@ -2,6 +2,7 @@ using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Invitations;
 using HRS.Domain.Organization;
+using HRS.Domain.Templates;
 using HRS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -15,6 +16,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UserSession> UserSessions => Set<UserSession>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    public DbSet<ReportType> ReportTypes => Set<ReportType>();
 
     public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();
 
@@ -142,6 +145,18 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 CreatedAt = OrganizationSeedIds.SeedTimestamp,
                 ArchivedAt = (DateTimeOffset?)null,
             });
+        });
+
+        builder.Entity<ReportType>(reportType =>
+        {
+            reportType.ToTable("report_types");
+            reportType.HasKey(r => r.Id);
+            reportType.Property(r => r.Name).IsRequired();
+            // A plain list of enum values, not a relationship to another entity — mapped straight
+            // to a Postgres integer[] column rather than a join table (EF Core primitive collections).
+            reportType.PrimitiveCollection(r => r.ApplicableLevels)
+                .HasField("_applicableLevels")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
     }
 }

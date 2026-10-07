@@ -155,7 +155,9 @@
       "organization": "Organization",
       "organizationShort": "Org",
       "users": "Users",
-      "usersShort": "Users"
+      "usersShort": "Users",
+      "reportTypes": "Report types",
+      "reportTypesShort": "Reports"
     }
   },
   "HomePlaceholder": {
@@ -300,6 +302,46 @@
       "importAnother": "Import another file",
       "viewOrganization": "View organization"
     }
+  },
+  "ReportTypes": {
+    "title": "Report types",
+    "subtitle": "What units are asked to submit, who submits it, and where it routes.",
+    "loading": "Loading report types…",
+    "listErrorTitle": "We couldn't load report types",
+    "listErrorDescription": "Check your connection and try again.",
+    "emptyTitle": "No report types yet",
+    "emptyDescription": "Add the first report type to start building templates against it.",
+    "filterLabel": "Filter report types",
+    "tabActive": "Active",
+    "tabArchived": "Archived",
+    "newReportType": "New report type",
+    "selectPrompt": "Select a report type to view and edit its details.",
+    "detailLoading": "Loading report type…",
+    "detailErrorTitle": "We couldn't load this report type",
+    "archived": "Archived",
+    "columnName": "Report type",
+    "columnWhoSubmits": "Who submits",
+    "columnAttachments": "Attachments",
+    "yes": "Yes",
+    "no": "No",
+    "nameLabel": "Name",
+    "descriptionLabel": "Description",
+    "categoryLabel": "Category",
+    "frequencyLabel": "Frequency",
+    "whoSubmitsLabel": "Who submits",
+    "recipientLevelLabel": "Recipient level",
+    "observerDepthLabel": "Observer depth",
+    "allowAttachmentsLabel": "Allow attachments",
+    "selectPlaceholder": "Select…",
+    "create": "Create report type",
+    "creating": "Creating…",
+    "save": "Save",
+    "saving": "Saving…",
+    "archive": "Archive",
+    "archiving": "Archiving…",
+    "restore": "Restore",
+    "restoring": "Restoring…",
+    "cancel": "Cancel"
   },
   "Profile": {
     "title": "Profile and settings",

@@ -31,4 +31,7 @@ public sealed class AccessPolicy(IAppDbContext db, IClock clock) : IAccessPolicy
     public async Task<bool> IsOrganizationAdminAsync(Guid userId, CancellationToken cancellationToken) =>
         await HasRoleAsync(userId, RoleName.Secretariat, cancellationToken)
             || await HasRoleAsync(userId, RoleName.SysAdmin, cancellationToken);
+
+    public Task<bool> IsTemplateAdminAsync(Guid userId, CancellationToken cancellationToken) =>
+        HasRoleAsync(userId, RoleName.Secretariat, cancellationToken);
 }

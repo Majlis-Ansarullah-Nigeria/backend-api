@@ -26,7 +26,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M2.5 Move unit to a new parent keeping history (FR-ORG-005).
 
 ## M3 — Report types and templates (FR-TPL)
-- [ ] M3.1 Report types with routing rule data (FR-TPL-001).
+- [x] M3.1 Report types with routing rule data (FR-TPL-001).
 - [ ] M3.2 Template schema model + JSON validation + versioning draft/publish/immutable (FR-TPL-007, FR-TPL-008).
 - [ ] M3.3 Shared expression language: C# + TS evaluators + `shared/expression-fixtures.json` parity tests (FR-TPL-005).
 - [ ] M3.4 Frontend form engine: all field types, conditional logic, computed fields, per-level visibility (FR-TPL-002..004).

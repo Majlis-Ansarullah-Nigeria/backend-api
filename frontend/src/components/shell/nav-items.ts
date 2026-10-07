@@ -1,6 +1,6 @@
-import { Bell, FileText, History, Home, Network, User, Users, type LucideIcon } from "lucide-react";
+import { Bell, FileText, History, Home, LayoutTemplate, Network, User, Users, type LucideIcon } from "lucide-react";
 
-export type NavItemKey = "home" | "reports" | "history" | "notifications" | "profile" | "organization" | "users";
+export type NavItemKey = "home" | "reports" | "history" | "notifications" | "profile" | "organization" | "users" | "reportTypes";
 
 export interface NavItem {
   href: string;
@@ -23,11 +23,12 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
 /**
  * Secretariat navigation. The full tree from the mockup (Overview, Inbox, Report types,
  * Windows, Organization, Users, Dashboards, Exports, Announcements, Audit log, Settings)
- * lands incrementally as each of those routes is built — Organization (M2.2) and Users
- * (M2.4) exist so far. No mobile board exists for these screens, so AppShell hides the
- * bottom tabs here.
+ * lands incrementally as each of those routes is built — Report types (M3.1), Organization
+ * (M2.2) and Users (M2.4) exist so far. No mobile board exists for these screens, so AppShell
+ * hides the bottom tabs here.
  */
 export const SECRETARIAT_NAV_ITEMS: NavItem[] = [
+  { href: "/secretariat/report-types", key: "reportTypes", icon: LayoutTemplate },
   { href: "/secretariat/organization", key: "organization", icon: Network },
   { href: "/secretariat/users", key: "users", icon: Users },
 ];

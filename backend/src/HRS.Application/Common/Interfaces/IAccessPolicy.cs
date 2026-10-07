@@ -21,4 +21,10 @@ public interface IAccessPolicy
     /// centralized here so every org-mutation handler doesn't duplicate the role combination.
     /// </summary>
     Task<bool> IsOrganizationAdminAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Secretariat only — "build and publish templates" (SRS 3.2 role table). Unlike organization
+    /// management, SysAdmin does NOT get this; kept separate from <see cref="IsOrganizationAdminAsync"/>.
+    /// </summary>
+    Task<bool> IsTemplateAdminAsync(Guid userId, CancellationToken cancellationToken);
 }

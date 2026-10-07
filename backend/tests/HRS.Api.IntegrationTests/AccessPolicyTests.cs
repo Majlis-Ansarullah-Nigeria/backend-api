@@ -44,6 +44,22 @@ public class AccessPolicyTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task IsTemplateAdminAsyncIsTrueOnlyForSecretariatNotSysAdmin()
+    {
+        var secretariatUserId = await factory.CreateUserAsync($"{Guid.NewGuid():N}@example.org", "Correct-Horse-Ap4");
+        await factory.CreateRoleAssignmentAsync(secretariatUserId, OrganizationSeedIds.NationalUnitId, RoleName.Secretariat);
+        var sysAdminUserId = await factory.CreateUserAsync($"{Guid.NewGuid():N}@example.org", "Correct-Horse-Ap5");
+        await factory.CreateRoleAssignmentAsync(sysAdminUserId, OrganizationSeedIds.NationalUnitId, RoleName.SysAdmin);
+
+        var policy = CreatePolicy(out var scope);
+        using (scope)
+        {
+            Assert.True(await policy.IsTemplateAdminAsync(secretariatUserId, CancellationToken.None));
+            Assert.False(await policy.IsTemplateAdminAsync(sysAdminUserId, CancellationToken.None));
+        }
+    }
+
+    [Fact]
     public async Task HasRoleForUnitAsyncOnlyMatchesTheSpecificUnit()
     {
         var userId = await factory.CreateUserAsync($"{Guid.NewGuid():N}@example.org", "Correct-Horse-Ap3");

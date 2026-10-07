@@ -309,6 +309,61 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HRS.Domain.Templates.ReportType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllowAttachments")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_attachments");
+
+                    b.PrimitiveCollection<int[]>("ApplicableLevels")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("applicable_levels");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("integer")
+                        .HasColumnName("frequency");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<int>("ObserverDepth")
+                        .HasColumnType("integer")
+                        .HasColumnName("observer_depth");
+
+                    b.Property<int>("RecipientLevel")
+                        .HasColumnType("integer")
+                        .HasColumnName("recipient_level");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_types");
+
+                    b.ToTable("report_types", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")

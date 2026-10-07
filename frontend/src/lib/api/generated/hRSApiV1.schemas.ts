@@ -71,6 +71,25 @@ export interface CreateInvitationResult {
   expiresAt: string;
 }
 
+export type ReportTypeCategory = number;
+
+export type ReportTypeFrequency = number;
+
+export type UnitLevelCode = number;
+
+export interface CreateReportTypeRequest {
+  name: string;
+  /** @nullable */
+  description: string | null;
+  category: ReportTypeCategory;
+  frequency: ReportTypeFrequency;
+  applicableLevels: UnitLevelCode[];
+  recipientLevel: UnitLevelCode;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  observerDepth: number | string;
+  allowAttachments: boolean;
+}
+
 export type RoleName = number;
 
 export type DelegateScope = number;
@@ -196,6 +215,23 @@ export interface ProblemDetails {
   instance?: string | null;
 }
 
+export interface ReportTypeSummary {
+  id: string;
+  name: string;
+  /** @nullable */
+  description: string | null;
+  category: ReportTypeCategory;
+  frequency: ReportTypeFrequency;
+  applicableLevels: UnitLevelCode[];
+  recipientLevel: UnitLevelCode;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  observerDepth: number | string;
+  allowAttachments: boolean;
+  createdAt: string;
+  /** @nullable */
+  archivedAt: string | null;
+}
+
 export interface ResetPasswordRequest {
   email: string;
   token: string;
@@ -221,8 +257,6 @@ export interface TotpEnrollment {
   sharedKey: string;
   authenticatorUri: string;
 }
-
-export type UnitLevelCode = number;
 
 export interface UnitLevelSummary {
   id: string;
@@ -279,6 +313,19 @@ export interface UnitTreeNode {
   /** @nullable */
   headName: string | null;
   hasVacantHead: boolean;
+}
+
+export interface UpdateReportTypeRequest {
+  name: string;
+  /** @nullable */
+  description: string | null;
+  category: ReportTypeCategory;
+  frequency: ReportTypeFrequency;
+  applicableLevels: UnitLevelCode[];
+  recipientLevel: UnitLevelCode;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  observerDepth: number | string;
+  allowAttachments: boolean;
 }
 
 export interface UpdateUnitRequest {
@@ -346,6 +393,10 @@ export type GetUnitsParams = {
 parentId?: string;
 levelId?: string;
 q?: string;
+includeArchived?: boolean;
+};
+
+export type GetReportTypesParams = {
 includeArchived?: boolean;
 };
 
