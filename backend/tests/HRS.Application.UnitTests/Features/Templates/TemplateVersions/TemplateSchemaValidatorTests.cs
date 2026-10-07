@@ -219,6 +219,19 @@ public class TemplateSchemaValidatorTests
     }
 
     [Fact]
+    public void AComputedFieldWithAMalformedExpressionFailsValidation()
+    {
+        var field = new TemplateField(
+            "attendance_rate", TemplateFieldType.Computed, "Attendance rate", null, false, null, null, null, null, null,
+            false, null, null, null, AggregationRule.None, "attendance / (total_members", null, null);
+
+        var result = _validator.Validate(new TemplateSchema([Section(field)]));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains("not valid"));
+    }
+
+    [Fact]
     public void AComputedFieldWithAnExpressionIsValid()
     {
         var field = new TemplateField(

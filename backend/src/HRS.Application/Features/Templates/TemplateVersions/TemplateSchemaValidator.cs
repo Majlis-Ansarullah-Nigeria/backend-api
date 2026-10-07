@@ -1,12 +1,15 @@
 using System.Text.RegularExpressions;
 using FluentValidation;
 using HRS.Domain.Templates;
+using HRS.Domain.Templates.Expressions;
 
 namespace HRS.Application.Features.Templates.TemplateVersions;
 
 /// <summary>Structural validation only — does the schema have a well-formed shape (unique
-/// keys, the right companion fields for each type). It never evaluates showIf, aggregation
-/// roll-ups or computed expressions; those are M3.3/M3.4's job against this same shape.</summary>
+/// keys, the right companion fields for each type). A computed field's expression is parsed
+/// (via ExpressionEvaluator, M3.3) to catch syntax errors at save time, but never evaluated
+/// against real answers here. showIf's trigger and aggregation roll-ups are never evaluated
+/// either; that's M3.4's job against this same shape.</summary>
 public sealed class TemplateSchemaValidator : AbstractValidator<TemplateSchema>
 {
     private static readonly Regex StableKeyPattern = new("^[a-z][a-z0-9_]*$", RegexOptions.Compiled);
@@ -76,6 +79,11 @@ public sealed class TemplateFieldValidator : AbstractValidator<TemplateField>
     private static readonly TemplateFieldType[] ChoiceTypes =
         [TemplateFieldType.SingleChoice, TemplateFieldType.MultipleChoice, TemplateFieldType.Dropdown];
 
+    // A parse-only check: field values don't matter here, only whether the expression is
+    // syntactically well-formed (ExpressionEvaluator never fails on missing/empty field data).
+    private static readonly IReadOnlyDictionary<string, object?> EmptyFieldValues =
+        new Dictionary<string, object?>();
+
     public TemplateFieldValidator()
     {
         RuleFor(x => x.Key).NotEmpty().Must(TemplateSchemaValidator.IsStableKey)
@@ -138,6 +146,10 @@ public sealed class TemplateFieldValidator : AbstractValidator<TemplateField>
             .NotEmpty()
             .WithMessage("A computed field needs an expression.")
             .When(x => x.Type == TemplateFieldType.Computed);
+        RuleFor(x => x.ComputedExpression)
+            .Must(expression => ExpressionEvaluator.Evaluate(expression!, EmptyFieldValues).IsSuccess)
+            .WithMessage("Expression is not valid.")
+            .When(x => x.Type == TemplateFieldType.Computed && !string.IsNullOrEmpty(x.ComputedExpression));
         RuleFor(x => x.ComputedExpression)
             .Empty()
             .WithMessage("Only computed fields may have an expression.")

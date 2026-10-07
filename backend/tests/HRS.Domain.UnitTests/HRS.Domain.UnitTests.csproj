@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\src\HRS.Domain\HRS.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Cross-language parity fixtures (M3.3): the frontend's Vitest suite reads the same file. -->
+    <None Include="..\..\..\shared\expression-fixtures.json" Link="expression-fixtures.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
