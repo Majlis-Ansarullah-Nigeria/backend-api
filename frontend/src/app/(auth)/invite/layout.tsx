@@ -2,7 +2,7 @@ import { BarChart3 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
-export default async function AuthLayout({ children }: { children: ReactNode }) {
+export default async function InviteLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations("AcceptInvitation");
 
   return (
