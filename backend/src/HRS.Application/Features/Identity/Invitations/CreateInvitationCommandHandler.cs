@@ -42,7 +42,9 @@ public sealed class CreateInvitationCommandHandler(
 
         var token = SecureToken.Generate();
         var invitation = Invitation.Create(
-            Guid.CreateVersion7(), request.Email, request.Name, SecureToken.Hash(token), now, request.PendingHeadOfUnitId);
+            Guid.CreateVersion7(), request.Email, request.Name, SecureToken.Hash(token), now,
+            request.PendingHeadOfUnitId, request.PendingRole, request.PendingDelegateScope, request.AppointedBy,
+            request.PendingStartsAt, request.PendingEndsAt);
 
         db.Invitations.Add(invitation);
         await db.SaveChangesAsync(cancellationToken);

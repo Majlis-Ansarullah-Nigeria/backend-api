@@ -184,7 +184,12 @@ export function OrganizationScreen() {
               }}
             />
           ) : selectedNode ? (
-            <UnitDetailPanel unitId={selectedNode.id} breadcrumb={breadcrumb} levelName={levelNameByCode[selectedNode.levelCode]} />
+            <UnitDetailPanel
+              unitId={selectedNode.id}
+              breadcrumb={breadcrumb}
+              levelName={levelNameByCode[selectedNode.levelCode]}
+              node={selectedNode}
+            />
           ) : (
             <div className="rounded-lg border border-line bg-surface p-6 text-sm text-ink-muted">{t("selectPrompt")}</div>
           )}

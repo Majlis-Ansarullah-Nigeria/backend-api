@@ -80,6 +80,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("accepted_at");
 
+                    b.Property<Guid?>("AppointedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointed_by");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -98,9 +102,25 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<int?>("PendingDelegateScope")
+                        .HasColumnType("integer")
+                        .HasColumnName("pending_delegate_scope");
+
+                    b.Property<DateTimeOffset?>("PendingEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pending_ends_at");
+
                     b.Property<Guid?>("PendingHeadOfUnitId")
                         .HasColumnType("uuid")
                         .HasColumnName("pending_head_of_unit_id");
+
+                    b.Property<int?>("PendingRole")
+                        .HasColumnType("integer")
+                        .HasColumnName("pending_role");
+
+                    b.Property<DateTimeOffset?>("PendingStartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pending_starts_at");
 
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("timestamp with time zone")
@@ -308,6 +328,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text")
                         .HasColumnName("concurrency_stamp");
+
+                    b.Property<DateTimeOffset?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deactivated_at");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)

@@ -1,5 +1,7 @@
 using HRS.Api.Common;
+using HRS.Application.Common.Interfaces;
 using HRS.Application.Features.Identity.Invitations;
+using HRS.Domain.Common;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,9 +15,20 @@ public static class InvitationsEndpoints
 
         invitations.MapPost("/", async (
                 [FromBody] CreateInvitationRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                IAccessPolicy accessPolicy,
                 ISender sender,
                 CancellationToken cancellationToken) =>
             {
+                // Re-gated per FR-AC-004/FR-ORG-004 (M2.4) — every invite is role-driven in
+                // practice (assigning a head/delegate sends one via CreateRoleAssignmentCommand),
+                // so a bare invite with no role attached is still an org-admin-only action.
+                if (!await accessPolicy.IsOrganizationAdminAsync(user.GetUserId(), cancellationToken))
+                {
+                    return Result.Failure<CreateInvitationResult>(
+                        Error.Forbidden("FORBIDDEN", "Only the Secretariat or an Admin can manage the organization.")).ToProblemDetails();
+                }
+
                 var result = await sender.Send(new CreateInvitationCommand(request.Email, request.Name), cancellationToken);
 
                 return result.IsFailure
@@ -23,11 +36,9 @@ public static class InvitationsEndpoints
                     : Results.Created($"/api/v1/invitations/{result.Value.Id}", result.Value);
             })
             .WithName("CreateInvitation")
-            // TEMP (FR-IAM-002): any authenticated user can invite for now — Units (M2.1) and
-            // RoleAssignment (M1.4) don't exist yet to gate this on "can assign a head" (FR-AC-004).
-            // M2.4 re-gates this to the real assign-head permission.
             .RequireAuthorization()
             .Produces<CreateInvitationResult>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
         invitations.MapGet("/{token}", async (

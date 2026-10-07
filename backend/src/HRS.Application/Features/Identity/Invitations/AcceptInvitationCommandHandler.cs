@@ -39,8 +39,9 @@ public sealed class AcceptInvitationCommandHandler(
         if (invitation.PendingHeadOfUnitId is { } unitId)
         {
             db.RoleAssignments.Add(new RoleAssignment(
-                Guid.CreateVersion7(), created.Value.Id, unitId, RoleName.UnitHead,
-                delegateScope: null, startsAt: now, endsAt: null, appointedBy: null));
+                Guid.CreateVersion7(), created.Value.Id, unitId, invitation.PendingRole ?? RoleName.UnitHead,
+                invitation.PendingDelegateScope, invitation.PendingStartsAt ?? now, invitation.PendingEndsAt,
+                appointedBy: invitation.AppointedBy));
         }
 
         await db.SaveChangesAsync(cancellationToken);

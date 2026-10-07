@@ -71,6 +71,26 @@ export interface CreateInvitationResult {
   expiresAt: string;
 }
 
+export type RoleName = number;
+
+export type DelegateScope = number;
+
+export interface CreateRoleAssignmentRequest {
+  email: string;
+  name: string;
+  role: RoleName;
+  delegateScope: null | DelegateScope;
+  startsAt: string;
+  /** @nullable */
+  endsAt: string | null;
+}
+
+export interface CreateRoleAssignmentResult {
+  /** @nullable */
+  roleAssignmentId: string | null;
+  invited: boolean;
+}
+
 export interface CreateUnitRequest {
   code: string;
   name: string;
@@ -94,8 +114,6 @@ export interface CreateUnitRequest {
   longitude: number | string | null;
 }
 
-export type DelegateScope = number;
-
 export interface ForgotPasswordRequest {
   identifier: string;
 }
@@ -112,8 +130,6 @@ export interface LoginRequest {
   identifier: string;
   password: string;
 }
-
-export type RoleName = number;
 
 export interface RoleAssignmentSummary {
   id: string;
@@ -279,6 +295,35 @@ export interface UpdateUnitRequest {
      * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
      */
   longitude: number | string | null;
+}
+
+export type UserAccountStatus = number;
+
+export interface UserRoleAssignmentItem {
+  id: string;
+  role: RoleName;
+  delegateScope: null | DelegateScope;
+  unitId: string;
+  unitName: string;
+  unitDisplayCode: string;
+  startsAt: string;
+  /** @nullable */
+  endsAt: string | null;
+  isActive: boolean;
+}
+
+export interface UserListItem {
+  /** @nullable */
+  userId: string | null;
+  /** @nullable */
+  invitationId: string | null;
+  name: string;
+  email: string;
+  /** @nullable */
+  lastLoginAt: string | null;
+  twoFactorEnabled: boolean;
+  status: UserAccountStatus;
+  roleAssignments: UserRoleAssignmentItem[];
 }
 
 export type GetOrganizationTreeParams = {

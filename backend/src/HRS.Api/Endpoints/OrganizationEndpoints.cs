@@ -1,7 +1,9 @@
 using HRS.Api.Common;
 using HRS.Application.Features.Organization.BulkImport;
 using HRS.Application.Features.Organization.Levels;
+using HRS.Application.Features.Organization.RoleAssignments;
 using HRS.Application.Features.Organization.Units;
+using HRS.Domain.Access;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
@@ -205,6 +207,33 @@ public static class OrganizationEndpoints
             .WithName("RestoreUnit")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        units.MapPost("/{id:guid}/assignments", async (
+                Guid id,
+                [FromBody] CreateRoleAssignmentRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new CreateRoleAssignmentCommand(
+                    user.GetUserId(),
+                    id,
+                    request.Email,
+                    request.Name,
+                    request.Role,
+                    request.DelegateScope,
+                    request.StartsAt,
+                    request.EndsAt);
+
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("CreateRoleAssignment")
+            .Produces<CreateRoleAssignmentResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 
     private static async Task<byte[]> ReadAllBytesAsync(IFormFile file, CancellationToken cancellationToken)
@@ -233,3 +262,11 @@ public sealed record UpdateUnitRequest(
     string? ContactEmail,
     double? Latitude,
     double? Longitude);
+
+public sealed record CreateRoleAssignmentRequest(
+    string Email,
+    string Name,
+    RoleName Role,
+    DelegateScope? DelegateScope,
+    DateTimeOffset StartsAt,
+    DateTimeOffset? EndsAt);

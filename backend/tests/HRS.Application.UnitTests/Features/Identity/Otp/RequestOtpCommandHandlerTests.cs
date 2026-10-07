@@ -109,5 +109,20 @@ public class RequestOtpCommandHandlerTests
 
         public Task<Result> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<IReadOnlyList<UserAccountSummary>> GetAllUsersAsync(CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result> DeactivateUserAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result> ReactivateUserAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task AdminResetMfaAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task RevokeAllSessionsAsync(Guid userId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

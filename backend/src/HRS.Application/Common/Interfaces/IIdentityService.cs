@@ -140,7 +140,41 @@ public interface IIdentityService
     /// </summary>
     Task<IReadOnlyDictionary<Guid, string>> GetUserNamesAsync(
         IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every user account. The users screen (FR-ADM-002) combines this with RoleAssignments and
+    /// pending Invitations — Application can't see ApplicationUser directly, same reason as
+    /// GetUserNamesAsync. Search/filter (including by unit name, which spans both this and
+    /// RoleAssignments) happens client-side over the full list, same shape as the org tree (M2.2) —
+    /// reasonable at this org's scale and avoids a cross-store server-side search.
+    /// </summary>
+    Task<IReadOnlyList<UserAccountSummary>> GetAllUsersAsync(CancellationToken cancellationToken);
+
+    /// <summary>Admin action (FR-ADM-002): blocks sign-in immediately — checked on every login/OTP/MFA/refresh path.</summary>
+    Task<Result> DeactivateUserAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>Reverses <see cref="DeactivateUserAsync"/>.</summary>
+    Task<Result> ReactivateUserAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Admin action (FR-ADM-002): turns a user's TOTP off, for a lost-device recovery. Unlike
+    /// <see cref="DisableTotpAsync"/> this is never blocked by FR-IAM-003's mandatory-role rule —
+    /// an admin resetting someone else's lost device is a different case than a user dodging a
+    /// requirement, and the user must re-enroll before next sign-in if their role still mandates it.
+    /// </summary>
+    Task AdminResetMfaAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>Admin action (FR-ADM-002): revokes every active session for a user, not just "others" (there's no "current" from the admin's seat).</summary>
+    Task RevokeAllSessionsAsync(Guid userId, CancellationToken cancellationToken);
 }
+
+public sealed record UserAccountSummary(
+    Guid Id,
+    string Name,
+    string Email,
+    DateTimeOffset? LastLoginAt,
+    DateTimeOffset? DeactivatedAt,
+    bool TwoFactorEnabled);
 
 public sealed record AuthenticatedUser(
     Guid Id,

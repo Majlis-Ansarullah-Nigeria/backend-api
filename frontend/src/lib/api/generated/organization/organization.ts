@@ -27,6 +27,8 @@ import type {
   BulkImportCommitResult,
   BulkImportSummary,
   CommitBulkImportBody,
+  CreateRoleAssignmentRequest,
+  CreateRoleAssignmentResult,
   CreateUnitRequest,
   GetOrganizationTreeParams,
   GetUnitsParams,
@@ -978,4 +980,86 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRestoreUnitMutationOptions(options), queryClient);
+    }
+    export const getCreateRoleAssignmentUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/units/${id}/assignments`
+}
+
+export const createRoleAssignment = async (id: string,
+    createRoleAssignmentRequest: CreateRoleAssignmentRequest, options?: Parameters<typeof customFetch>[1]): Promise<CreateRoleAssignmentResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CreateRoleAssignmentResult>(getCreateRoleAssignmentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createRoleAssignmentRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateRoleAssignmentMutationKey = () => ['createRoleAssignment'] as const;
+
+export const getCreateRoleAssignmentMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRoleAssignment>>, TError,CreateRoleAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRoleAssignment>>, TError,CreateRoleAssignmentMutationVariables, TContext> => {
+
+const mutationKey = getCreateRoleAssignmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRoleAssignment>>, CreateRoleAssignmentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createRoleAssignment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRoleAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof createRoleAssignment>>>
+    export type CreateRoleAssignmentMutationBody = CreateRoleAssignmentRequest
+    export type CreateRoleAssignmentMutationError = ProblemDetails
+    export type CreateRoleAssignmentMutationVariables = {id: string;data: CreateRoleAssignmentRequest}
+
+    export const useCreateRoleAssignment = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRoleAssignment>>, TError,CreateRoleAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createRoleAssignment>>,
+        TError,
+        CreateRoleAssignmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRoleAssignmentMutationOptions(options), queryClient);
     }

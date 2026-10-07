@@ -116,6 +116,7 @@ try
     app.MapIdentityEndpoints();
     app.MapInvitationsEndpoints();
     app.MapOrganizationEndpoints();
+    app.MapAdminEndpoints();
 
     app.MapGet("/", () => "HRS API");
 

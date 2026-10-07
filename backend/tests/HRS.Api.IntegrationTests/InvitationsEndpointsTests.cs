@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using HRS.Api.Endpoints;
 using HRS.Application.Features.Identity.Invitations;
+using HRS.Domain.Access;
+using HRS.Domain.Organization;
 
 namespace HRS.Api.IntegrationTests;
 
@@ -11,10 +13,14 @@ public partial class InvitationsEndpointsTests(ApiFactory factory)
 {
     private static string UniqueEmail() => $"{Guid.NewGuid():N}@example.org";
 
+    // Creating a bare invitation is now org-admin gated (FR-AC-004/FR-ORG-004, M2.4) — every
+    // invite is role-driven in practice. This helper is named for what these tests exercise
+    // (the invite/accept flow), not for the caller's own role.
     private async Task<HttpClient> CreateLoggedInClientAsync()
     {
         var email = UniqueEmail();
-        await factory.CreateUserAsync(email, "Correct-Horse-Inviter1");
+        var userId = await factory.CreateUserAsync(email, "Correct-Horse-Inviter1");
+        await factory.CreateRoleAssignmentAsync(userId, OrganizationSeedIds.NationalUnitId, RoleName.Secretariat);
 
         var client = factory.CreateAuthenticatedClient();
         await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(email, "Correct-Horse-Inviter1"));
@@ -41,6 +47,19 @@ public partial class InvitationsEndpointsTests(ApiFactory factory)
         var response = await client.PostAsJsonAsync("/api/v1/invitations", new CreateInvitationRequest(UniqueEmail(), "Someone"));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateInvitationRequiresOrgAdmin()
+    {
+        var email = UniqueEmail();
+        await factory.CreateUserAsync(email, "Correct-Horse-Plain1");
+        using var client = factory.CreateAuthenticatedClient();
+        await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(email, "Correct-Horse-Plain1"));
+
+        var response = await client.PostAsJsonAsync("/api/v1/invitations", new CreateInvitationRequest(UniqueEmail(), "Someone"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

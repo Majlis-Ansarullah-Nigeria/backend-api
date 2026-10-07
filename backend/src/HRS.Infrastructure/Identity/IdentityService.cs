@@ -50,6 +50,11 @@ public sealed class IdentityService(
             return Result.Failure<AuthenticatedUser>(InvalidCredentials);
         }
 
+        if (user.DeactivatedAt is not null)
+        {
+            return Result.Failure<AuthenticatedUser>(AccountDeactivated);
+        }
+
         var signInResult = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
 
         if (signInResult.IsLockedOut)
@@ -121,7 +126,7 @@ public sealed class IdentityService(
 
         var user = await userManager.FindByIdAsync(session.UserId.ToString());
 
-        if (user is null)
+        if (user is null || user.DeactivatedAt is not null)
         {
             return Result.Failure<AuthTokens>(InvalidRefreshToken);
         }
@@ -273,6 +278,11 @@ public sealed class IdentityService(
             return Result.Failure<AuthenticatedUser>(InvalidOtp);
         }
 
+        if (user.DeactivatedAt is not null)
+        {
+            return Result.Failure<AuthenticatedUser>(AccountDeactivated);
+        }
+
         if (await userManager.IsLockedOutAsync(user))
         {
             return Result.Failure<AuthenticatedUser>(AccountLocked);
@@ -380,6 +390,11 @@ public sealed class IdentityService(
         if (user is null)
         {
             return Result.Failure<AuthenticatedUser>(InvalidMfaChallenge);
+        }
+
+        if (user.DeactivatedAt is not null)
+        {
+            return Result.Failure<AuthenticatedUser>(AccountDeactivated);
         }
 
         if (await userManager.IsLockedOutAsync(user))
@@ -527,6 +542,70 @@ public sealed class IdentityService(
             .ToDictionaryAsync(u => u.Id, u => u.Name, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<UserAccountSummary>> GetAllUsersAsync(CancellationToken cancellationToken) =>
+        await userManager.Users
+            .AsNoTracking()
+            .Select(u => new UserAccountSummary(u.Id, u.Name, u.Email!, u.LastLoginAt, u.DeactivatedAt, u.TwoFactorEnabled))
+            .ToListAsync(cancellationToken);
+
+    public async Task<Result> DeactivateUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return Result.Failure(Error.NotFound("USER_NOT_FOUND", "User not found."));
+        }
+
+        user.DeactivatedAt = clock.UtcNow;
+        await userManager.UpdateAsync(user);
+
+        var sessions = await db.UserSessions
+            .Where(s => s.UserId == userId && s.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in sessions)
+        {
+            session.Revoke(clock.UtcNow);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> ReactivateUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return Result.Failure(Error.NotFound("USER_NOT_FOUND", "User not found."));
+        }
+
+        user.DeactivatedAt = null;
+        await userManager.UpdateAsync(user);
+
+        return Result.Success();
+    }
+
+    public Task AdminResetMfaAsync(Guid userId, CancellationToken cancellationToken) =>
+        DisableTotpAsync(userId, cancellationToken);
+
+    public async Task RevokeAllSessionsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var sessions = await db.UserSessions
+            .Where(s => s.UserId == userId && s.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in sessions)
+        {
+            session.Revoke(clock.UtcNow);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     private static string BuildAuthenticatorUri(string email, string unformattedKey) =>
         string.Format(
             CultureInfo.InvariantCulture,
@@ -606,6 +685,9 @@ public sealed class IdentityService(
 
     private static Error InvalidTotpCode =>
         Error.Validation("INVALID_TOTP_CODE", "That code is incorrect. Check your authenticator app and try again.");
+
+    private static Error AccountDeactivated =>
+        Error.Forbidden("ACCOUNT_DEACTIVATED", "This account has been deactivated. Contact your National Secretariat.");
 
     private static Error AccountLocked =>
         Error.Forbidden("ACCOUNT_LOCKED", "Too many failed attempts. Try again in 15 minutes.");

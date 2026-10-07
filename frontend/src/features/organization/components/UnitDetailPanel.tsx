@@ -20,14 +20,16 @@ import {
   useUpdateUnit,
 } from "@/lib/api/generated/organization/organization";
 import { updateUnitSchema, type UpdateUnitFormValues } from "@/features/organization/schemas/unit-form";
+import { AssignHeadPanel } from "./AssignHeadPanel";
 
 export interface UnitDetailPanelProps {
   unitId: string;
   breadcrumb: UnitTreeNode[];
   levelName?: string;
+  node: UnitTreeNode;
 }
 
-export function UnitDetailPanel({ unitId, breadcrumb, levelName }: UnitDetailPanelProps) {
+export function UnitDetailPanel({ unitId, breadcrumb, levelName, node }: UnitDetailPanelProps) {
   const t = useTranslations("Organization");
   const unit = useGetUnit<UnitSummary, ApiError>(unitId);
 
@@ -45,17 +47,19 @@ export function UnitDetailPanel({ unitId, breadcrumb, levelName }: UnitDetailPan
     );
   }
 
-  return <UnitDetailForm key={unit.data.id} unit={unit.data} breadcrumb={breadcrumb} levelName={levelName} />;
+  return <UnitDetailForm key={unit.data.id} unit={unit.data} breadcrumb={breadcrumb} levelName={levelName} node={node} />;
 }
 
 function UnitDetailForm({
   unit,
   breadcrumb,
   levelName,
+  node,
 }: {
   unit: UnitSummary;
   breadcrumb: UnitTreeNode[];
   levelName?: string;
+  node: UnitTreeNode;
 }) {
   const t = useTranslations("Organization");
   const queryClient = useQueryClient();
@@ -174,6 +178,10 @@ function UnitDetailForm({
           </Button>
         ) : null}
       </form>
+
+      {!unit.archivedAt ? (
+        <AssignHeadPanel unitId={unit.id} unitName={unit.name} headName={node.headName} hasVacantHead={node.hasVacantHead} />
+      ) : null}
 
       {archiveUnit.isError ? (
         <p role="alert" className="rounded-sm bg-status-returned-bg px-3 py-2 text-sm text-status-returned-fg">
