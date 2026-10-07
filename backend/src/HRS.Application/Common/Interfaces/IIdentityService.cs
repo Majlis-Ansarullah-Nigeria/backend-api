@@ -123,6 +123,17 @@ public interface IIdentityService
     Task RevokeOtherSessionsAsync(Guid userId, Guid currentSessionId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Queues a password-reset email if the identifier matches an account (FR-IAM-005). Always
+    /// succeeds to the caller regardless of whether a match was found, mirroring
+    /// <see cref="RequestOtpAsync"/> so the endpoint never reveals account existence.
+    /// Per-identifier throttling (NFR-SEC-04) returns a RateLimited failure instead.
+    /// </summary>
+    Task<Result> RequestPasswordResetAsync(string identifier, CancellationToken cancellationToken);
+
+    /// <summary>Consumes a password-reset token (ASP.NET Core Identity's own, not a custom one) and sets a new password.</summary>
+    Task<Result> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Display names for a set of users, keyed by Id. Missing ids (e.g. a deleted account) are
     /// simply absent from the result. Used to resolve unit heads for the organization tree
     /// (M2.2) without exposing ApplicationUser (an Infrastructure type) to Application.

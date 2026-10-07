@@ -16,7 +16,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M1.3 Invitations and set-password flow (FR-IAM-002) + Invite screen.
 - [x] M1.4 Role assignments with term dates, active assignment switching, `IAccessPolicy` skeleton (FR-AC-001..003).
 - [x] M1.5 TOTP MFA required for Secretariat/Admin (FR-IAM-003); sessions list + sign out others (FR-IAM-006).
-- [ ] M1.6 Login, code, reset, MFA screens per mockups.
+- [x] M1.6 Login, code, reset, MFA screens per mockups.
 
 ## M2 — Organization (FR-ORG)
 - [x] M2.1 Unit levels, units with materialized path, CRUD + archive (FR-ORG-001).

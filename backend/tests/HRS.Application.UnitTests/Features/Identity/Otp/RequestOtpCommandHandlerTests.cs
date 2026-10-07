@@ -103,5 +103,11 @@ public class RequestOtpCommandHandlerTests
 
         public Task<Guid?> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+
+        public Task<Result> RequestPasswordResetAsync(string identifier, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<Result> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 }

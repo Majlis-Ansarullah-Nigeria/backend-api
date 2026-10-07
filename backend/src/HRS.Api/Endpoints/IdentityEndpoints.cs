@@ -6,6 +6,7 @@ using HRS.Application.Features.Identity.Logout;
 using HRS.Application.Features.Identity.CurrentUser;
 using HRS.Application.Features.Identity.Mfa;
 using HRS.Application.Features.Identity.Otp;
+using HRS.Application.Features.Identity.PasswordReset;
 using HRS.Application.Features.Identity.Refresh;
 using HRS.Application.Features.Identity.Sessions;
 using Mediator;
@@ -108,6 +109,31 @@ public static class IdentityEndpoints
             .Produces<MfaChallengeResponse>(StatusCodes.Status202Accepted)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        auth.MapPost("/password/forgot", async (
+                [FromBody] ForgotPasswordRequest request,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new RequestPasswordResetCommand(request.Identifier), cancellationToken);
+
+                return result.IsFailure ? result.ToProblemDetails() : Results.Accepted();
+            })
+            .WithName("ForgotPassword")
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
+
+        auth.MapPost("/password/reset", async (
+                [FromBody] ResetPasswordRequest request,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsFailure ? result.ToProblemDetails() : Results.NoContent();
+            })
+            .WithName("ResetPassword")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
         auth.MapPost("/mfa/verify", async (
                 [FromBody] MfaVerifyRequest request,
@@ -292,6 +318,10 @@ public sealed record LoginRequest(string Identifier, string Password);
 public sealed record OtpRequest(string Identifier);
 
 public sealed record OtpVerifyRequest(string Identifier, string Code);
+
+public sealed record ForgotPasswordRequest(string Identifier);
+
+public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
 
 public sealed record MeResponse(Guid Id, string Name, string Email);
 

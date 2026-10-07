@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Options;
 using HRS.Domain.Common;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Persistence;
@@ -20,17 +21,22 @@ public sealed class IdentityService(
     IEmailSender emailSender,
     IAccessTokenGenerator tokenGenerator,
     IClock clock,
-    IOptions<AuthOptions> authOptions) : IIdentityService
+    IOptions<AuthOptions> authOptions,
+    IOptions<AppOptions> appOptions) : IIdentityService
 {
     private static readonly TimeSpan OtpCodeLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromMinutes(15);
     private const int OtpMaxRequestsPerWindow = 3;
+
+    private static readonly TimeSpan PasswordResetRequestWindow = TimeSpan.FromMinutes(15);
+    private const int PasswordResetMaxRequestsPerWindow = 3;
 
     private static readonly TimeSpan MfaChallengeLifetime = TimeSpan.FromMinutes(5);
     private const int RecoveryCodeCount = 10;
     private const string TotpIssuer = "HRS Reporting Service";
 
     private readonly AuthOptions _authOptions = authOptions.Value;
+    private readonly AppOptions _appOptions = appOptions.Value;
 
     public async Task<Result<AuthenticatedUser>> ValidateCredentialsAsync(
         string identifier,
@@ -185,6 +191,72 @@ public sealed class IdentityService(
                 "Your HRS sign-in code",
                 $"Your sign-in code is {code}. It expires in 10 minutes. If you didn't request this, ignore this email."),
             cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> RequestPasswordResetAsync(string identifier, CancellationToken cancellationToken)
+    {
+        var redisDb = redis.GetDatabase();
+        var throttleKey = $"pwreset-throttle:{NormalizeIdentifier(identifier)}";
+
+        var requestCount = await redisDb.StringIncrementAsync(throttleKey);
+
+        if (requestCount == 1)
+        {
+            await redisDb.KeyExpireAsync(throttleKey, PasswordResetRequestWindow);
+        }
+
+        if (requestCount > PasswordResetMaxRequestsPerWindow)
+        {
+            var ttl = await redisDb.KeyTimeToLiveAsync(throttleKey) ?? PasswordResetRequestWindow;
+            return Result.Failure(Error.RateLimited(
+                "PASSWORD_RESET_RATE_LIMITED",
+                "Too many reset requests. Try again later.",
+                (int)Math.Ceiling(ttl.TotalSeconds)));
+        }
+
+        var user = await FindUserAsync(identifier, cancellationToken);
+
+        if (user is null || user.Email is null)
+        {
+            // No enumeration: behave exactly as if a reset email had been sent.
+            return Result.Success();
+        }
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var resetUrl = $"{_appOptions.PublicUrl.TrimEnd('/')}/login/reset/{Uri.EscapeDataString(token)}"
+            + $"?email={Uri.EscapeDataString(user.Email)}";
+
+        await emailSender.QueueAsync(
+            new EmailMessage(
+                user.Email,
+                "Reset your HRS password",
+                $"Hi {user.Name},\n\n"
+                    + $"Reset your password:\n{resetUrl}\n\n"
+                    + "If you didn't request this, ignore this email — your password hasn't changed."),
+            cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user is null)
+        {
+            return Result.Failure(InvalidPasswordResetToken);
+        }
+
+        var result = await userManager.ResetPasswordAsync(user, token, newPassword);
+
+        if (!result.Succeeded)
+        {
+            return Result.Failure(Error.Validation(
+                "INVALID_PASSWORD_RESET",
+                string.Join(" ", result.Errors.Select(e => e.Description))));
+        }
 
         return Result.Success();
     }
@@ -537,6 +609,9 @@ public sealed class IdentityService(
 
     private static Error AccountLocked =>
         Error.Forbidden("ACCOUNT_LOCKED", "Too many failed attempts. Try again in 15 minutes.");
+
+    private static Error InvalidPasswordResetToken =>
+        Error.Validation("INVALID_PASSWORD_RESET", "This reset link is invalid or has expired.");
 
     private static Error InvalidRefreshToken =>
         Error.Unauthenticated("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired.");

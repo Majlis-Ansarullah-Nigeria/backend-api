@@ -96,6 +96,10 @@ export interface CreateUnitRequest {
 
 export type DelegateScope = number;
 
+export interface ForgotPasswordRequest {
+  identifier: string;
+}
+
 export type IFormFile = Blob;
 
 export interface InvitationPreview {
@@ -170,6 +174,12 @@ export interface ProblemDetails {
   detail?: string | null;
   /** @nullable */
   instance?: string | null;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  newPassword: string;
 }
 
 export interface SessionSummary {
