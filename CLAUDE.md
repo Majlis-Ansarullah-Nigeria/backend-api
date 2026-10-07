@@ -16,7 +16,7 @@ Reporting platform for a hierarchical organization: National → Zones → Dilaa
 - `.github/workflows/` — CI on every PR; deploy to Dokploy after CI passes on `main`.
 
 ## Commands
-- Dev services: `docker compose up -d` (Postgres :5432, Redis :6379, Mailpit UI :8025, RustFS console :9001)
+- Dev services: `docker compose up -d` (Postgres :5433 — remapped off the default 5432, Redis :6379, Mailpit UI :8025, RustFS console :9001)
 - Backend: `dotnet build backend/HRS.sln` · `dotnet test backend/HRS.sln` · run API `dotnet run --project backend/src/HRS.Api` (:8080, Swagger at /scalar)
 - Frontend: `pnpm -C frontend dev` (:3000) · `pnpm -C frontend lint` · `pnpm -C frontend typecheck` · `pnpm -C frontend test`
 - API client: `pnpm -C frontend api:generate` after any backend contract change (API must be running).

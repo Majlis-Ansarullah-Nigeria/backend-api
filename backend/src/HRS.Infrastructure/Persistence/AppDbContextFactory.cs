@@ -10,7 +10,7 @@ namespace HRS.Infrastructure.Persistence;
 public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     private const string DesignTimeConnectionString =
-        "Host=localhost;Port=5432;Database=hrs;Username=hrs;Password=hrs_dev_password";
+        "Host=localhost;Port=5433;Database=hrs;Username=hrs;Password=hrs_dev_password";
 
     public AppDbContext CreateDbContext(string[] args)
     {
