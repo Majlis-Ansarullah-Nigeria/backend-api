@@ -31,7 +31,8 @@ public sealed record TemplateField(
     AggregationRule Aggregation,
     string? ComputedExpression,
     IReadOnlyList<TemplateFieldOption>? Options,
-    IReadOnlyList<TemplateField>? Columns);
+    IReadOnlyList<TemplateField>? Columns,
+    string? Placeholder = null);
 
 public sealed record TemplateFieldOption(string Value, string Label);
 

@@ -28,7 +28,10 @@ import type {
   GetReportTypesParams,
   ProblemDetails,
   ReportTypeSummary,
-  UpdateReportTypeRequest
+  TemplateVersionDetail,
+  TemplateVersionSummary,
+  UpdateReportTypeRequest,
+  UpdateTemplateSchemaRequest
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -544,4 +547,351 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRestoreReportTypeMutationOptions(options), queryClient);
+    }
+    export const getGetTemplateVersionsUrl = (reportTypeId: string,) => {
+
+
+
+
+  return `/api/v1/report-types/${reportTypeId}/template-versions`
+}
+
+export const getTemplateVersions = async (reportTypeId: string, options?: Parameters<typeof customFetch>[1]): Promise<TemplateVersionSummary[]> => {
+
+  return customFetch<TemplateVersionSummary[]>(getGetTemplateVersionsUrl(reportTypeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTemplateVersionsQueryKey = (reportTypeId: string,) => {
+    return [
+    `/api/v1/report-types/${reportTypeId}/template-versions`
+    ] as const;
+    }
+
+
+export const getGetTemplateVersionsQueryOptions = <TData = Awaited<ReturnType<typeof getTemplateVersions>>, TError = ProblemDetails>(reportTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTemplateVersionsQueryKey(reportTypeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTemplateVersions>>> = ({ signal }) => getTemplateVersions(reportTypeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: reportTypeId !== null && reportTypeId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetTemplateVersionsQueryResult = NonNullable<Awaited<ReturnType<typeof getTemplateVersions>>>
+export type GetTemplateVersionsQueryError = ProblemDetails
+
+
+export function useGetTemplateVersions<TData = Awaited<ReturnType<typeof getTemplateVersions>>, TError = ProblemDetails>(
+ reportTypeId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTemplateVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getTemplateVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTemplateVersions<TData = Awaited<ReturnType<typeof getTemplateVersions>>, TError = ProblemDetails>(
+ reportTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTemplateVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getTemplateVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTemplateVersions<TData = Awaited<ReturnType<typeof getTemplateVersions>>, TError = ProblemDetails>(
+ reportTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetTemplateVersions<TData = Awaited<ReturnType<typeof getTemplateVersions>>, TError = ProblemDetails>(
+ reportTypeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetTemplateVersionsQueryOptions(reportTypeId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getUpdateTemplateSchemaUrl = (reportTypeId: string,) => {
+
+
+
+
+  return `/api/v1/report-types/${reportTypeId}/template-versions`
+}
+
+export const updateTemplateSchema = async (reportTypeId: string,
+    updateTemplateSchemaRequest: UpdateTemplateSchemaRequest, options?: Parameters<typeof customFetch>[1]): Promise<TemplateVersionSummary> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TemplateVersionSummary>(getUpdateTemplateSchemaUrl(reportTypeId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateTemplateSchemaRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateTemplateSchemaMutationKey = () => ['updateTemplateSchema'] as const;
+
+export const getUpdateTemplateSchemaMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTemplateSchema>>, TError,UpdateTemplateSchemaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTemplateSchema>>, TError,UpdateTemplateSchemaMutationVariables, TContext> => {
+
+const mutationKey = getUpdateTemplateSchemaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTemplateSchema>>, UpdateTemplateSchemaMutationVariables> = (props) => {
+          const {reportTypeId,data} = props ?? {};
+
+          return  updateTemplateSchema(reportTypeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTemplateSchemaMutationResult = NonNullable<Awaited<ReturnType<typeof updateTemplateSchema>>>
+    export type UpdateTemplateSchemaMutationBody = UpdateTemplateSchemaRequest
+    export type UpdateTemplateSchemaMutationError = ProblemDetails
+    export type UpdateTemplateSchemaMutationVariables = {reportTypeId: string;data: UpdateTemplateSchemaRequest}
+
+    export const useUpdateTemplateSchema = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTemplateSchema>>, TError,UpdateTemplateSchemaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateTemplateSchema>>,
+        TError,
+        UpdateTemplateSchemaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateTemplateSchemaMutationOptions(options), queryClient);
+    }
+    export const getGetTemplateVersionUrl = (reportTypeId: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/v1/report-types/${reportTypeId}/template-versions/${versionId}`
+}
+
+export const getTemplateVersion = async (reportTypeId: string,
+    versionId: string, options?: Parameters<typeof customFetch>[1]): Promise<TemplateVersionDetail> => {
+
+  return customFetch<TemplateVersionDetail>(getGetTemplateVersionUrl(reportTypeId,versionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTemplateVersionQueryKey = (reportTypeId: string,
+    versionId: string,) => {
+    return [
+    `/api/v1/report-types/${reportTypeId}/template-versions/${versionId}`
+    ] as const;
+    }
+
+
+export const getGetTemplateVersionQueryOptions = <TData = Awaited<ReturnType<typeof getTemplateVersion>>, TError = ProblemDetails>(reportTypeId: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersion>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTemplateVersionQueryKey(reportTypeId,versionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTemplateVersion>>> = ({ signal }) => getTemplateVersion(reportTypeId,versionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: reportTypeId !== null && reportTypeId !== undefined && versionId !== null && versionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersion>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetTemplateVersionQueryResult = NonNullable<Awaited<ReturnType<typeof getTemplateVersion>>>
+export type GetTemplateVersionQueryError = ProblemDetails
+
+
+export function useGetTemplateVersion<TData = Awaited<ReturnType<typeof getTemplateVersion>>, TError = ProblemDetails>(
+ reportTypeId: string,
+    versionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersion>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTemplateVersion>>,
+          TError,
+          Awaited<ReturnType<typeof getTemplateVersion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTemplateVersion<TData = Awaited<ReturnType<typeof getTemplateVersion>>, TError = ProblemDetails>(
+ reportTypeId: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersion>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTemplateVersion>>,
+          TError,
+          Awaited<ReturnType<typeof getTemplateVersion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTemplateVersion<TData = Awaited<ReturnType<typeof getTemplateVersion>>, TError = ProblemDetails>(
+ reportTypeId: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersion>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetTemplateVersion<TData = Awaited<ReturnType<typeof getTemplateVersion>>, TError = ProblemDetails>(
+ reportTypeId: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTemplateVersion>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetTemplateVersionQueryOptions(reportTypeId,versionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPublishTemplateVersionUrl = (reportTypeId: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/v1/report-types/${reportTypeId}/template-versions/${versionId}/publish`
+}
+
+export const publishTemplateVersion = async (reportTypeId: string,
+    versionId: string, options?: Parameters<typeof customFetch>[1]): Promise<TemplateVersionSummary> => {
+
+  return customFetch<TemplateVersionSummary>(getPublishTemplateVersionUrl(reportTypeId,versionId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPublishTemplateVersionMutationKey = () => ['publishTemplateVersion'] as const;
+
+export const getPublishTemplateVersionMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishTemplateVersion>>, TError,PublishTemplateVersionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishTemplateVersion>>, TError,PublishTemplateVersionMutationVariables, TContext> => {
+
+const mutationKey = getPublishTemplateVersionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishTemplateVersion>>, PublishTemplateVersionMutationVariables> = (props) => {
+          const {reportTypeId,versionId} = props ?? {};
+
+          return  publishTemplateVersion(reportTypeId,versionId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishTemplateVersionMutationResult = NonNullable<Awaited<ReturnType<typeof publishTemplateVersion>>>
+
+    export type PublishTemplateVersionMutationError = ProblemDetails
+    export type PublishTemplateVersionMutationVariables = {reportTypeId: string;versionId: string}
+
+    export const usePublishTemplateVersion = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishTemplateVersion>>, TError,PublishTemplateVersionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof publishTemplateVersion>>,
+        TError,
+        PublishTemplateVersionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPublishTemplateVersionMutationOptions(options), queryClient);
     }

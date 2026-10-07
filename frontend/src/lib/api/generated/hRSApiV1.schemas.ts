@@ -12,6 +12,8 @@ export interface AcceptInvitationRequest {
   agreedToPrivacyNotice: boolean;
 }
 
+export type AggregationRule = number;
+
 export interface BulkImportCommitResult {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   createdCount: number | string;
@@ -253,6 +255,97 @@ export interface SetActiveAssignmentRequest {
   roleAssignmentId: string;
 }
 
+export type TemplateFieldType = number;
+
+export interface TemplateShowIf {
+  fieldKey: string;
+  equalsValue: string;
+}
+
+export interface TemplateFieldOption {
+  value: string;
+  label: string;
+}
+
+export interface TemplateField {
+  key: string;
+  type: TemplateFieldType;
+  label: string;
+  /** @nullable */
+  helpText: string | null;
+  required: boolean;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  min: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  max: number | string | null;
+  /** @nullable */
+  regex: string | null;
+  /** @nullable */
+  defaultValue: string | null;
+  /** @nullable */
+  unitLabel: string | null;
+  confidential: boolean;
+  /** @nullable */
+  owningDepartmentId: string | null;
+  /** @nullable */
+  visibleForLevels: UnitLevelCode[] | null;
+  showIf: null | TemplateShowIf;
+  aggregation: AggregationRule;
+  /** @nullable */
+  computedExpression: string | null;
+  /** @nullable */
+  options: TemplateFieldOption[] | null;
+  /** @nullable */
+  columns: TemplateField[] | null;
+  /** @nullable */
+  placeholder?: string | null;
+}
+
+export interface TemplateSection {
+  key: string;
+  title: string;
+  fields: TemplateField[];
+}
+
+export interface TemplateSchema {
+  sections: TemplateSection[];
+}
+
+export type TemplateVersionStatus = number;
+
+export interface TemplateVersionDetail {
+  id: string;
+  reportTypeId: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  versionNumber: number | string;
+  status: TemplateVersionStatus;
+  schema: TemplateSchema;
+  createdAt: string;
+  /** @nullable */
+  publishedAt: string | null;
+  /** @nullable */
+  retiredAt: string | null;
+}
+
+export interface TemplateVersionSummary {
+  id: string;
+  reportTypeId: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  versionNumber: number | string;
+  status: TemplateVersionStatus;
+  createdAt: string;
+  /** @nullable */
+  publishedAt: string | null;
+  /** @nullable */
+  retiredAt: string | null;
+}
+
 export interface TotpEnrollment {
   sharedKey: string;
   authenticatorUri: string;
@@ -326,6 +419,10 @@ export interface UpdateReportTypeRequest {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   observerDepth: number | string;
   allowAttachments: boolean;
+}
+
+export interface UpdateTemplateSchemaRequest {
+  schema: TemplateSchema;
 }
 
 export interface UpdateUnitRequest {

@@ -347,6 +347,18 @@
     "restoring": "Restoring…",
     "cancel": "Cancel"
   },
+  "FormEngine": {
+    "selectPlaceholder": "Select…",
+    "yes": "Yes",
+    "no": "No",
+    "noRowsYet": "No rows yet.",
+    "addRow": "Add row",
+    "removeRow": "Remove row {number}",
+    "noMembersYet": "No members yet.",
+    "addMember": "Add member",
+    "memberLabel": "Member {number}",
+    "removeMember": "Remove member {number}"
+  },
   "Profile": {
     "title": "Profile and settings",
     "sessionsHeading": "Signed-in devices",
