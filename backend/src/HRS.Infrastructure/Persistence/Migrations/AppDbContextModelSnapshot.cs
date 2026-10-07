@@ -445,13 +445,69 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("report_type_id");
 
+                    b.Property<Guid?>("ScheduleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("schedule_id");
+
+                    b.PrimitiveCollection<Guid[]>("TargetUnitIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("target_unit_ids");
+
                     b.HasKey("Id")
                         .HasName("pk_submission_windows");
 
                     b.HasIndex("ReportTypeId")
                         .HasDatabaseName("ix_submission_windows_report_type_id");
 
+                    b.HasIndex("ScheduleId")
+                        .HasDatabaseName("ix_submission_windows_schedule_id");
+
                     b.ToTable("submission_windows", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Windows.WindowSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ClosesDayOffset")
+                        .HasColumnType("integer")
+                        .HasColumnName("closes_day_offset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("integer")
+                        .HasColumnName("frequency");
+
+                    b.Property<int>("GraceDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("grace_days");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<int>("OpensDayOffset")
+                        .HasColumnType("integer")
+                        .HasColumnName("opens_day_offset");
+
+                    b.Property<Guid>("ReportTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_type_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_window_schedules");
+
+                    b.HasIndex("ReportTypeId")
+                        .HasDatabaseName("ix_window_schedules_report_type_id");
+
+                    b.ToTable("window_schedules", (string)null);
                 });
 
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>
@@ -750,6 +806,12 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_submission_windows_report_types_report_type_id");
 
+                    b.HasOne("HRS.Domain.Windows.WindowSchedule", null)
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_submission_windows_window_schedules_schedule_id");
+
                     b.OwnsMany("HRS.Domain.Windows.WindowLevelDueDate", "DueDates", b1 =>
                         {
                             b1.Property<int>("id")
@@ -786,6 +848,53 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("DueDates");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Windows.WindowSchedule", b =>
+                {
+                    b.HasOne("HRS.Domain.Templates.ReportType", null)
+                        .WithMany()
+                        .HasForeignKey("ReportTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_window_schedules_report_types_report_type_id");
+
+                    b.OwnsMany("HRS.Domain.Windows.ScheduleLevelDueOffset", "DueOffsets", b1 =>
+                        {
+                            b1.Property<int>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasColumnName("id");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("id"));
+
+                            b1.Property<int>("DueDayOffset")
+                                .HasColumnType("integer")
+                                .HasColumnName("due_day_offset");
+
+                            b1.Property<int>("Level")
+                                .HasColumnType("integer")
+                                .HasColumnName("level");
+
+                            b1.Property<Guid>("window_schedule_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("window_schedule_id");
+
+                            b1.HasKey("id")
+                                .HasName("pk_window_schedule_due_offsets");
+
+                            b1.HasIndex("window_schedule_id", "Level")
+                                .IsUnique()
+                                .HasDatabaseName("ix_window_schedule_due_offsets_window_schedule_id_level");
+
+                            b1.ToTable("window_schedule_due_offsets", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("window_schedule_id")
+                                .HasConstraintName("fk_window_schedule_due_offsets_window_schedules_window_schedul");
+                        });
+
+                    b.Navigation("DueOffsets");
                 });
 
             modelBuilder.Entity("HRS.Infrastructure.Identity.ApplicationUser", b =>

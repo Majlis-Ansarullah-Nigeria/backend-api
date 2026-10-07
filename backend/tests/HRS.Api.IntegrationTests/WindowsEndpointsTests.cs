@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using HRS.Api.Endpoints;
+using HRS.Application.Features.Organization.Units;
 using HRS.Application.Features.Templates.ReportTypes;
 using HRS.Application.Features.Windows.SubmissionWindows;
 using HRS.Domain.Access;
@@ -64,6 +65,27 @@ public class WindowsEndpointsTests(ApiFactory factory)
         3,
         Now.AddDays(30),
         dueDates);
+
+    // "W"-prefixed codes (WZ/WD/WM), not the plain Z/D/M codes other integration test files use —
+    // every test in HRS.Api.IntegrationTests shares one Testcontainers Postgres, so unit codes
+    // must be namespaced per file to avoid (ParentId, Code) collisions across files.
+    private static async Task<Guid> CreateMuqamUnitAsync(HttpClient client, string suffix)
+    {
+        var zone = await (await client.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest($"WZ{suffix}", $"Window Zone {suffix}", OrganizationSeedIds.ZoneLevelId, OrganizationSeedIds.NationalUnitId, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var dila = await (await client.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest($"WD{suffix}", $"Window Dila {suffix}", OrganizationSeedIds.DilaLevelId, zone!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var muqam = await (await client.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest($"WM{suffix}", $"Window Muqam {suffix}", OrganizationSeedIds.MuqamLevelId, dila!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        return muqam!.Id;
+    }
 
     [Fact]
     public async Task CreatingAWindowRequiresSecretariat()
@@ -230,5 +252,65 @@ public class WindowsEndpointsTests(ApiFactory factory)
         var response = await client.PutAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows/{Guid.NewGuid()}", update);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AnAdHocWindowCanTargetAHandPickedListOfUnits()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Hand Picked Window Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "01");
+
+        var request = new CreateSubmissionWindowRequest(
+            "Flood Survey", Now, 3, Now.AddDays(30), [new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10))], [muqamId]);
+        var response = await client.PostAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+        Assert.Equal([muqamId], result!.Window.TargetUnitIds);
+        Assert.Null(result.Window.ScheduleId);
+    }
+
+    [Fact]
+    public async Task AnUnknownTargetUnitIdFails()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Unknown Target Report", UnitLevelCode.Muqam);
+
+        var request = new CreateSubmissionWindowRequest(
+            "Flood Survey", Now, 3, Now.AddDays(30), [new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10))], [Guid.NewGuid()]);
+        var response = await client.PostAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ATargetUnitAtALevelWithNoDueDateFails()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "No Due Date Target Report", UnitLevelCode.Muqam, UnitLevelCode.Dila);
+        var muqamId = await CreateMuqamUnitAsync(client, "02");
+
+        // Only Dila has a due date — the targeted Muqam's level has none.
+        var request = new CreateSubmissionWindowRequest(
+            "Flood Survey", Now, 3, Now.AddDays(30), [new WindowDueDate(UnitLevelCode.Dila, Now.AddDays(10))], [muqamId]);
+        var response = await client.PostAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AnArchivedTargetUnitFails()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Archived Target Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "03");
+        await client.DeleteAsync(new Uri($"/api/v1/units/{muqamId}", UriKind.Relative));
+
+        var request = new CreateSubmissionWindowRequest(
+            "Flood Survey", Now, 3, Now.AddDays(30), [new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10))], [muqamId]);
+        var response = await client.PostAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

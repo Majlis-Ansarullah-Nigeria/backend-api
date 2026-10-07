@@ -23,5 +23,7 @@ public interface IAppDbContext
 
     DbSet<Unit> Units { get; }
 
+    DbSet<WindowSchedule> WindowSchedules { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

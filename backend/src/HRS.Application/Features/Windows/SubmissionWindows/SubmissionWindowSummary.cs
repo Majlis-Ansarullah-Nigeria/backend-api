@@ -10,7 +10,9 @@ public sealed record SubmissionWindowSummary(
     int GraceDays,
     DateTimeOffset ClosesAt,
     IReadOnlyList<WindowDueDate> DueDates,
-    DateTimeOffset CreatedAt)
+    DateTimeOffset CreatedAt,
+    Guid? ScheduleId,
+    IReadOnlyList<Guid> TargetUnitIds)
 {
     public static SubmissionWindowSummary FromEntity(SubmissionWindow window) => new(
         window.Id,
@@ -20,5 +22,7 @@ public sealed record SubmissionWindowSummary(
         window.GraceDays,
         window.ClosesAt,
         window.DueDates.Select(d => new WindowDueDate(d.Level, d.DueAt)).ToList(),
-        window.CreatedAt);
+        window.CreatedAt,
+        window.ScheduleId,
+        window.TargetUnitIds);
 }

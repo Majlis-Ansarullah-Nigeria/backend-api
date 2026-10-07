@@ -11,4 +11,5 @@ public sealed record UpdateSubmissionWindowCommand(
     DateTimeOffset OpensAt,
     int GraceDays,
     DateTimeOffset ClosesAt,
-    IReadOnlyList<WindowDueDate> DueDates) : IRequest<Result<CreateSubmissionWindowResult>>;
+    IReadOnlyList<WindowDueDate> DueDates,
+    IReadOnlyList<Guid>? TargetUnitIds = null) : IRequest<Result<CreateSubmissionWindowResult>>;

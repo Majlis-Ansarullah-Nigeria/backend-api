@@ -10,6 +10,7 @@ public sealed record CreateSubmissionWindowCommand(
     DateTimeOffset OpensAt,
     int GraceDays,
     DateTimeOffset ClosesAt,
-    IReadOnlyList<WindowDueDate> DueDates) : IRequest<Result<CreateSubmissionWindowResult>>;
+    IReadOnlyList<WindowDueDate> DueDates,
+    IReadOnlyList<Guid>? TargetUnitIds = null) : IRequest<Result<CreateSubmissionWindowResult>>;
 
 public sealed record CreateSubmissionWindowResult(SubmissionWindowSummary Window, IReadOnlyList<string> Warnings);

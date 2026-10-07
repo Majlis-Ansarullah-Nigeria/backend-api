@@ -30,6 +30,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Unit> Units => Set<Unit>();
 
+    public DbSet<WindowSchedule> WindowSchedules => Set<WindowSchedule>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -189,6 +191,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(w => w.ReportTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+            // SetNull, not Restrict/Cascade: a window stands on its own once generated — if its
+            // schedule is ever removed, the window just loses its provenance link, not itself.
+            window
+                .HasOne<WindowSchedule>()
+                .WithMany()
+                .HasForeignKey(w => w.ScheduleId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             window.OwnsMany(w => w.DueDates, dueDate =>
             {
@@ -199,6 +208,35 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 dueDate.HasIndex("submission_window_id", nameof(WindowLevelDueDate.Level)).IsUnique();
             });
             window.Navigation(w => w.DueDates).HasField("_dueDates").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            // A plain list of unit ids, not a relationship — FR-WIN-004's "hand-picked list of
+            // units" (M4.2), mapped straight to a Postgres uuid[] column like ReportType's
+            // ApplicableLevels, not a join table.
+            window.PrimitiveCollection(w => w.TargetUnitIds)
+                .HasField("_targetUnitIds")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<WindowSchedule>(schedule =>
+        {
+            schedule.ToTable("window_schedules");
+            schedule.HasKey(s => s.Id);
+            schedule.HasIndex(s => s.ReportTypeId);
+            schedule
+                .HasOne<ReportType>()
+                .WithMany()
+                .HasForeignKey(s => s.ReportTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            schedule.OwnsMany(s => s.DueOffsets, dueOffset =>
+            {
+                dueOffset.ToTable("window_schedule_due_offsets");
+                dueOffset.WithOwner().HasForeignKey("window_schedule_id");
+                dueOffset.Property<int>("id");
+                dueOffset.HasKey("id");
+                dueOffset.HasIndex("window_schedule_id", nameof(ScheduleLevelDueOffset.Level)).IsUnique();
+            });
+            schedule.Navigation(s => s.DueOffsets).HasField("_dueOffsets").UsePropertyAccessMode(PropertyAccessMode.Field);
         });
     }
 }

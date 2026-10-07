@@ -54,7 +54,8 @@ public static class WindowsEndpoints
                     request.OpensAt,
                     request.GraceDays,
                     request.ClosesAt,
-                    request.DueDates);
+                    request.DueDates,
+                    request.TargetUnitIds);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -85,7 +86,8 @@ public static class WindowsEndpoints
                     request.OpensAt,
                     request.GraceDays,
                     request.ClosesAt,
-                    request.DueDates);
+                    request.DueDates,
+                    request.TargetUnitIds);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -104,11 +106,13 @@ public sealed record CreateSubmissionWindowRequest(
     DateTimeOffset OpensAt,
     int GraceDays,
     DateTimeOffset ClosesAt,
-    IReadOnlyList<WindowDueDate> DueDates);
+    IReadOnlyList<WindowDueDate> DueDates,
+    IReadOnlyList<Guid>? TargetUnitIds = null);
 
 public sealed record UpdateSubmissionWindowRequest(
     string PeriodLabel,
     DateTimeOffset OpensAt,
     int GraceDays,
     DateTimeOffset ClosesAt,
-    IReadOnlyList<WindowDueDate> DueDates);
+    IReadOnlyList<WindowDueDate> DueDates,
+    IReadOnlyList<Guid>? TargetUnitIds = null);

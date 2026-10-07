@@ -38,6 +38,12 @@ public sealed class CreateSubmissionWindowCommandHandler(IAppDbContext db, IAcce
                 "LEVEL_NOT_APPLICABLE", $"{invalidLevel.Level} doesn't submit this report type."));
         }
 
+        var targetUnitError = await TargetUnitValidator.ValidateAsync(db, request.TargetUnitIds, request.DueDates, cancellationToken);
+        if (targetUnitError is not null)
+        {
+            return Result.Failure<CreateSubmissionWindowResult>(targetUnitError);
+        }
+
         var window = SubmissionWindow.Create(
             Guid.CreateVersion7(),
             request.ReportTypeId,
@@ -46,7 +52,9 @@ public sealed class CreateSubmissionWindowCommandHandler(IAppDbContext db, IAcce
             request.GraceDays,
             request.ClosesAt,
             request.DueDates.Select(d => new WindowLevelDueDate(d.Level, d.DueAt)),
-            clock.UtcNow);
+            clock.UtcNow,
+            scheduleId: null,
+            targetUnitIds: request.TargetUnitIds);
 
         db.SubmissionWindows.Add(window);
         await db.SaveChangesAsync(cancellationToken);

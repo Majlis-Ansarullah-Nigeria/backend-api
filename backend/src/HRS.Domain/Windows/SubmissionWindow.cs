@@ -8,10 +8,17 @@ namespace HRS.Domain.Windows;
 /// "N days, late but still accepted" and applies on top of each level's own due date, capped by
 /// the single window-wide ClosesAt (a level's grace can't outlast the hard close). OpensAt and
 /// ClosesAt are window-wide; only DueAt varies by level.
+///
+/// ScheduleId (M4.2) records which WindowSchedule generated this window, if any — null means it
+/// was created directly, which is what "ad-hoc" (FR-WIN-004) means here; there's no separate
+/// IsAdHoc flag. TargetUnitIds (M4.2), when set, is FR-WIN-004's "hand-picked list of units" —
+/// it restricts the window to exactly those units on top of (not instead of) the per-level due
+/// dates, which still say when each affected level is due.
 /// </summary>
 public sealed class SubmissionWindow
 {
     private readonly List<WindowLevelDueDate> _dueDates = [];
+    private readonly List<Guid> _targetUnitIds = [];
 
     private SubmissionWindow()
     {
@@ -25,7 +32,9 @@ public sealed class SubmissionWindow
         int graceDays,
         DateTimeOffset closesAt,
         IEnumerable<WindowLevelDueDate> dueDates,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        Guid? scheduleId,
+        IEnumerable<Guid>? targetUnitIds)
     {
         Id = id;
         ReportTypeId = reportTypeId;
@@ -35,6 +44,8 @@ public sealed class SubmissionWindow
         ClosesAt = closesAt;
         _dueDates.AddRange(dueDates);
         CreatedAt = now;
+        ScheduleId = scheduleId;
+        _targetUnitIds.AddRange(targetUnitIds ?? []);
     }
 
     public Guid Id { get; private set; }
@@ -53,6 +64,10 @@ public sealed class SubmissionWindow
 
     public DateTimeOffset CreatedAt { get; private set; }
 
+    public Guid? ScheduleId { get; private set; }
+
+    public IReadOnlyList<Guid> TargetUnitIds => _targetUnitIds;
+
     public static SubmissionWindow Create(
         Guid id,
         Guid reportTypeId,
@@ -61,15 +76,18 @@ public sealed class SubmissionWindow
         int graceDays,
         DateTimeOffset closesAt,
         IEnumerable<WindowLevelDueDate> dueDates,
-        DateTimeOffset now) =>
-        new(id, reportTypeId, periodLabel, opensAt, graceDays, closesAt, dueDates, now);
+        DateTimeOffset now,
+        Guid? scheduleId = null,
+        IEnumerable<Guid>? targetUnitIds = null) =>
+        new(id, reportTypeId, periodLabel, opensAt, graceDays, closesAt, dueDates, now, scheduleId, targetUnitIds);
 
     public void Update(
         string periodLabel,
         DateTimeOffset opensAt,
         int graceDays,
         DateTimeOffset closesAt,
-        IEnumerable<WindowLevelDueDate> dueDates)
+        IEnumerable<WindowLevelDueDate> dueDates,
+        IEnumerable<Guid>? targetUnitIds = null)
     {
         PeriodLabel = periodLabel;
         OpensAt = opensAt;
@@ -77,6 +95,8 @@ public sealed class SubmissionWindow
         ClosesAt = closesAt;
         _dueDates.Clear();
         _dueDates.AddRange(dueDates);
+        _targetUnitIds.Clear();
+        _targetUnitIds.AddRange(targetUnitIds ?? []);
     }
 
     public DateTimeOffset? DueAtFor(UnitLevelCode level) =>
