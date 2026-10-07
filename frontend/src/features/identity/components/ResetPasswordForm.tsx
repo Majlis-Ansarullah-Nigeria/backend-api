@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import type { ApiError } from "@/lib/api/client";
 import { useResetPassword } from "@/lib/api/generated/identity/identity";
 import { PASSWORD_MIN_LENGTH, passwordCriteria } from "@/features/identity/schemas/accept-invitation";
@@ -70,7 +70,13 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
         <Field id="reset-password" label={t("newPasswordLabel")} error={form.formState.errors.password?.message}>
-          <Input id="reset-password" type="password" autoComplete="new-password" {...form.register("password")} />
+          <PasswordInput
+            id="reset-password"
+            autoComplete="new-password"
+            showPasswordLabel={t("showPassword")}
+            hidePasswordLabel={t("hidePassword")}
+            {...form.register("password")}
+          />
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
             <PasswordCriterion met={criteria.length} label={t("passwordCriteriaLength")} />
             <PasswordCriterion met={criteria.digit} label={t("passwordCriteriaDigit")} />

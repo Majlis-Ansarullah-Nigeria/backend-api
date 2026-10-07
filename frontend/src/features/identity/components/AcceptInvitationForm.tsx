@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   acceptInvitationSchema,
   passwordCriteria,
@@ -151,11 +152,12 @@ function InvitationAcceptFields({ token, invitation }: { token: string; invitati
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="password">{t("passwordLabel")}</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="new-password"
             aria-invalid={!!form.formState.errors.password}
+            showPasswordLabel={t("showPassword")}
+            hidePasswordLabel={t("hidePassword")}
             {...form.register("password")}
           />
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs">

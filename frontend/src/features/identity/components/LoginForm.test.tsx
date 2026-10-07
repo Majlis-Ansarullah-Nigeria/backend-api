@@ -101,4 +101,18 @@ describe("LoginForm", () => {
 
     expect(screen.getByRole("link", { name: /forgot password/i })).toHaveAttribute("href", "/login/forgot");
   });
+
+  it("toggles the password field between hidden and visible", async () => {
+    const user = userEvent.setup();
+    renderWithIntl(<LoginForm />);
+
+    const passwordField = screen.getByLabelText(/^password$/i);
+    expect(passwordField).toHaveAttribute("type", "password");
+
+    await user.click(screen.getByRole("button", { name: /show password/i }));
+    expect(passwordField).toHaveAttribute("type", "text");
+
+    await user.click(screen.getByRole("button", { name: /hide password/i }));
+    expect(passwordField).toHaveAttribute("type", "password");
+  });
 });

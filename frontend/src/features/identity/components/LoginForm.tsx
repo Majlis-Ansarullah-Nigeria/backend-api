@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import type { ApiError } from "@/lib/api/client";
 import type { MeResponse, MfaChallengeResponse } from "@/lib/api/generated/hRSApiV1.schemas";
 import { useLogin, useRequestOtp } from "@/lib/api/generated/identity/identity";
@@ -81,7 +82,13 @@ export function LoginForm() {
             <Input id="login-email" autoComplete="username" {...passwordForm.register("identifier")} />
           </Field>
           <Field id="login-password" label={t("passwordLabel")} error={passwordForm.formState.errors.password?.message}>
-            <Input id="login-password" type="password" autoComplete="current-password" {...passwordForm.register("password")} />
+            <PasswordInput
+              id="login-password"
+              autoComplete="current-password"
+              showPasswordLabel={t("showPassword")}
+              hidePasswordLabel={t("hidePassword")}
+              {...passwordForm.register("password")}
+            />
           </Field>
 
           <div className="flex items-center justify-end text-sm">
