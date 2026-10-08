@@ -466,6 +466,47 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("submission_windows", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Windows.WindowJobRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("EventKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("event_key");
+
+                    b.Property<int>("EventType")
+                        .HasColumnType("integer")
+                        .HasColumnName("event_type");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.Property<Guid>("WindowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("window_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_window_job_runs");
+
+                    b.HasIndex("UnitId")
+                        .HasDatabaseName("ix_window_job_runs_unit_id");
+
+                    b.HasIndex("WindowId", "UnitId", "EventType", "EventKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_window_job_runs_window_id_unit_id_event_type_event_key");
+
+                    b.ToTable("window_job_runs", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Windows.WindowSchedule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -962,6 +1003,23 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.Navigation("Extensions");
 
                     b.Navigation("Reopens");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Windows.WindowJobRun", b =>
+                {
+                    b.HasOne("HRS.Domain.Organization.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_window_job_runs_units_unit_id");
+
+                    b.HasOne("HRS.Domain.Windows.SubmissionWindow", null)
+                        .WithMany()
+                        .HasForeignKey("WindowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_window_job_runs_submission_windows_window_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Windows.WindowSchedule", b =>

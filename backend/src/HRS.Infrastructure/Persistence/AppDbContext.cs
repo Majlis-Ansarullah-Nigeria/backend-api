@@ -30,6 +30,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Unit> Units => Set<Unit>();
 
+    public DbSet<WindowJobRun> WindowJobRuns => Set<WindowJobRun>();
+
     public DbSet<WindowSchedule> WindowSchedules => Set<WindowSchedule>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -247,6 +249,26 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                     .OnDelete(DeleteBehavior.Restrict);
             });
             window.Navigation(w => w.Reopens).HasField("_reopens").UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // Its own top-level table, not owned by SubmissionWindow: per-unit, grows without bound,
+        // and queried independently by the worker and (later) M8's dispatcher.
+        builder.Entity<WindowJobRun>(jobRun =>
+        {
+            jobRun.ToTable("window_job_runs");
+            jobRun.HasKey(r => r.Id);
+            jobRun.Property(r => r.EventKey).IsRequired();
+            jobRun.HasIndex(r => new { r.WindowId, r.UnitId, r.EventType, r.EventKey }).IsUnique();
+            jobRun
+                .HasOne<SubmissionWindow>()
+                .WithMany()
+                .HasForeignKey(r => r.WindowId)
+                .OnDelete(DeleteBehavior.Cascade);
+            jobRun
+                .HasOne<Unit>()
+                .WithMany()
+                .HasForeignKey(r => r.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<WindowSchedule>(schedule =>

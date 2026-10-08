@@ -13,7 +13,7 @@ public class DependencyRuleTests
     private static readonly Assembly ApplicationAssembly = typeof(IClock).Assembly;
     private static readonly Assembly InfrastructureAssembly = typeof(DependencyInjection).Assembly;
     private static readonly Assembly ApiAssembly = typeof(ResultExtensions).Assembly;
-    private static readonly Assembly WorkerAssembly = typeof(HRS.Worker.Worker).Assembly;
+    private static readonly Assembly WorkerAssembly = typeof(HRS.Worker.WindowJobsRecurringJob).Assembly;
 
     [Fact]
     public void DomainShouldNotDependOnOuterLayers()

@@ -5,7 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Serilog.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
