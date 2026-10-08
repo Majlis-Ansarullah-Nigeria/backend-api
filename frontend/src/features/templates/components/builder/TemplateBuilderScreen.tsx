@@ -128,7 +128,7 @@ export function TemplateBuilderScreen({ reportTypeId }: { reportTypeId: string }
       ) : tab === "preview" ? (
         <PreviewTab schema={schema} levels={levels.data} />
       ) : (
-        <VersionsTab reportTypeId={reportTypeId} />
+        <VersionsTab reportTypeId={reportTypeId} levels={levels.data} />
       )}
     </div>
   );
