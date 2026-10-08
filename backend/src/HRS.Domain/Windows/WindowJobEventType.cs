@@ -9,4 +9,5 @@ public enum WindowJobEventType
     Reminder,
     Overdue,
     Closed,
+    Escalated,
 }

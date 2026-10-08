@@ -47,7 +47,8 @@ public sealed class UpdateSubmissionWindowCommandHandler(IAppDbContext db, IAcce
             request.GraceDays,
             request.ClosesAt,
             request.DueDates.Select(d => new WindowLevelDueDate(d.Level, d.DueAt)),
-            request.TargetUnitIds);
+            request.TargetUnitIds,
+            request.ReminderSettings?.ToEntity());
 
         await db.SaveChangesAsync(cancellationToken);
 

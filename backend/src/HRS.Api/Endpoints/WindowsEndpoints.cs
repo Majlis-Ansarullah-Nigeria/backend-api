@@ -55,7 +55,8 @@ public static class WindowsEndpoints
                     request.GraceDays,
                     request.ClosesAt,
                     request.DueDates,
-                    request.TargetUnitIds);
+                    request.TargetUnitIds,
+                    request.ReminderSettings);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -87,7 +88,8 @@ public static class WindowsEndpoints
                     request.GraceDays,
                     request.ClosesAt,
                     request.DueDates,
-                    request.TargetUnitIds);
+                    request.TargetUnitIds,
+                    request.ReminderSettings);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -161,7 +163,8 @@ public sealed record CreateSubmissionWindowRequest(
     int GraceDays,
     DateTimeOffset ClosesAt,
     IReadOnlyList<WindowDueDate> DueDates,
-    IReadOnlyList<Guid>? TargetUnitIds = null);
+    IReadOnlyList<Guid>? TargetUnitIds = null,
+    ReminderSettings? ReminderSettings = null);
 
 public sealed record UpdateSubmissionWindowRequest(
     string PeriodLabel,
@@ -169,7 +172,8 @@ public sealed record UpdateSubmissionWindowRequest(
     int GraceDays,
     DateTimeOffset ClosesAt,
     IReadOnlyList<WindowDueDate> DueDates,
-    IReadOnlyList<Guid>? TargetUnitIds = null);
+    IReadOnlyList<Guid>? TargetUnitIds = null,
+    ReminderSettings? ReminderSettings = null);
 
 public sealed record GrantWindowExtensionRequest(
     IReadOnlyList<Guid> UnitIds,

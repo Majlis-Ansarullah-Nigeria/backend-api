@@ -37,7 +37,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M4.2 Schedule rules generating windows 12 months ahead (FR-WIN-002); ad-hoc requests (FR-WIN-004).
 - [x] M4.3 Extensions and reopen (FR-WIN-005, FR-WIN-006).
 - [x] M4.4 Hangfire worker: open, remind, close, mark missed — idempotent (BR-WIN-04, BR-WIN-08).
-- [ ] M4.5 Windows calendar + create/edit window screens.
+- [x] M4.5 Windows calendar + create/edit window screens.
 
 ## M5 — Submission (FR-SUB)
 - [ ] M5.1 Report instance lifecycle in the domain with full unit tests (section 5 of SRS).

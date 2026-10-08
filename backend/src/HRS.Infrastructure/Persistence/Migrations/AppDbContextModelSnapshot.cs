@@ -853,6 +853,51 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_submission_windows_window_schedules_schedule_id");
 
+                    b.OwnsOne("HRS.Domain.Windows.WindowReminderSettings", "ReminderSettings", b1 =>
+                        {
+                            b1.Property<Guid>("SubmissionWindowId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<bool>("EscalateToParentAfterThreeDays")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(true)
+                                .HasColumnName("escalate_to_parent_after_three_days");
+
+                            b1.Property<bool>("EscalateToZoneAfterSevenDays")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(false)
+                                .HasColumnName("escalate_to_zone_after_seven_days");
+
+                            b1.Property<bool>("RemindFiveDaysBefore")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(true)
+                                .HasColumnName("remind_five_days_before");
+
+                            b1.Property<bool>("RemindOnDueDay")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(true)
+                                .HasColumnName("remind_on_due_day");
+
+                            b1.Property<bool>("RemindTwoDaysBefore")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(true)
+                                .HasColumnName("remind_two_days_before");
+
+                            b1.HasKey("SubmissionWindowId");
+
+                            b1.ToTable("submission_windows");
+
+                            b1.WithOwner()
+                                .HasForeignKey("SubmissionWindowId")
+                                .HasConstraintName("fk_submission_windows_submission_windows_id");
+                        });
+
                     b.OwnsMany("HRS.Domain.Windows.WindowExtension", "Extensions", b1 =>
                         {
                             b1.Property<int>("id")
@@ -1001,6 +1046,9 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.Navigation("DueDates");
 
                     b.Navigation("Extensions");
+
+                    b.Navigation("ReminderSettings")
+                        .IsRequired();
 
                     b.Navigation("Reopens");
                 });

@@ -198,4 +198,54 @@ public class SubmissionWindowTests
 
         Assert.Equal(WindowLevelStatus.Closed, window.StatusFor(UnitLevelCode.Muqam, Now.AddDays(21), unitId));
     }
+
+    [Fact]
+    public void CreateDefaultsReminderSettingsWhenNoneAreGiven()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(30), Now.AddDays(10));
+
+        Assert.Equal(WindowReminderSettings.Default().RemindFiveDaysBefore, window.ReminderSettings.RemindFiveDaysBefore);
+        Assert.Equal(WindowReminderSettings.Default().EscalateToZoneAfterSevenDays, window.ReminderSettings.EscalateToZoneAfterSevenDays);
+    }
+
+    [Fact]
+    public void CreateUsesTheGivenReminderSettingsWhenProvided()
+    {
+        var settings = new WindowReminderSettings(false, false, false, false, true);
+        var window = SubmissionWindow.Create(
+            Guid.NewGuid(), Guid.NewGuid(), "October 2026", Now, 3, Now.AddDays(30),
+            [new WindowLevelDueDate(UnitLevelCode.Muqam, Now.AddDays(10))], Now, reminderSettings: settings);
+
+        Assert.False(window.ReminderSettings.RemindFiveDaysBefore);
+        Assert.True(window.ReminderSettings.EscalateToZoneAfterSevenDays);
+    }
+
+    [Fact]
+    public void UpdateReplacesReminderSettingsWhenGiven()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(30), Now.AddDays(10));
+        var settings = new WindowReminderSettings(false, false, false, false, true);
+
+        window.Update(
+            "October 2026", Now, 3, Now.AddDays(30),
+            [new WindowLevelDueDate(UnitLevelCode.Muqam, Now.AddDays(10))], reminderSettings: settings);
+
+        Assert.False(window.ReminderSettings.RemindFiveDaysBefore);
+        Assert.True(window.ReminderSettings.EscalateToZoneAfterSevenDays);
+    }
+
+    [Fact]
+    public void UpdateKeepsExistingReminderSettingsWhenNoneAreGiven()
+    {
+        var window = CreateWindow(Now, 3, Now.AddDays(30), Now.AddDays(10));
+        window.Update(
+            "October 2026", Now, 3, Now.AddDays(30),
+            [new WindowLevelDueDate(UnitLevelCode.Muqam, Now.AddDays(10))],
+            reminderSettings: new WindowReminderSettings(false, false, false, false, true));
+
+        window.Update("November 2026", Now, 3, Now.AddDays(30), [new WindowLevelDueDate(UnitLevelCode.Muqam, Now.AddDays(10))]);
+
+        Assert.False(window.ReminderSettings.RemindFiveDaysBefore);
+        Assert.True(window.ReminderSettings.EscalateToZoneAfterSevenDays);
+    }
 }

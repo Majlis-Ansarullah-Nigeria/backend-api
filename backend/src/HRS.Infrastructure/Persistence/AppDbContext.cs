@@ -249,6 +249,18 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                     .OnDelete(DeleteBehavior.Restrict);
             });
             window.Navigation(w => w.Reopens).HasField("_reopens").UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            // Columns directly on submission_windows, not a child table — one settings value per
+            // window, same shape as the "Create window" mockup's Reminders panel.
+            window.OwnsOne(w => w.ReminderSettings, settings =>
+            {
+                settings.Property(s => s.RemindFiveDaysBefore).HasColumnName("remind_five_days_before").HasDefaultValue(true);
+                settings.Property(s => s.RemindTwoDaysBefore).HasColumnName("remind_two_days_before").HasDefaultValue(true);
+                settings.Property(s => s.RemindOnDueDay).HasColumnName("remind_on_due_day").HasDefaultValue(true);
+                settings.Property(s => s.EscalateToParentAfterThreeDays).HasColumnName("escalate_to_parent_after_three_days").HasDefaultValue(true);
+                settings.Property(s => s.EscalateToZoneAfterSevenDays).HasColumnName("escalate_to_zone_after_seven_days").HasDefaultValue(false);
+            });
+            window.Navigation(w => w.ReminderSettings).IsRequired();
         });
 
         // Its own top-level table, not owned by SubmissionWindow: per-unit, grows without bound,

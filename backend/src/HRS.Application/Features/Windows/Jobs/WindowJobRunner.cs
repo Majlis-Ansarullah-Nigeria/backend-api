@@ -1,4 +1,3 @@
-using System.Globalization;
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Organization;
 using HRS.Domain.Windows;
@@ -7,18 +6,16 @@ using Microsoft.EntityFrameworkCore;
 namespace HRS.Application.Features.Windows.Jobs;
 
 /// <summary>
-/// Detects window-lifecycle transitions (BR-WIN-08: open, remind, overdue, close) and logs each
-/// one exactly once per (window, unit). Pure detection — it never sends a notification itself and
-/// never touches a ReportInstance (M5.1 doesn't exist yet, so there is nothing to actually mark
-/// Missed); M8's outbox dispatcher is the intended consumer of the rows this writes, and M5.1's
-/// instance lifecycle is the intended consumer of a unit's Closed event once it exists.
+/// Detects window-lifecycle transitions (BR-WIN-08: open, remind, overdue, close, escalate) and
+/// logs each one exactly once per (window, unit). Pure detection — it never sends a notification
+/// itself and never touches a ReportInstance (M5.1 doesn't exist yet, so there is nothing to
+/// actually mark Missed); M8's outbox dispatcher is the intended consumer of the rows this writes,
+/// and M5.1's instance lifecycle is the intended consumer of a unit's Closed event once it exists.
+/// Which stages actually fire is read per-window from WindowReminderSettings (the "Create window"
+/// mockup's Reminders panel), not a fixed cadence.
 /// </summary>
 public static class WindowJobRunner
 {
-    // FR-NOT-002's example cadence. Real per-organization configurability is FR-NOT-003 (M8) —
-    // hardcoded here deliberately, not a shortcut to revisit later without a reason to.
-    private static readonly int[] ReminderDaysBeforeDue = [5, 2, 1];
-
     public static async Task<int> RunAsync(IAppDbContext db, IClock clock, CancellationToken cancellationToken)
     {
         var now = clock.UtcNow;
@@ -71,15 +68,31 @@ public static class WindowJobRunner
                     TryRecord(db, seen, window.Id, unit.Id, WindowJobEventType.Opened, string.Empty, now, ref created);
                 }
 
-                foreach (var days in ReminderDaysBeforeDue)
+                var settings = window.ReminderSettings;
+
+                if (settings.RemindFiveDaysBefore && now >= dueAt.Value.AddDays(-5) && now < dueAt.Value)
                 {
-                    var remindAt = dueAt.Value.AddDays(-days);
-                    if (now >= remindAt && now < dueAt.Value)
-                    {
-                        TryRecord(
-                            db, seen, window.Id, unit.Id, WindowJobEventType.Reminder,
-                            days.ToString(CultureInfo.InvariantCulture), now, ref created);
-                    }
+                    TryRecord(db, seen, window.Id, unit.Id, WindowJobEventType.Reminder, "5", now, ref created);
+                }
+
+                if (settings.RemindTwoDaysBefore && now >= dueAt.Value.AddDays(-2) && now < dueAt.Value)
+                {
+                    TryRecord(db, seen, window.Id, unit.Id, WindowJobEventType.Reminder, "2", now, ref created);
+                }
+
+                if (settings.RemindOnDueDay && now.Date == dueAt.Value.Date)
+                {
+                    TryRecord(db, seen, window.Id, unit.Id, WindowJobEventType.Reminder, "0", now, ref created);
+                }
+
+                if (settings.EscalateToParentAfterThreeDays && now >= dueAt.Value.AddDays(3))
+                {
+                    TryRecord(db, seen, window.Id, unit.Id, WindowJobEventType.Escalated, "Parent", now, ref created);
+                }
+
+                if (settings.EscalateToZoneAfterSevenDays && now >= dueAt.Value.AddDays(7))
+                {
+                    TryRecord(db, seen, window.Id, unit.Id, WindowJobEventType.Escalated, "Zone", now, ref created);
                 }
 
                 var status = window.StatusFor(level, now, unit.Id);

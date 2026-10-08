@@ -251,6 +251,45 @@ public class WindowsEndpointsTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task CreatingAWindowWithoutReminderSettingsDefaultsThem()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Default Reminders Report", UnitLevelCode.Muqam);
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows",
+            ValidWindow(new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10))));
+
+        var result = await response.Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+        Assert.True(result!.Window.ReminderSettings.RemindFiveDaysBefore);
+        Assert.True(result.Window.ReminderSettings.RemindTwoDaysBefore);
+        Assert.True(result.Window.ReminderSettings.RemindOnDueDay);
+        Assert.True(result.Window.ReminderSettings.EscalateToParentAfterThreeDays);
+        Assert.False(result.Window.ReminderSettings.EscalateToZoneAfterSevenDays);
+    }
+
+    [Fact]
+    public async Task UpdateSubmissionWindowReplacesItsReminderSettings()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Custom Reminders Report", UnitLevelCode.Muqam);
+        var created = await (await client.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                ValidWindow(new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var customSettings = new ReminderSettings(false, false, false, false, true);
+        var update = new UpdateSubmissionWindowRequest(
+            "October 2026", Now, 3, Now.AddDays(30), [new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10))],
+            ReminderSettings: customSettings);
+        var response = await client.PutAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}", update);
+
+        var result = await response.Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+        Assert.False(result!.Window.ReminderSettings.RemindFiveDaysBefore);
+        Assert.True(result.Window.ReminderSettings.EscalateToZoneAfterSevenDays);
+    }
+
+    [Fact]
     public async Task UpdateSubmissionWindowForAnUnknownIdReturnsNotFound()
     {
         using var client = await CreateSecretariatClientAsync();

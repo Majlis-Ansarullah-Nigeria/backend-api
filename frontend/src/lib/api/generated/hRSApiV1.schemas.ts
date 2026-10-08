@@ -112,6 +112,69 @@ export interface CreateRoleAssignmentResult {
   invited: boolean;
 }
 
+export interface WindowDueDate {
+  level: UnitLevelCode;
+  dueAt: string;
+}
+
+export interface ReminderSettings {
+  remindFiveDaysBefore: boolean;
+  remindTwoDaysBefore: boolean;
+  remindOnDueDay: boolean;
+  escalateToParentAfterThreeDays: boolean;
+  escalateToZoneAfterSevenDays: boolean;
+}
+
+export interface CreateSubmissionWindowRequest {
+  periodLabel: string;
+  opensAt: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  graceDays: number | string;
+  closesAt: string;
+  dueDates: WindowDueDate[];
+  /** @nullable */
+  targetUnitIds?: string[] | null;
+  reminderSettings?: null | ReminderSettings;
+}
+
+export interface WindowExtensionSummary {
+  unitId: string;
+  newDueAt: string;
+  newClosesAt: string;
+  reason: string;
+  grantedAt: string;
+}
+
+export interface WindowReopenSummary {
+  unitId: string;
+  reopenedUntil: string;
+  reason: string;
+  reopenedAt: string;
+}
+
+export interface SubmissionWindowSummary {
+  id: string;
+  reportTypeId: string;
+  periodLabel: string;
+  opensAt: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  graceDays: number | string;
+  closesAt: string;
+  dueDates: WindowDueDate[];
+  createdAt: string;
+  /** @nullable */
+  scheduleId: string | null;
+  targetUnitIds: string[];
+  extensions: WindowExtensionSummary[];
+  reopens: WindowReopenSummary[];
+  reminderSettings: ReminderSettings;
+}
+
+export interface CreateSubmissionWindowResult {
+  window: SubmissionWindowSummary;
+  warnings: string[];
+}
+
 export interface CreateUnitRequest {
   code: string;
   name: string;
@@ -135,8 +198,53 @@ export interface CreateUnitRequest {
   longitude: number | string | null;
 }
 
+export interface ScheduleDueOffset {
+  level: UnitLevelCode;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  dueDayOffset: number | string;
+}
+
+export interface CreateWindowScheduleRequest {
+  frequency: ReportTypeFrequency;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  opensDayOffset: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  graceDays: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  closesDayOffset: number | string;
+  dueOffsets: ScheduleDueOffset[];
+}
+
+export interface WindowScheduleSummary {
+  id: string;
+  reportTypeId: string;
+  frequency: ReportTypeFrequency;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  opensDayOffset: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  graceDays: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  closesDayOffset: number | string;
+  dueOffsets: ScheduleDueOffset[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateWindowScheduleResult {
+  schedule: WindowScheduleSummary;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  windowsGenerated: number | string;
+}
+
 export interface ForgotPasswordRequest {
   identifier: string;
+}
+
+export interface GrantWindowExtensionRequest {
+  unitIds: string[];
+  newDueAt: string;
+  newClosesAt: string;
+  reason: string;
 }
 
 export type IFormFile = Blob;
@@ -215,6 +323,12 @@ export interface ProblemDetails {
   detail?: string | null;
   /** @nullable */
   instance?: string | null;
+}
+
+export interface ReopenWindowRequest {
+  unitIds: string[];
+  reopenedUntil: string;
+  reason: string;
 }
 
 export interface ReportTypeSummary {
@@ -421,6 +535,18 @@ export interface UpdateReportTypeRequest {
   allowAttachments: boolean;
 }
 
+export interface UpdateSubmissionWindowRequest {
+  periodLabel: string;
+  opensAt: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  graceDays: number | string;
+  closesAt: string;
+  dueDates: WindowDueDate[];
+  /** @nullable */
+  targetUnitIds?: string[] | null;
+  reminderSettings?: null | ReminderSettings;
+}
+
 export interface UpdateTemplateSchemaRequest {
   schema: TemplateSchema;
 }
@@ -443,6 +569,17 @@ export interface UpdateUnitRequest {
      * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
      */
   longitude: number | string | null;
+}
+
+export interface UpdateWindowScheduleRequest {
+  frequency: ReportTypeFrequency;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  opensDayOffset: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  graceDays: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  closesDayOffset: number | string;
+  dueOffsets: ScheduleDueOffset[];
 }
 
 export type UserAccountStatus = number;

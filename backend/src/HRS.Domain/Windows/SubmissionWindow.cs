@@ -36,7 +36,8 @@ public sealed class SubmissionWindow
         IEnumerable<WindowLevelDueDate> dueDates,
         DateTimeOffset now,
         Guid? scheduleId,
-        IEnumerable<Guid>? targetUnitIds)
+        IEnumerable<Guid>? targetUnitIds,
+        WindowReminderSettings? reminderSettings)
     {
         Id = id;
         ReportTypeId = reportTypeId;
@@ -48,6 +49,7 @@ public sealed class SubmissionWindow
         CreatedAt = now;
         ScheduleId = scheduleId;
         _targetUnitIds.AddRange(targetUnitIds ?? []);
+        ReminderSettings = reminderSettings ?? WindowReminderSettings.Default();
     }
 
     public Guid Id { get; private set; }
@@ -74,6 +76,8 @@ public sealed class SubmissionWindow
 
     public IReadOnlyList<WindowReopen> Reopens => _reopens;
 
+    public WindowReminderSettings ReminderSettings { get; private set; } = WindowReminderSettings.Default();
+
     public static SubmissionWindow Create(
         Guid id,
         Guid reportTypeId,
@@ -84,8 +88,9 @@ public sealed class SubmissionWindow
         IEnumerable<WindowLevelDueDate> dueDates,
         DateTimeOffset now,
         Guid? scheduleId = null,
-        IEnumerable<Guid>? targetUnitIds = null) =>
-        new(id, reportTypeId, periodLabel, opensAt, graceDays, closesAt, dueDates, now, scheduleId, targetUnitIds);
+        IEnumerable<Guid>? targetUnitIds = null,
+        WindowReminderSettings? reminderSettings = null) =>
+        new(id, reportTypeId, periodLabel, opensAt, graceDays, closesAt, dueDates, now, scheduleId, targetUnitIds, reminderSettings);
 
     public void Update(
         string periodLabel,
@@ -93,7 +98,8 @@ public sealed class SubmissionWindow
         int graceDays,
         DateTimeOffset closesAt,
         IEnumerable<WindowLevelDueDate> dueDates,
-        IEnumerable<Guid>? targetUnitIds = null)
+        IEnumerable<Guid>? targetUnitIds = null,
+        WindowReminderSettings? reminderSettings = null)
     {
         PeriodLabel = periodLabel;
         OpensAt = opensAt;
@@ -103,6 +109,7 @@ public sealed class SubmissionWindow
         _dueDates.AddRange(dueDates);
         _targetUnitIds.Clear();
         _targetUnitIds.AddRange(targetUnitIds ?? []);
+        ReminderSettings = reminderSettings ?? ReminderSettings;
     }
 
     /// <summary>A unit's own due date for its level — an active extension (BR-WIN-05) overrides

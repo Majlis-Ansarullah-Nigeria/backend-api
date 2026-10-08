@@ -26,7 +26,8 @@ public sealed record SubmissionWindowSummary(
     Guid? ScheduleId,
     IReadOnlyList<Guid> TargetUnitIds,
     IReadOnlyList<WindowExtensionSummary> Extensions,
-    IReadOnlyList<WindowReopenSummary> Reopens)
+    IReadOnlyList<WindowReopenSummary> Reopens,
+    ReminderSettings ReminderSettings)
 {
     public static SubmissionWindowSummary FromEntity(SubmissionWindow window) => new(
         window.Id,
@@ -40,5 +41,6 @@ public sealed record SubmissionWindowSummary(
         window.ScheduleId,
         window.TargetUnitIds,
         window.Extensions.Select(WindowExtensionSummary.FromEntity).ToList(),
-        window.Reopens.Select(WindowReopenSummary.FromEntity).ToList());
+        window.Reopens.Select(WindowReopenSummary.FromEntity).ToList(),
+        ReminderSettings.FromEntity(window.ReminderSettings));
 }

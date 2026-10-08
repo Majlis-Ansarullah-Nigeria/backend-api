@@ -54,7 +54,8 @@ public sealed class CreateSubmissionWindowCommandHandler(IAppDbContext db, IAcce
             request.DueDates.Select(d => new WindowLevelDueDate(d.Level, d.DueAt)),
             clock.UtcNow,
             scheduleId: null,
-            targetUnitIds: request.TargetUnitIds);
+            targetUnitIds: request.TargetUnitIds,
+            reminderSettings: request.ReminderSettings?.ToEntity());
 
         db.SubmissionWindows.Add(window);
         await db.SaveChangesAsync(cancellationToken);

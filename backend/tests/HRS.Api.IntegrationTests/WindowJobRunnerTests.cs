@@ -85,10 +85,11 @@ public class WindowJobRunnerTests(ApiFactory factory)
         int graceDays,
         DateTimeOffset closesAt,
         DateTimeOffset dueAt,
-        IReadOnlyList<Guid>? targetUnitIds = null)
+        IReadOnlyList<Guid>? targetUnitIds = null,
+        ReminderSettings? reminderSettings = null)
     {
         var request = new CreateSubmissionWindowRequest(
-            "Job Test Window", opensAt, graceDays, closesAt, [new WindowDueDate(UnitLevelCode.Muqam, dueAt)], targetUnitIds);
+            "Job Test Window", opensAt, graceDays, closesAt, [new WindowDueDate(UnitLevelCode.Muqam, dueAt)], targetUnitIds, reminderSettings);
         var created = await (await client.PostAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows", request))
             .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
 
@@ -145,18 +146,96 @@ public class WindowJobRunnerTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task ReminderEventsFireOnceDueDateIsWithinAConfiguredThreshold()
+    public async Task FiveDayReminderFiresWhenDueDateIsWithinFiveDaysButNotTwo()
     {
         using var client = await CreateSecretariatClientAsync();
-        var reportTypeId = await CreateReportTypeAsync(client, "Reminder Job Report", UnitLevelCode.Muqam);
+        var reportTypeId = await CreateReportTypeAsync(client, "Five Day Reminder Report", UnitLevelCode.Muqam);
         var muqamId = await CreateMuqamUnitAsync(client, "03");
-        // Due in 18 hours — within the "1 day before" threshold.
-        var windowId = await CreateWindowAsync(client, reportTypeId, Now.AddDays(-5), 3, Now.AddDays(30), Now.AddHours(18));
+        var windowId = await CreateWindowAsync(client, reportTypeId, Now.AddDays(-5), 3, Now.AddDays(30), Now.AddDays(4));
 
         await RunJobAsync();
 
         var runs = await GetJobRunsAsync(windowId);
-        Assert.Contains(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Reminder && r.EventKey == "1");
+        Assert.Contains(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Reminder && r.EventKey == "5");
+        Assert.DoesNotContain(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Reminder && r.EventKey == "2");
+    }
+
+    [Fact]
+    public async Task TwoDayReminderFiresWhenDueDateIsWithinTwoDays()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Two Day Reminder Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "03b");
+        var windowId = await CreateWindowAsync(client, reportTypeId, Now.AddDays(-5), 3, Now.AddDays(30), Now.AddDays(1));
+
+        await RunJobAsync();
+
+        var runs = await GetJobRunsAsync(windowId);
+        Assert.Contains(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Reminder && r.EventKey == "2");
+    }
+
+    [Fact]
+    public async Task OnDueDayReminderFiresOnTheDueCalendarDate()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Due Day Reminder Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "03c");
+        var windowId = await CreateWindowAsync(client, reportTypeId, Now.AddDays(-5), 3, Now.AddDays(30), Now);
+
+        await RunJobAsync();
+
+        var runs = await GetJobRunsAsync(windowId);
+        Assert.Contains(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Reminder && r.EventKey == "0");
+    }
+
+    [Fact]
+    public async Task ADisabledReminderStageNeverFiresEvenWhenItsDateConditionIsMet()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Disabled Reminder Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "03d");
+        var settings = new ReminderSettings(
+            RemindFiveDaysBefore: false, RemindTwoDaysBefore: true, RemindOnDueDay: true,
+            EscalateToParentAfterThreeDays: true, EscalateToZoneAfterSevenDays: false);
+        var windowId = await CreateWindowAsync(client, reportTypeId, Now.AddDays(-5), 3, Now.AddDays(30), Now.AddDays(4), reminderSettings: settings);
+
+        await RunJobAsync();
+
+        var runs = await GetJobRunsAsync(windowId);
+        Assert.DoesNotContain(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Reminder && r.EventKey == "5");
+    }
+
+    [Fact]
+    public async Task EscalateToParentFiresThreeDaysAfterDueByDefault()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Escalate Parent Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "03e");
+        var windowId = await CreateWindowAsync(client, reportTypeId, Now.AddDays(-30), 30, Now.AddDays(30), Now.AddDays(-4));
+
+        await RunJobAsync();
+
+        var runs = await GetJobRunsAsync(windowId);
+        Assert.Contains(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Escalated && r.EventKey == "Parent");
+        Assert.DoesNotContain(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Escalated && r.EventKey == "Zone");
+    }
+
+    [Fact]
+    public async Task EscalateToZoneFiresSevenDaysAfterDueWhenEnabled()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Escalate Zone Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "03f");
+        var settings = new ReminderSettings(
+            RemindFiveDaysBefore: true, RemindTwoDaysBefore: true, RemindOnDueDay: true,
+            EscalateToParentAfterThreeDays: true, EscalateToZoneAfterSevenDays: true);
+        var windowId = await CreateWindowAsync(
+            client, reportTypeId, Now.AddDays(-30), 30, Now.AddDays(30), Now.AddDays(-8), reminderSettings: settings);
+
+        await RunJobAsync();
+
+        var runs = await GetJobRunsAsync(windowId);
+        Assert.Contains(runs, r => r.UnitId == muqamId && r.EventType == WindowJobEventType.Escalated && r.EventKey == "Zone");
     }
 
     [Fact]

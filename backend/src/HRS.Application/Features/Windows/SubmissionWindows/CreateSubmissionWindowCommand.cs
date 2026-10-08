@@ -11,6 +11,7 @@ public sealed record CreateSubmissionWindowCommand(
     int GraceDays,
     DateTimeOffset ClosesAt,
     IReadOnlyList<WindowDueDate> DueDates,
-    IReadOnlyList<Guid>? TargetUnitIds = null) : IRequest<Result<CreateSubmissionWindowResult>>;
+    IReadOnlyList<Guid>? TargetUnitIds = null,
+    ReminderSettings? ReminderSettings = null) : IRequest<Result<CreateSubmissionWindowResult>>;
 
 public sealed record CreateSubmissionWindowResult(SubmissionWindowSummary Window, IReadOnlyList<string> Warnings);
