@@ -1,0 +1,180 @@
+namespace HRS.Domain.Submissions;
+
+/// <summary>
+/// One unit's filled report for one submission window (SRS §5 — the report lifecycle). Always
+/// belongs to a Unit, never a User (hrs-domain: "Reports belong to a Unit, never to a User. Heads
+/// change; history stays with the unit."). TemplateVersionId is pinned at creation so the form
+/// always renders — and always answers questions about what was asked — against the exact
+/// version it was filled against, even after a newer version publishes (FR-TPL-007).
+///
+/// This type only enforces the state machine itself. Window-open checks, the late-flag
+/// computation, and WINDOW_CLOSED rejection are Application-handler concerns (M5.3/M5.5/M5.6) —
+/// the same split SubmissionWindow already draws between domain-level date math and
+/// handler-level orchestration. AnswersJson is an opaque blob here for the same reason
+/// TemplateVersion.SchemaJson is: the structured shape and its validation belong to Application
+/// (M5.3), not Domain.
+/// </summary>
+public sealed class ReportInstance
+{
+    private ReportInstance()
+    {
+    }
+
+    private ReportInstance(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now)
+    {
+        Id = id;
+        WindowId = windowId;
+        UnitId = unitId;
+        TemplateVersionId = templateVersionId;
+        Status = ReportInstanceStatus.NotStarted;
+        AnswersJson = "{}";
+        CreatedAt = now;
+    }
+
+    public Guid Id { get; private set; }
+
+    public Guid WindowId { get; private set; }
+
+    public Guid UnitId { get; private set; }
+
+    public Guid TemplateVersionId { get; private set; }
+
+    public ReportInstanceStatus Status { get; private set; }
+
+    public string AnswersJson { get; private set; } = "{}";
+
+    public bool IsLate { get; private set; }
+
+    public DateTimeOffset CreatedAt { get; private set; }
+
+    public DateTimeOffset? SubmittedAt { get; private set; }
+
+    public DateTimeOffset? AcknowledgedAt { get; private set; }
+
+    public DateTimeOffset? ReturnedAt { get; private set; }
+
+    public string? ReturnComment { get; private set; }
+
+    public DateTimeOffset? RevisionDeadline { get; private set; }
+
+    public DateTimeOffset? ReopenedAt { get; private set; }
+
+    public static ReportInstance Create(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now) =>
+        new(id, windowId, unitId, templateVersionId, now);
+
+    /// <summary>Saves a draft (manual save or autosave, FR-SUB-003). NotStarted -&gt; Draft on the
+    /// first save; a Draft or Returned report just updates its answers in place — saving never
+    /// moves a Returned report back to Draft by itself, only Submit (resubmission) does.</summary>
+    public void Save(string answersJson)
+    {
+        if (Status is not (ReportInstanceStatus.NotStarted or ReportInstanceStatus.Draft or ReportInstanceStatus.Returned))
+        {
+            throw new InvalidOperationException($"Can't save a report in {Status} status — it's locked.");
+        }
+
+        AnswersJson = answersJson;
+
+        if (Status == ReportInstanceStatus.NotStarted)
+        {
+            Status = ReportInstanceStatus.Draft;
+        }
+    }
+
+    /// <summary>Submits a Draft, or resubmits a Returned report (FR-SUB-009, BR-WIN-06). IsLate is
+    /// computed by the caller against the window's (possibly extended) due date — see this type's
+    /// own doc comment for why that math lives in the handler, not here.</summary>
+    public void Submit(bool isLate, DateTimeOffset now)
+    {
+        if (Status is not (ReportInstanceStatus.Draft or ReportInstanceStatus.Returned))
+        {
+            throw new InvalidOperationException($"Can't submit a report in {Status} status.");
+        }
+
+        Status = ReportInstanceStatus.Submitted;
+        SubmittedAt = now;
+        IsLate = isLate;
+        ReturnComment = null;
+        RevisionDeadline = null;
+    }
+
+    /// <summary>The Secretariat opens a submitted report — this is what "unread" structurally
+    /// means; there's no separate IsRead flag.</summary>
+    public void Open()
+    {
+        if (Status != ReportInstanceStatus.Submitted)
+        {
+            throw new InvalidOperationException($"Can't open a report in {Status} status.");
+        }
+
+        Status = ReportInstanceStatus.InReview;
+    }
+
+    /// <summary>The head withdraws a submission while it's still unread (FR-SUB-009). The other
+    /// half of that rule — the window must still be open — is a handler concern.</summary>
+    public void Withdraw()
+    {
+        if (Status != ReportInstanceStatus.Submitted)
+        {
+            throw new InvalidOperationException($"Can't withdraw a report in {Status} status.");
+        }
+
+        Status = ReportInstanceStatus.Draft;
+    }
+
+    public void Acknowledge(DateTimeOffset now)
+    {
+        if (Status != ReportInstanceStatus.InReview)
+        {
+            throw new InvalidOperationException($"Can't acknowledge a report in {Status} status.");
+        }
+
+        Status = ReportInstanceStatus.Acknowledged;
+        AcknowledgedAt = now;
+    }
+
+    /// <summary>Sends a report back with a comment. revisionDeadline defaults to 7 days out
+    /// (BR-WIN-06's default), overridable by the reviewer.</summary>
+    public void Return(string comment, DateTimeOffset now, DateTimeOffset? revisionDeadline = null)
+    {
+        if (Status != ReportInstanceStatus.InReview)
+        {
+            throw new InvalidOperationException($"Can't return a report in {Status} status.");
+        }
+
+        Status = ReportInstanceStatus.Returned;
+        ReturnComment = comment;
+        ReturnedAt = now;
+        RevisionDeadline = revisionDeadline ?? now.AddDays(7);
+    }
+
+    /// <summary>The window job (M4.4/M8) marks an unsubmitted instance Missed once the hard close
+    /// passes (BR-WIN-04). The draft's answers are kept for reference, not cleared.</summary>
+    public void MarkMissed()
+    {
+        if (Status is not (ReportInstanceStatus.NotStarted or ReportInstanceStatus.Draft))
+        {
+            throw new InvalidOperationException($"Can't mark a report in {Status} status as missed.");
+        }
+
+        Status = ReportInstanceStatus.Missed;
+    }
+
+    /// <summary>Secretariat-only, rare, audited override (SRS §5.1) back into an editable state —
+    /// either a Missed window being reopened for late submission (FR-WIN-006) or an Acknowledged
+    /// report being reopened for correction.</summary>
+    public void Reopen(DateTimeOffset now)
+    {
+        if (Status is not (ReportInstanceStatus.Missed or ReportInstanceStatus.Acknowledged))
+        {
+            throw new InvalidOperationException($"Can't reopen a report in {Status} status.");
+        }
+
+        Status = ReportInstanceStatus.Draft;
+        ReopenedAt = now;
+    }
+
+    /// <summary>"Overdue" is a derived label (SRS §5.1), never stored: NotStarted or Draft, past
+    /// its due date.</summary>
+    public bool IsOverdue(DateTimeOffset now, DateTimeOffset dueAt) =>
+        (Status is ReportInstanceStatus.NotStarted or ReportInstanceStatus.Draft) && now > dueAt;
+}
