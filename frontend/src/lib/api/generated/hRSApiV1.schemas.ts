@@ -300,6 +300,23 @@ export interface MoveUnitRequest {
   newParentId: string;
 }
 
+export type ReportLineStatus = number;
+
+export interface MyReportSummary {
+  /** @nullable */
+  instanceId: string | null;
+  windowId: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  unitId: string;
+  unitName: string;
+  periodLabel: string;
+  dueAt: string;
+  /** @nullable */
+  submittedAt: string | null;
+  status: ReportLineStatus;
+}
+
 export interface OtpRequest {
   identifier: string;
 }

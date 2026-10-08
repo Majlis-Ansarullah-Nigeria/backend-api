@@ -2,6 +2,7 @@ using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Invitations;
 using HRS.Domain.Organization;
+using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
 using HRS.Domain.Windows;
 using HRS.Infrastructure.Identity;
@@ -17,6 +18,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UserSession> UserSessions => Set<UserSession>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
 
@@ -179,6 +182,31 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasOne<ReportType>()
                 .WithMany()
                 .HasForeignKey(v => v.ReportTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ReportInstance>(instance =>
+        {
+            instance.ToTable("report_instances");
+            instance.HasKey(i => i.Id);
+            instance.Property(i => i.AnswersJson).HasColumnType("jsonb").IsRequired();
+            // The report-instance uniqueness rule (ef-migration skill): one instance per unit per
+            // window, never two.
+            instance.HasIndex(i => new { i.WindowId, i.UnitId }).IsUnique();
+            instance
+                .HasOne<SubmissionWindow>()
+                .WithMany()
+                .HasForeignKey(i => i.WindowId)
+                .OnDelete(DeleteBehavior.Restrict);
+            instance
+                .HasOne<Unit>()
+                .WithMany()
+                .HasForeignKey(i => i.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+            instance
+                .HasOne<TemplateVersion>()
+                .WithMany()
+                .HasForeignKey(i => i.TemplateVersionId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

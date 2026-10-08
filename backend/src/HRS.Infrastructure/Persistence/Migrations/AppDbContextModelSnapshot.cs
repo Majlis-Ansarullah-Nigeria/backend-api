@@ -309,6 +309,82 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AcknowledgedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("acknowledged_at");
+
+                    b.Property<string>("AnswersJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("answers_json");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_late");
+
+                    b.Property<DateTimeOffset?>("ReopenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reopened_at");
+
+                    b.Property<string>("ReturnComment")
+                        .HasColumnType("text")
+                        .HasColumnName("return_comment");
+
+                    b.Property<DateTimeOffset?>("ReturnedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("returned_at");
+
+                    b.Property<DateTimeOffset?>("RevisionDeadline")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revision_deadline");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<Guid>("TemplateVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_version_id");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.Property<Guid>("WindowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("window_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_instances");
+
+                    b.HasIndex("TemplateVersionId")
+                        .HasDatabaseName("ix_report_instances_template_version_id");
+
+                    b.HasIndex("UnitId")
+                        .HasDatabaseName("ix_report_instances_unit_id");
+
+                    b.HasIndex("WindowId", "UnitId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_report_instances_window_id_unit_id");
+
+                    b.ToTable("report_instances", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Templates.ReportType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -826,6 +902,30 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_units_units_parent_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportInstance", b =>
+                {
+                    b.HasOne("HRS.Domain.Templates.TemplateVersion", null)
+                        .WithMany()
+                        .HasForeignKey("TemplateVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_instances_template_versions_template_version_id");
+
+                    b.HasOne("HRS.Domain.Organization.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_instances_units_unit_id");
+
+                    b.HasOne("HRS.Domain.Windows.SubmissionWindow", null)
+                        .WithMany()
+                        .HasForeignKey("WindowId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_instances_submission_windows_window_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Templates.TemplateVersion", b =>
