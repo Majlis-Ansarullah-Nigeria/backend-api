@@ -348,43 +348,7 @@ export interface ReopenWindowRequest {
   reason: string;
 }
 
-export interface ReportTypeSummary {
-  id: string;
-  name: string;
-  /** @nullable */
-  description: string | null;
-  category: ReportTypeCategory;
-  frequency: ReportTypeFrequency;
-  applicableLevels: UnitLevelCode[];
-  recipientLevel: UnitLevelCode;
-  /** @pattern ^-?(?:0|[1-9]\d*)$ */
-  observerDepth: number | string;
-  allowAttachments: boolean;
-  createdAt: string;
-  /** @nullable */
-  archivedAt: string | null;
-}
-
-export interface ResetPasswordRequest {
-  email: string;
-  token: string;
-  newPassword: string;
-}
-
-export interface SessionSummary {
-  id: string;
-  createdAt: string;
-  expiresAt: string;
-  /** @nullable */
-  createdByIp: string | null;
-  /** @nullable */
-  userAgent: string | null;
-  isCurrent: boolean;
-}
-
-export interface SetActiveAssignmentRequest {
-  roleAssignmentId: string;
-}
+export type ReportInstanceForEditingAnswers = { [key: string]: unknown };
 
 export type TemplateFieldType = number;
 
@@ -446,6 +410,86 @@ export interface TemplateSection {
 
 export interface TemplateSchema {
   sections: TemplateSection[];
+}
+
+export type ReportInstanceStatus = number;
+
+export interface ReportInstanceForEditing {
+  /** @nullable */
+  id: string | null;
+  windowId: string;
+  unitId: string;
+  unitName: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  periodLabel: string;
+  templateVersionId: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  templateVersionNumber: number | string;
+  schema: TemplateSchema;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  unitLevel: number | string;
+  answers: ReportInstanceForEditingAnswers;
+  status: ReportInstanceStatus;
+  canSave: boolean;
+  opensAt: string;
+  /** @nullable */
+  dueAt: string | null;
+  closesAt: string;
+  /** @nullable */
+  revisionDeadline: string | null;
+  /** @nullable */
+  rowVersion: string | null;
+}
+
+export interface ReportTypeSummary {
+  id: string;
+  name: string;
+  /** @nullable */
+  description: string | null;
+  category: ReportTypeCategory;
+  frequency: ReportTypeFrequency;
+  applicableLevels: UnitLevelCode[];
+  recipientLevel: UnitLevelCode;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  observerDepth: number | string;
+  allowAttachments: boolean;
+  createdAt: string;
+  /** @nullable */
+  archivedAt: string | null;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
+export type SaveReportDraftRequestAnswers = { [key: string]: unknown };
+
+export interface SaveReportDraftRequest {
+  answers: SaveReportDraftRequestAnswers;
+}
+
+export interface SaveReportDraftResult {
+  id: string;
+  status: ReportInstanceStatus;
+  rowVersion: string;
+}
+
+export interface SessionSummary {
+  id: string;
+  createdAt: string;
+  expiresAt: string;
+  /** @nullable */
+  createdByIp: string | null;
+  /** @nullable */
+  userAgent: string | null;
+  isCurrent: boolean;
+}
+
+export interface SetActiveAssignmentRequest {
+  roleAssignmentId: string;
 }
 
 export type TemplateVersionStatus = number;
@@ -649,5 +693,13 @@ includeArchived?: boolean;
 
 export type GetReportTypesParams = {
 includeArchived?: boolean;
+};
+
+export type GetReportInstanceForEditingParams = {
+unit: string;
+};
+
+export type SaveReportDraftParams = {
+unit: string;
 };
 

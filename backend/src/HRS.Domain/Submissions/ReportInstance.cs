@@ -59,6 +59,11 @@ public sealed class ReportInstance
 
     public DateTimeOffset? ReopenedAt { get; private set; }
 
+    /// <summary>Postgres' native xmin system column, mapped as an EF Core concurrency token
+    /// (Infrastructure) — the If-Match value autosave round-trips (backend/CLAUDE.md). Not set by
+    /// application code; the database assigns and updates it.</summary>
+    public uint RowVersion { get; private set; }
+
     public static ReportInstance Create(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now) =>
         new(id, windowId, unitId, templateVersionId, now);
 

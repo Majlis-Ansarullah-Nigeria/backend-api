@@ -190,6 +190,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             instance.ToTable("report_instances");
             instance.HasKey(i => i.Id);
             instance.Property(i => i.AnswersJson).HasColumnType("jsonb").IsRequired();
+            // Postgres' own xmin system column as the concurrency token — no real column is
+            // added by a migration, since xmin already exists on every table.
+            instance.Property(i => i.RowVersion).HasColumnName("xmin").IsRowVersion();
             // The report-instance uniqueness rule (ef-migration skill): one instance per unit per
             // window, never two.
             instance.HasIndex(i => new { i.WindowId, i.UnitId }).IsUnique();

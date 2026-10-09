@@ -5,23 +5,32 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
+  GetReportInstanceForEditingParams,
   MyReportSummary,
-  ProblemDetails
+  ProblemDetails,
+  ReportInstanceForEditing,
+  SaveReportDraftParams,
+  SaveReportDraftRequest,
+  SaveReportDraftResult
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -140,3 +149,203 @@ export function useGetMyReports<TData = Awaited<ReturnType<typeof getMyReports>>
 
 
 
+export const getGetReportInstanceForEditingUrl = (id: string,
+    params: GetReportInstanceForEditingParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}?${stringifiedParams}` : `/api/v1/reports/${id}`
+}
+
+export const getReportInstanceForEditing = async (id: string,
+    params: GetReportInstanceForEditingParams, options?: Parameters<typeof customFetch>[1]): Promise<ReportInstanceForEditing> => {
+
+  return customFetch<ReportInstanceForEditing>(getGetReportInstanceForEditingUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReportInstanceForEditingQueryKey = (id: string,
+    params?: GetReportInstanceForEditingParams,) => {
+    return [
+    `/api/v1/reports/${id}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetReportInstanceForEditingQueryOptions = <TData = Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError = ProblemDetails>(id: string,
+    params: GetReportInstanceForEditingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportInstanceForEditingQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportInstanceForEditing>>> = ({ signal }) => getReportInstanceForEditing(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReportInstanceForEditingQueryResult = NonNullable<Awaited<ReturnType<typeof getReportInstanceForEditing>>>
+export type GetReportInstanceForEditingQueryError = ProblemDetails
+
+
+export function useGetReportInstanceForEditing<TData = Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportInstanceForEditingParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportInstanceForEditing>>,
+          TError,
+          Awaited<ReturnType<typeof getReportInstanceForEditing>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportInstanceForEditing<TData = Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportInstanceForEditingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportInstanceForEditing>>,
+          TError,
+          Awaited<ReturnType<typeof getReportInstanceForEditing>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportInstanceForEditing<TData = Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportInstanceForEditingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetReportInstanceForEditing<TData = Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportInstanceForEditingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportInstanceForEditing>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReportInstanceForEditingQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSaveReportDraftUrl = (id: string,
+    params: SaveReportDraftParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}?${stringifiedParams}` : `/api/v1/reports/${id}`
+}
+
+export const saveReportDraft = async (id: string,
+    saveReportDraftRequest: SaveReportDraftRequest,
+    params: SaveReportDraftParams, options?: Parameters<typeof customFetch>[1]): Promise<SaveReportDraftResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SaveReportDraftResult>(getSaveReportDraftUrl(id,params),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveReportDraftRequest)
+  }
+);}
+
+
+
+
+
+export const getSaveReportDraftMutationKey = () => ['saveReportDraft'] as const;
+
+export const getSaveReportDraftMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveReportDraft>>, TError,SaveReportDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveReportDraft>>, TError,SaveReportDraftMutationVariables, TContext> => {
+
+const mutationKey = getSaveReportDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveReportDraft>>, SaveReportDraftMutationVariables> = (props) => {
+          const {id,data,params} = props ?? {};
+
+          return  saveReportDraft(id,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveReportDraftMutationResult = NonNullable<Awaited<ReturnType<typeof saveReportDraft>>>
+    export type SaveReportDraftMutationBody = SaveReportDraftRequest
+    export type SaveReportDraftMutationError = ProblemDetails
+    export type SaveReportDraftMutationVariables = {id: string;data: SaveReportDraftRequest;params: SaveReportDraftParams}
+
+    export const useSaveReportDraft = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveReportDraft>>, TError,SaveReportDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof saveReportDraft>>,
+        TError,
+        SaveReportDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveReportDraftMutationOptions(options), queryClient);
+    }

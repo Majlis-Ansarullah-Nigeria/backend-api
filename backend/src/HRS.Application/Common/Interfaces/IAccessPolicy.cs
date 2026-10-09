@@ -34,4 +34,11 @@ public interface IAccessPolicy
     /// if window and template permissions are ever split.
     /// </summary>
     Task<bool> IsWindowAdminAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// UnitHead or Delegate (any DelegateScope — DraftOnly delegates can still save, just not
+    /// submit later) for this specific unit (FR-SUB-002..004). Submit (M5.5) layers an additional
+    /// DraftAndSubmit-scope check on top of this for delegates.
+    /// </summary>
+    Task<bool> CanEditReportForUnitAsync(Guid userId, Guid unitId, CancellationToken cancellationToken);
 }

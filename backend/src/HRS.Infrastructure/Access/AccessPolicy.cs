@@ -37,4 +37,8 @@ public sealed class AccessPolicy(IAppDbContext db, IClock clock) : IAccessPolicy
 
     public Task<bool> IsWindowAdminAsync(Guid userId, CancellationToken cancellationToken) =>
         HasRoleAsync(userId, RoleName.Secretariat, cancellationToken);
+
+    public async Task<bool> CanEditReportForUnitAsync(Guid userId, Guid unitId, CancellationToken cancellationToken) =>
+        await HasRoleForUnitAsync(userId, unitId, RoleName.UnitHead, cancellationToken)
+            || await HasRoleForUnitAsync(userId, unitId, RoleName.Delegate, cancellationToken);
 }

@@ -5,6 +5,7 @@ using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
 using HRS.Domain.Windows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace HRS.Application.Common.Interfaces;
 
@@ -31,4 +32,9 @@ public interface IAppDbContext
     DbSet<WindowSchedule> WindowSchedules { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Exposes the change tracker's entry for a tracked entity — needed to set a
+    /// concurrency token's OriginalValue to a client-supplied If-Match value before saving
+    /// (ReportInstance.RowVersion), which EF's own DbSet API has no way to express.</summary>
+    EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
 }

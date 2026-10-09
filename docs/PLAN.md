@@ -42,7 +42,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 ## M5 — Submission (FR-SUB)
 - [x] M5.1 Report instance lifecycle in the domain with full unit tests (section 5 of SRS).
 - [x] M5.2 My reports inbox + head home (FR-SUB-001).
-- [ ] M5.3 Report form with autosave, `If-Match`, offline queue (FR-SUB-002..004, NFR-RES-01).
+- [x] M5.3 Report form with autosave, `If-Match`, offline queue (FR-SUB-002..004, NFR-RES-01).
 - [ ] M5.4 Attachments: presigned upload, ClamAV scan, limits (FR-SUB-005).
 - [ ] M5.5 Review-and-submit, declaration, idempotent submit, reference number, receipt PDF by email (FR-SUB-006, FR-SUB-010).
 - [ ] M5.6 Withdraw (FR-SUB-009); copy from last period (FR-SUB-008); nil report (FR-SUB-012).

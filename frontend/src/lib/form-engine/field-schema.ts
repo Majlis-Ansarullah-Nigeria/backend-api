@@ -91,3 +91,14 @@ export function buildSectionSchema(fields: TemplateField[], unitLevel: number, a
   }
   return z.object(shape);
 }
+
+/** The whole report form's schema (every section merged) — FR-SUB-002's inline validation. One
+ * combined resolver rather than swapping a per-section one lets react-hook-form keep showing a
+ * field's error even after the user has paged away from its section. */
+export function buildFormSchema(sections: readonly { fields: TemplateField[] }[], unitLevel: number, answers: Record<string, unknown>) {
+  const shape: Record<string, ZodTypeAny> = {};
+  for (const section of sections) {
+    Object.assign(shape, buildSectionSchema(section.fields, unitLevel, answers).shape);
+  }
+  return z.object(shape);
+}
