@@ -24,8 +24,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AttachmentSummary,
+  CompleteAttachmentUploadParams,
+  DeleteAttachmentParams,
   GetReportInstanceForEditingParams,
   MyReportSummary,
+  PresignAttachmentRequest,
+  PresignAttachmentUploadParams,
+  PresignedAttachmentUpload,
   ProblemDetails,
   ReportInstanceForEditing,
   SaveReportDraftParams,
@@ -348,4 +354,251 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSaveReportDraftMutationOptions(options), queryClient);
+    }
+    export const getPresignAttachmentUploadUrl = (id: string,
+    params: PresignAttachmentUploadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/attachments/presign?${stringifiedParams}` : `/api/v1/reports/${id}/attachments/presign`
+}
+
+export const presignAttachmentUpload = async (id: string,
+    presignAttachmentRequest: PresignAttachmentRequest,
+    params: PresignAttachmentUploadParams, options?: Parameters<typeof customFetch>[1]): Promise<PresignedAttachmentUpload> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PresignedAttachmentUpload>(getPresignAttachmentUploadUrl(id,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(presignAttachmentRequest)
+  }
+);}
+
+
+
+
+
+export const getPresignAttachmentUploadMutationKey = () => ['presignAttachmentUpload'] as const;
+
+export const getPresignAttachmentUploadMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof presignAttachmentUpload>>, TError,PresignAttachmentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof presignAttachmentUpload>>, TError,PresignAttachmentUploadMutationVariables, TContext> => {
+
+const mutationKey = getPresignAttachmentUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof presignAttachmentUpload>>, PresignAttachmentUploadMutationVariables> = (props) => {
+          const {id,data,params} = props ?? {};
+
+          return  presignAttachmentUpload(id,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PresignAttachmentUploadMutationResult = NonNullable<Awaited<ReturnType<typeof presignAttachmentUpload>>>
+    export type PresignAttachmentUploadMutationBody = PresignAttachmentRequest
+    export type PresignAttachmentUploadMutationError = ProblemDetails
+    export type PresignAttachmentUploadMutationVariables = {id: string;data: PresignAttachmentRequest;params: PresignAttachmentUploadParams}
+
+    export const usePresignAttachmentUpload = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof presignAttachmentUpload>>, TError,PresignAttachmentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof presignAttachmentUpload>>,
+        TError,
+        PresignAttachmentUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPresignAttachmentUploadMutationOptions(options), queryClient);
+    }
+    export const getCompleteAttachmentUploadUrl = (id: string,
+    attachmentId: string,
+    params: CompleteAttachmentUploadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/attachments/${attachmentId}/complete?${stringifiedParams}` : `/api/v1/reports/${id}/attachments/${attachmentId}/complete`
+}
+
+export const completeAttachmentUpload = async (id: string,
+    attachmentId: string,
+    params: CompleteAttachmentUploadParams, options?: Parameters<typeof customFetch>[1]): Promise<AttachmentSummary> => {
+
+  return customFetch<AttachmentSummary>(getCompleteAttachmentUploadUrl(id,attachmentId,params),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteAttachmentUploadMutationKey = () => ['completeAttachmentUpload'] as const;
+
+export const getCompleteAttachmentUploadMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAttachmentUpload>>, TError,CompleteAttachmentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeAttachmentUpload>>, TError,CompleteAttachmentUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteAttachmentUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeAttachmentUpload>>, CompleteAttachmentUploadMutationVariables> = (props) => {
+          const {id,attachmentId,params} = props ?? {};
+
+          return  completeAttachmentUpload(id,attachmentId,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteAttachmentUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeAttachmentUpload>>>
+
+    export type CompleteAttachmentUploadMutationError = ProblemDetails
+    export type CompleteAttachmentUploadMutationVariables = {id: string;attachmentId: string;params: CompleteAttachmentUploadParams}
+
+    export const useCompleteAttachmentUpload = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeAttachmentUpload>>, TError,CompleteAttachmentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeAttachmentUpload>>,
+        TError,
+        CompleteAttachmentUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteAttachmentUploadMutationOptions(options), queryClient);
+    }
+    export const getDeleteAttachmentUrl = (id: string,
+    attachmentId: string,
+    params: DeleteAttachmentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/attachments/${attachmentId}?${stringifiedParams}` : `/api/v1/reports/${id}/attachments/${attachmentId}`
+}
+
+export const deleteAttachment = async (id: string,
+    attachmentId: string,
+    params: DeleteAttachmentParams, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteAttachmentUrl(id,attachmentId,params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAttachmentMutationKey = () => ['deleteAttachment'] as const;
+
+export const getDeleteAttachmentMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAttachment>>, TError,DeleteAttachmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAttachment>>, TError,DeleteAttachmentMutationVariables, TContext> => {
+
+const mutationKey = getDeleteAttachmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAttachment>>, DeleteAttachmentMutationVariables> = (props) => {
+          const {id,attachmentId,params} = props ?? {};
+
+          return  deleteAttachment(id,attachmentId,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAttachmentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAttachment>>>
+
+    export type DeleteAttachmentMutationError = ProblemDetails
+    export type DeleteAttachmentMutationVariables = {id: string;attachmentId: string;params: DeleteAttachmentParams}
+
+    export const useDeleteAttachment = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAttachment>>, TError,DeleteAttachmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAttachment>>,
+        TError,
+        DeleteAttachmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteAttachmentMutationOptions(options), queryClient);
     }

@@ -17,6 +17,7 @@ import type { ReportInstanceForEditing } from "@/lib/api/generated/hRSApiV1.sche
 import { getGetMyReportsQueryKey } from "@/lib/api/generated/submissions/submissions";
 import { saveReportDraft, useGetReportInstanceForEditing } from "@/lib/api/generated/submissions/submissions";
 import { buildFormSchema } from "@/lib/form-engine/field-schema";
+import { TEMPLATE_FIELD_TYPE } from "@/lib/form-engine/field-types";
 import { SectionForm } from "@/lib/form-engine/components/SectionForm";
 import { clearPendingDraft, draftKey, getPendingDraft, savePendingDraft } from "@/lib/offline/draft-queue";
 import { countdownText } from "@/features/submissions/utils/countdown";
@@ -91,7 +92,13 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
 
   const saveMutation = useMutation({
     mutationFn: async (vars: { answers: Record<string, unknown>; ifMatch: string | null }) => {
-      const stripped = stripFileFields(vars.answers);
+      const fileFieldKeys = new Set(
+        (query.data?.schema.sections ?? [])
+          .flatMap((section) => section.fields)
+          .filter((f) => f.type === TEMPLATE_FIELD_TYPE.FileUpload)
+          .map((f) => f.key),
+      );
+      const stripped = stripFileFields(vars.answers, fileFieldKeys);
       return saveReportDraft(
         id,
         { answers: stripped },
@@ -303,7 +310,12 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
               <h2 className="mt-1 text-lg font-bold text-ink">{activeSection.title}</h2>
 
               <fieldset disabled={!canSave} className="mt-4">
-                <SectionForm section={activeSection} unitLevel={Number(data.unitLevel)} form={form} />
+                <SectionForm
+                  section={activeSection}
+                  unitLevel={Number(data.unitLevel)}
+                  form={form}
+                  uploadContext={{ reportId: id, unitId }}
+                />
               </fieldset>
 
               <div className="mt-6 flex justify-between gap-2">
@@ -325,12 +337,14 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
   );
 }
 
-/** FileUpload answers hold an in-memory browser File — attachments aren't persisted anywhere
- * until M5.4, and a File can't be JSON-serialized, so those fields are dropped before saving. */
-function stripFileFields(answers: Record<string, unknown>): Record<string, unknown> {
+/** FileUpload fields are never part of the autosaved answers JSON — their values are managed by
+ * their own presign/complete/delete endpoints (FR-SUB-005) and re-injected by the server on every
+ * load from the authoritative ReportAttachment rows, so saving them here would just be redundant
+ * (and could drift out of sync with what's actually been uploaded). */
+function stripFileFields(answers: Record<string, unknown>, fileFieldKeys: Set<string>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(answers)) {
-    if (typeof File !== "undefined" && value instanceof File) {
+    if (fileFieldKeys.has(key)) {
       continue;
     }
     result[key] = value;

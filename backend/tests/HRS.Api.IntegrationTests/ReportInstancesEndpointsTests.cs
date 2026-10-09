@@ -350,6 +350,38 @@ public class ReportInstancesEndpointsTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task SecondSaveReusingTheOriginalWindowIdStillFindsTheExistingInstance()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Report Instance Window Id Reuse Report", UnitLevelCode.Muqam);
+        await PublishEmptyTemplateAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "13");
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId, Now.AddDays(-1), 3, Now.AddDays(30), Now.AddDays(10));
+
+        var (client, userId) = await CreateAuthenticatedUserAsync();
+        await factory.CreateRoleAssignmentAsync(userId, muqamId, RoleName.UnitHead);
+
+        using var first = SaveRequest(windowId, muqamId, """{"q1":"hello"}""");
+        var firstResult = await (await client.SendAsync(first)).Content.ReadFromJsonAsync<SaveReportDraftResult>();
+
+        // A client that never learned the real instance id (e.g. it only ever attached a file,
+        // never called Save itself) keeps using the window id — this must find the instance
+        // ALREADY created for that (window, unit) pair rather than trying to create a second one
+        // and violating the one-instance-per-(window,unit) unique index.
+        using var second = SaveRequest(windowId, muqamId, """{"q1":"still the same instance"}""", firstResult!.RowVersion);
+        var secondResponse = await client.SendAsync(second);
+        var secondResult = await secondResponse.Content.ReadFromJsonAsync<SaveReportDraftResult>();
+
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+        Assert.Equal(firstResult.Id, secondResult!.Id);
+
+        var getResponse = await client.GetAsync(new Uri($"/api/v1/reports/{windowId}?unit={muqamId}", UriKind.Relative));
+        var report = await getResponse.Content.ReadFromJsonAsync<ReportInstanceForEditing>();
+
+        Assert.Equal(firstResult.Id, report!.Id);
+    }
+
+    [Fact]
     public async Task ADelegateCanAlsoSaveADraft()
     {
         using var secretariat = await CreateSecretariatClientAsync();

@@ -13,10 +13,12 @@ export function SectionForm({
   section,
   unitLevel,
   form,
+  uploadContext,
 }: {
   section: TemplateSection;
   unitLevel: number;
   form: UseFormReturn<Record<string, unknown>>;
+  uploadContext?: { reportId: string; unitId: string };
 }) {
   const answers = useWatch({ control: form.control });
   const shown = visibleFields(section.fields, unitLevel, answers);
@@ -33,7 +35,7 @@ export function SectionForm({
             </p>
           </FieldShell>
         ) : (
-          <FieldRenderer key={field.key} field={field} form={form} />
+          <FieldRenderer key={field.key} field={field} form={form} uploadContext={uploadContext} />
         ),
       )}
     </div>

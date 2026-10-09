@@ -80,10 +80,12 @@ try
             return ValueTask.CompletedTask;
         };
 
-        // 300/5min per IP: still a meaningful anti-abuse ceiling (well below credential-stuffing
+        // 600/5min per IP: still a meaningful anti-abuse ceiling (well below credential-stuffing
         // rates) but with headroom for the growing integration-test suite, which shares one
-        // in-memory limiter across every test in the "Api" collection (ApiFactory.cs).
-        var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 300;
+        // in-memory limiter across every test in the "Api" collection (ApiFactory.cs). Raised from
+        // 300 when M5.4's attachment tests (each logging in its own secretariat + unit-head client)
+        // pushed the full suite past the old ceiling — bump this again if that recurs.
+        var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 600;
 
         options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",

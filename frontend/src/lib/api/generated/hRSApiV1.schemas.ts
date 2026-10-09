@@ -14,6 +14,15 @@ export interface AcceptInvitationRequest {
 
 export type AggregationRule = number;
 
+export interface AttachmentSummary {
+  id: string;
+  fieldKey: string;
+  fileName: string;
+  contentType: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  sizeBytes: number | string;
+}
+
 export interface BulkImportCommitResult {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   createdCount: number | string;
@@ -324,6 +333,19 @@ export interface OtpRequest {
 export interface OtpVerifyRequest {
   identifier: string;
   code: string;
+}
+
+export interface PresignAttachmentRequest {
+  fieldKey: string;
+  fileName: string;
+  contentType: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  sizeBytes: number | string;
+}
+
+export interface PresignedAttachmentUpload {
+  attachmentId: string;
+  uploadUrl: string;
 }
 
 export interface ProblemDetails {
@@ -700,6 +722,18 @@ unit: string;
 };
 
 export type SaveReportDraftParams = {
+unit: string;
+};
+
+export type PresignAttachmentUploadParams = {
+unit: string;
+};
+
+export type CompleteAttachmentUploadParams = {
+unit: string;
+};
+
+export type DeleteAttachmentParams = {
 unit: string;
 };
 

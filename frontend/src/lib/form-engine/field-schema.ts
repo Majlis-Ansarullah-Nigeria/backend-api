@@ -71,7 +71,7 @@ function buildFieldSchema(field: TemplateField): ZodTypeAny {
         : z.array(z.record(z.string(), z.string()));
 
     case TEMPLATE_FIELD_TYPE.FileUpload:
-      return z.unknown().optional();
+      return field.required ? z.array(z.unknown()).min(1, "Attach at least one file") : z.array(z.unknown());
 
     default:
       return z.unknown().optional();

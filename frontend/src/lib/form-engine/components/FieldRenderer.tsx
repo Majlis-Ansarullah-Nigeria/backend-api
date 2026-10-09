@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { TemplateField } from "@/lib/api/generated/hRSApiV1.schemas";
 import { TEMPLATE_FIELD_TYPE } from "../field-types";
 import { FieldShell } from "./FieldShell";
+import { FileUploadField } from "./FileUploadField";
 import { MemberListField } from "./MemberListField";
 import { RepeatableTableField } from "./RepeatableTableField";
 
@@ -14,7 +15,15 @@ function errorMessage(errors: FieldErrors, key: string): string | undefined {
   return typeof error?.message === "string" ? error.message : undefined;
 }
 
-export function FieldRenderer({ field, form }: { field: TemplateField; form: UseFormReturn<Record<string, unknown>> }) {
+export function FieldRenderer({
+  field,
+  form,
+  uploadContext,
+}: {
+  field: TemplateField;
+  form: UseFormReturn<Record<string, unknown>>;
+  uploadContext?: { reportId: string; unitId: string };
+}) {
   const t = useTranslations("FormEngine");
   const error = errorMessage(form.formState.errors, field.key);
   const shellProps = { fieldKey: field.key, label: field.label, helpText: field.helpText, required: field.required, error };
@@ -180,18 +189,7 @@ export function FieldRenderer({ field, form }: { field: TemplateField; form: Use
     case TEMPLATE_FIELD_TYPE.FileUpload:
       return (
         <FieldShell {...shellProps}>
-          <Controller
-            control={form.control}
-            name={field.key as never}
-            render={({ field: controller }) => (
-              <input
-                id={field.key}
-                type="file"
-                className="text-sm text-ink"
-                onChange={(event) => controller.onChange(event.target.files?.[0] ?? null)}
-              />
-            )}
-          />
+          <FileUploadField field={field} form={form} uploadContext={uploadContext} />
         </FieldShell>
       );
 

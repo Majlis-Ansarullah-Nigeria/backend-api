@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Submissions.Attachments;
 using HRS.Application.Features.Submissions.MyReports;
 using HRS.Application.Features.Submissions.ReportInstances;
 using Mediator;
@@ -81,7 +82,71 @@ public static class SubmissionsEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
+
+        var attachments = app.MapGroup("/api/v1/reports/{id:guid}/attachments").WithTags("Submissions").RequireAuthorization();
+
+        attachments.MapPost("/presign", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                [FromBody] PresignAttachmentRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new PresignAttachmentUploadCommand(
+                    user.GetUserId(), id, unitId, request.FieldKey, request.FileName, request.ContentType, request.SizeBytes);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("PresignAttachmentUpload")
+            .Produces<PresignedAttachmentUpload>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        attachments.MapPost("/{attachmentId:guid}/complete", async (
+                Guid id,
+                Guid attachmentId,
+                [FromQuery(Name = "unit")] Guid unitId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new CompleteAttachmentUploadCommand(user.GetUserId(), id, unitId, attachmentId);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("CompleteAttachmentUpload")
+            .Produces<AttachmentSummary>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        attachments.MapDelete("/{attachmentId:guid}", async (
+                Guid id,
+                Guid attachmentId,
+                [FromQuery(Name = "unit")] Guid unitId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new DeleteAttachmentCommand(user.GetUserId(), id, unitId, attachmentId);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("DeleteAttachment")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 }
 
 public sealed record SaveReportDraftRequest(Dictionary<string, object?> Answers);
+
+public sealed record PresignAttachmentRequest(string FieldKey, string FileName, string ContentType, long SizeBytes);

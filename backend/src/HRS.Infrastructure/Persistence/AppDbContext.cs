@@ -19,6 +19,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
+    public DbSet<ReportAttachment> ReportAttachments => Set<ReportAttachment>();
+
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
@@ -210,6 +212,22 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasOne<TemplateVersion>()
                 .WithMany()
                 .HasForeignKey(i => i.TemplateVersionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ReportAttachment>(attachment =>
+        {
+            attachment.ToTable("report_attachments");
+            attachment.HasKey(a => a.Id);
+            attachment.Property(a => a.FieldKey).IsRequired();
+            attachment.Property(a => a.FileName).IsRequired();
+            attachment.Property(a => a.ContentType).IsRequired();
+            attachment.Property(a => a.StorageKey).IsRequired();
+            attachment.HasIndex(a => a.ReportInstanceId);
+            attachment
+                .HasOne<ReportInstance>()
+                .WithMany()
+                .HasForeignKey(a => a.ReportInstanceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

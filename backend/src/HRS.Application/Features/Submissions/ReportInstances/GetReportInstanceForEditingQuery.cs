@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Submissions.Attachments;
 using HRS.Application.Features.Templates.TemplateVersions;
 using HRS.Domain.Common;
 using HRS.Domain.Submissions;
@@ -32,6 +33,14 @@ public sealed class GetReportInstanceForEditingQueryHandler(IAppDbContext db, IA
 
         var instance = await db.ReportInstances.AsNoTracking()
             .FirstOrDefaultAsync(i => i.Id == request.Id && i.UnitId == request.UnitId, cancellationToken);
+
+        // request.Id didn't match an instance directly — it may be the window id the frontend
+        // started the screen with, from before any instance existed. An instance may since have
+        // been created for that (window, unit) pair (e.g. the first Save, or an attachment
+        // upload) without the frontend ever learning its real id, so check there too before
+        // concluding none exists.
+        instance ??= await db.ReportInstances.AsNoTracking()
+            .FirstOrDefaultAsync(i => i.WindowId == request.Id && i.UnitId == request.UnitId, cancellationToken);
 
         var window = await db.SubmissionWindows.AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == (instance != null ? instance.WindowId : request.Id), cancellationToken);
@@ -87,6 +96,31 @@ public sealed class GetReportInstanceForEditingQueryHandler(IAppDbContext db, IA
         var answers = instance is null
             ? []
             : JsonSerializer.Deserialize<Dictionary<string, object?>>(instance.AnswersJson, JsonSerializerOptions.Web) ?? [];
+
+        // FileUpload fields are never part of the autosaved answers JSON (ReportFormScreen.tsx's
+        // stripFileFields) — ReportAttachment rows are the only source of truth for them, so every
+        // such field gets its current attachment list spliced in here, always an array (even empty)
+        // rather than missing, so the frontend never has to special-case "never touched".
+        var fileFieldKeys = schema.Sections.SelectMany(s => s.Fields).Where(f => f.Type == TemplateFieldType.FileUpload).Select(f => f.Key).ToList();
+        if (fileFieldKeys.Count > 0 && instance is not null)
+        {
+            var attachments = await db.ReportAttachments.AsNoTracking()
+                .Where(a => a.ReportInstanceId == instance.Id && a.Status == ReportAttachmentStatus.Clean)
+                .ToListAsync(cancellationToken);
+            var byField = attachments.GroupBy(a => a.FieldKey).ToDictionary(g => g.Key, g => g.Select(AttachmentSummary.From).ToList());
+
+            foreach (var fieldKey in fileFieldKeys)
+            {
+                answers[fieldKey] = byField.GetValueOrDefault(fieldKey, []);
+            }
+        }
+        else
+        {
+            foreach (var fieldKey in fileFieldKeys)
+            {
+                answers[fieldKey] = new List<AttachmentSummary>();
+            }
+        }
 
         return new ReportInstanceForEditing(
             instance?.Id,

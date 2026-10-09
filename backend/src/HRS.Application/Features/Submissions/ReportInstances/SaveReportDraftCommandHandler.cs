@@ -23,6 +23,12 @@ public sealed class SaveReportDraftCommandHandler(IAppDbContext db, IAccessPolic
         // Tracked, not AsNoTracking — this one gets mutated and saved.
         var instance = await db.ReportInstances.FirstOrDefaultAsync(i => i.Id == request.Id && i.UnitId == request.UnitId, cancellationToken);
 
+        // request.Id may be the window id from before an instance existed — an instance may since
+        // have been created for that (window, unit) pair without the frontend learning its real
+        // id (e.g. via an attachment upload). Falling through to "create a new one" here would
+        // violate the one-instance-per-(window,unit) unique index.
+        instance ??= await db.ReportInstances.FirstOrDefaultAsync(i => i.WindowId == request.Id && i.UnitId == request.UnitId, cancellationToken);
+
         var window = await db.SubmissionWindows.AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == (instance != null ? instance.WindowId : request.Id), cancellationToken);
         if (window is null)

@@ -29,6 +29,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public CapturingEmailSender EmailSender { get; } = new();
 
+    public FakeFileStorage FileStorage { get; } = new();
+
+    public FakeVirusScanner VirusScanner { get; } = new();
+
     // xunit requires exactly one public constructor on a collection fixture, so the
     // rate-limit override (used only by the standalone AuthRateLimitTests) is internal.
     public ApiFactory()
@@ -49,6 +53,14 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             {
                 new("ConnectionStrings:Default", _postgres.GetConnectionString()),
                 new("ConnectionStrings:Redis", _redis.GetConnectionString()),
+                // IFileStorage/IVirusScanner are replaced below with fakes, but StorageOptions
+                // binding (for the S3BucketInitializer hosted service's IAmazonS3 dependency,
+                // which still resolves at host startup) requires these to be present; it never
+                // auto-creates a bucket here since AutoCreateBucket is left unset (false).
+                new("Storage:Endpoint", "http://localhost:9000"),
+                new("Storage:Bucket", "hrs-test"),
+                new("Storage:AccessKey", "test"),
+                new("Storage:SecretKey", "test"),
             };
 
             // Defaults to the production-sized limit, which is generous enough not to
@@ -63,8 +75,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             configBuilder.AddInMemoryCollection(settings);
         });
 
-        // Replaces the registration from AddInfrastructure() — no live SMTP server in tests.
-        builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(EmailSender));
+        // Replaces the registrations from AddInfrastructure() — no live SMTP server, S3-compatible
+        // storage or ClamAV daemon in tests (see FakeFileStorage/FakeVirusScanner's own doc comments).
+        builder.ConfigureTestServices(services => services
+            .AddSingleton<IEmailSender>(EmailSender)
+            .AddSingleton<IFileStorage>(FileStorage)
+            .AddSingleton<IVirusScanner>(VirusScanner));
     }
 
     public async Task InitializeAsync()

@@ -91,4 +91,17 @@ describe("buildSectionSchema", () => {
     expect(schema.safeParse({ field_a: { start: "", end: "2026-01-01" } }).success).toBe(false);
     expect(schema.safeParse({ field_a: { start: "2026-01-01", end: "2026-01-31" } }).success).toBe(true);
   });
+
+  it("requires at least one attachment for a required FileUpload field", () => {
+    const schema = buildSectionSchema([field({ type: TEMPLATE_FIELD_TYPE.FileUpload, required: true })], 3, {});
+
+    expect(schema.safeParse({ field_a: [] }).success).toBe(false);
+    expect(schema.safeParse({ field_a: [{ id: "att-1" }] }).success).toBe(true);
+  });
+
+  it("allows an optional FileUpload field to have no attachments", () => {
+    const schema = buildSectionSchema([field({ type: TEMPLATE_FIELD_TYPE.FileUpload, required: false })], 3, {});
+
+    expect(schema.safeParse({ field_a: [] }).success).toBe(true);
+  });
 });

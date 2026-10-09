@@ -13,6 +13,8 @@ public interface IAppDbContext
 {
     DbSet<Invitation> Invitations { get; }
 
+    DbSet<ReportAttachment> ReportAttachments { get; }
+
     DbSet<ReportInstance> ReportInstances { get; }
 
     DbSet<ReportType> ReportTypes { get; }

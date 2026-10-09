@@ -1,17 +1,21 @@
 using System.Globalization;
+using Amazon.S3;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
 using HRS.Infrastructure.Access;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
 using HRS.Infrastructure.Email;
+using HRS.Infrastructure.Files;
 using HRS.Infrastructure.Identity;
 using HRS.Infrastructure.Organization;
 using HRS.Infrastructure.Persistence;
+using HRS.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace HRS.Infrastructure;
@@ -95,6 +99,51 @@ public static class DependencyInjection
         services.AddScoped<IAccessPolicy, AccessPolicy>();
         services.AddScoped<IBulkImportFileReader, BulkImportFileReader>();
         services.AddScoped<IBulkImportTemplateGenerator, BulkImportTemplateGenerator>();
+
+        services.AddOptions<StorageOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                options.Endpoint = configuration["Storage:Endpoint"]
+                    ?? throw new InvalidOperationException("Missing Storage:Endpoint.");
+                options.Bucket = configuration["Storage:Bucket"]
+                    ?? throw new InvalidOperationException("Missing Storage:Bucket.");
+                options.AccessKey = configuration["Storage:AccessKey"]
+                    ?? throw new InvalidOperationException("Missing Storage:AccessKey.");
+                options.SecretKey = configuration["Storage:SecretKey"]
+                    ?? throw new InvalidOperationException("Missing Storage:SecretKey.");
+                options.Region = configuration["Storage:Region"] ?? "auto";
+                options.AutoCreateBucket = configuration.GetValue("Storage:AutoCreateBucket", false);
+            });
+
+        services.AddSingleton<IAmazonS3>(sp =>
+        {
+            var storageOptions = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
+            var config = new AmazonS3Config
+            {
+                ServiceURL = storageOptions.Endpoint,
+                ForcePathStyle = true,
+                AuthenticationRegion = storageOptions.Region == "auto" ? "us-east-1" : storageOptions.Region,
+            };
+            return new AmazonS3Client(storageOptions.AccessKey, storageOptions.SecretKey, config);
+        });
+
+        services.AddScoped<IFileStorage, S3FileStorage>();
+        services.AddHostedService<S3BucketInitializer>();
+
+        services.AddOptions<ClamAvOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                options.Host = configuration["ClamAV:Host"]
+                    ?? throw new InvalidOperationException("Missing ClamAV:Host.");
+
+                var port = configuration["ClamAV:Port"];
+                if (port is not null)
+                {
+                    options.Port = int.Parse(port, CultureInfo.InvariantCulture);
+                }
+            });
+
+        services.AddScoped<IVirusScanner, ClamAvVirusScanner>();
 
         return services;
     }

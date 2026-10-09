@@ -543,7 +543,14 @@
     "noMembersYet": "No members yet.",
     "addMember": "Add member",
     "memberLabel": "Member {number}",
-    "removeMember": "Remove member {number}"
+    "removeMember": "Remove member {number}",
+    "fileUploadPreviewOnly": "File upload (preview only)",
+    "addFiles": "Add files",
+    "uploading": "Uploading {name}…",
+    "uploadFailed": "Upload failed. Try again.",
+    "fileTooLarge": "Files must be 20 MB or smaller.",
+    "dismiss": "Dismiss",
+    "removeFile": "Remove {name}"
   },
   "Profile": {
     "title": "Profile and settings",

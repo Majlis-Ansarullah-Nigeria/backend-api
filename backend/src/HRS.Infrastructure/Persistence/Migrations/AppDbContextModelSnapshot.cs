@@ -309,6 +309,62 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FieldKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("field_key");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("file_name");
+
+                    b.Property<Guid>("ReportInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_instance_id");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size_bytes");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("storage_key");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("uploaded_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_attachments");
+
+                    b.HasIndex("ReportInstanceId")
+                        .HasDatabaseName("ix_report_attachments_report_instance_id");
+
+                    b.ToTable("report_attachments", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Submissions.ReportInstance", b =>
                 {
                     b.Property<Guid>("Id")
@@ -908,6 +964,16 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_units_units_parent_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportAttachment", b =>
+                {
+                    b.HasOne("HRS.Domain.Submissions.ReportInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ReportInstanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_attachments_report_instances_report_instance_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Submissions.ReportInstance", b =>
