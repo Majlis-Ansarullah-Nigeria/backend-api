@@ -9,6 +9,7 @@ using HRS.Infrastructure.Email;
 using HRS.Infrastructure.Files;
 using HRS.Infrastructure.Identity;
 using HRS.Infrastructure.Organization;
+using HRS.Infrastructure.Pdf;
 using HRS.Infrastructure.Persistence;
 using HRS.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
@@ -16,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using QuestPDF.Infrastructure;
 using StackExchange.Redis;
 
 namespace HRS.Infrastructure;
@@ -144,6 +146,9 @@ public static class DependencyInjection
             });
 
         services.AddScoped<IVirusScanner, ClamAvVirusScanner>();
+
+        QuestPDF.Settings.License = LicenseType.Community;
+        services.AddScoped<IPdfRenderer, QuestPdfReportReceiptRenderer>();
 
         return services;
     }

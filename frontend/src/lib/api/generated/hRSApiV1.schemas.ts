@@ -462,6 +462,10 @@ export interface ReportInstanceForEditing {
   revisionDeadline: string | null;
   /** @nullable */
   rowVersion: string | null;
+  /** @nullable */
+  referenceNumber: string | null;
+  /** @nullable */
+  submittedAt: string | null;
 }
 
 export interface ReportTypeSummary {
@@ -485,6 +489,10 @@ export interface ResetPasswordRequest {
   email: string;
   token: string;
   newPassword: string;
+}
+
+export interface ReviewWarningsResult {
+  warnings: string[];
 }
 
 export type SaveReportDraftRequestAnswers = { [key: string]: unknown };
@@ -512,6 +520,17 @@ export interface SessionSummary {
 
 export interface SetActiveAssignmentRequest {
   roleAssignmentId: string;
+}
+
+export interface SubmitReportRequest {
+  confirmed: boolean;
+}
+
+export interface SubmitReportResult {
+  id: string;
+  referenceNumber: string;
+  submittedAt: string;
+  isLate: boolean;
 }
 
 export type TemplateVersionStatus = number;
@@ -722,6 +741,18 @@ unit: string;
 };
 
 export type SaveReportDraftParams = {
+unit: string;
+};
+
+export type GetReportReviewWarningsParams = {
+unit: string;
+};
+
+export type GetReportReceiptPdfParams = {
+unit: string;
+};
+
+export type SubmitReportParams = {
 unit: string;
 };
 

@@ -69,6 +69,41 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("role_assignments", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Common.IdempotencyRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("key");
+
+                    b.Property<string>("ResponseJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("response_json");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_idempotency_records");
+
+                    b.HasIndex("UserId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_idempotency_records_user_id_key");
+
+                    b.ToTable("idempotency_records", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Invitations.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -389,6 +424,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_late");
 
+                    b.Property<string>("ReferenceNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("reference_number");
+
                     b.Property<DateTimeOffset?>("ReopenedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("reopened_at");
@@ -433,6 +472,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_report_instances");
+
+                    b.HasIndex("ReferenceNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_report_instances_reference_number");
 
                     b.HasIndex("TemplateVersionId")
                         .HasDatabaseName("ix_report_instances_template_version_id");

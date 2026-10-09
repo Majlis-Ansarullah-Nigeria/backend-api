@@ -38,7 +38,17 @@ public sealed partial class BackgroundEmailDispatcher(
         mimeMessage.From.Add(MailboxAddress.Parse(_options.From));
         mimeMessage.To.Add(MailboxAddress.Parse(message.ToAddress));
         mimeMessage.Subject = message.Subject;
-        mimeMessage.Body = new TextPart("plain") { Text = message.TextBody };
+
+        if (message.Attachment is { } attachment)
+        {
+            var builder = new BodyBuilder { TextBody = message.TextBody };
+            builder.Attachments.Add(attachment.FileName, attachment.Content, ContentType.Parse(attachment.ContentType));
+            mimeMessage.Body = builder.ToMessageBody();
+        }
+        else
+        {
+            mimeMessage.Body = new TextPart("plain") { Text = message.TextBody };
+        }
 
         using var client = new SmtpClient();
         await client.ConnectAsync(_options.SmtpHost, _options.SmtpPort, SecureSocketOptions.None, cancellationToken);

@@ -32,7 +32,7 @@ public class MyReportStatusCalculatorTests
             return instance;
         }
 
-        instance.Submit(isLate, Now);
+        instance.Submit(isLate, "REF-TEST", Now);
         if (target == ReportInstanceStatus.Submitted)
         {
             return instance;

@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
+using HRS.Domain.Common;
 using HRS.Domain.Invitations;
 using HRS.Domain.Organization;
 using HRS.Domain.Submissions;
@@ -16,6 +17,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityUserContext<ApplicationUser, Guid>(options), IAppDbContext
 {
     public DbSet<UserSession> UserSessions => Set<UserSession>();
+
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
@@ -62,6 +65,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<IdempotencyRecord>(record =>
+        {
+            record.ToTable("idempotency_records");
+            record.HasKey(r => r.Id);
+            record.Property(r => r.Key).IsRequired();
+            record.Property(r => r.ResponseJson).HasColumnType("jsonb").IsRequired();
+            record.HasIndex(r => new { r.UserId, r.Key }).IsUnique();
         });
 
         builder.Entity<Invitation>(invitation =>
@@ -198,6 +210,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             // The report-instance uniqueness rule (ef-migration skill): one instance per unit per
             // window, never two.
             instance.HasIndex(i => new { i.WindowId, i.UnitId }).IsUnique();
+            // Postgres' unique index allows any number of NULLs, so this only ever constrains
+            // actual (post-submit) reference numbers — never two instances with the same one.
+            instance.HasIndex(i => i.ReferenceNumber).IsUnique();
             instance
                 .HasOne<SubmissionWindow>()
                 .WithMany()

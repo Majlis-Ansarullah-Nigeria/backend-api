@@ -28,15 +28,21 @@ import type {
   CompleteAttachmentUploadParams,
   DeleteAttachmentParams,
   GetReportInstanceForEditingParams,
+  GetReportReceiptPdfParams,
+  GetReportReviewWarningsParams,
   MyReportSummary,
   PresignAttachmentRequest,
   PresignAttachmentUploadParams,
   PresignedAttachmentUpload,
   ProblemDetails,
   ReportInstanceForEditing,
+  ReviewWarningsResult,
   SaveReportDraftParams,
   SaveReportDraftRequest,
-  SaveReportDraftResult
+  SaveReportDraftResult,
+  SubmitReportParams,
+  SubmitReportRequest,
+  SubmitReportResult
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -354,6 +360,315 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSaveReportDraftMutationOptions(options), queryClient);
+    }
+    export const getGetReportReviewWarningsUrl = (id: string,
+    params: GetReportReviewWarningsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/review-warnings?${stringifiedParams}` : `/api/v1/reports/${id}/review-warnings`
+}
+
+export const getReportReviewWarnings = async (id: string,
+    params: GetReportReviewWarningsParams, options?: Parameters<typeof customFetch>[1]): Promise<ReviewWarningsResult> => {
+
+  return customFetch<ReviewWarningsResult>(getGetReportReviewWarningsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReportReviewWarningsQueryKey = (id: string,
+    params?: GetReportReviewWarningsParams,) => {
+    return [
+    `/api/v1/reports/${id}/review-warnings`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetReportReviewWarningsQueryOptions = <TData = Awaited<ReturnType<typeof getReportReviewWarnings>>, TError = ProblemDetails>(id: string,
+    params: GetReportReviewWarningsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReviewWarnings>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportReviewWarningsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportReviewWarnings>>> = ({ signal }) => getReportReviewWarnings(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportReviewWarnings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReportReviewWarningsQueryResult = NonNullable<Awaited<ReturnType<typeof getReportReviewWarnings>>>
+export type GetReportReviewWarningsQueryError = ProblemDetails
+
+
+export function useGetReportReviewWarnings<TData = Awaited<ReturnType<typeof getReportReviewWarnings>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReviewWarningsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReviewWarnings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportReviewWarnings>>,
+          TError,
+          Awaited<ReturnType<typeof getReportReviewWarnings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportReviewWarnings<TData = Awaited<ReturnType<typeof getReportReviewWarnings>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReviewWarningsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReviewWarnings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportReviewWarnings>>,
+          TError,
+          Awaited<ReturnType<typeof getReportReviewWarnings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportReviewWarnings<TData = Awaited<ReturnType<typeof getReportReviewWarnings>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReviewWarningsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReviewWarnings>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetReportReviewWarnings<TData = Awaited<ReturnType<typeof getReportReviewWarnings>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReviewWarningsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReviewWarnings>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReportReviewWarningsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetReportReceiptPdfUrl = (id: string,
+    params: GetReportReceiptPdfParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/receipt-pdf?${stringifiedParams}` : `/api/v1/reports/${id}/receipt-pdf`
+}
+
+export const getReportReceiptPdf = async (id: string,
+    params: GetReportReceiptPdfParams, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getGetReportReceiptPdfUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReportReceiptPdfQueryKey = (id: string,
+    params?: GetReportReceiptPdfParams,) => {
+    return [
+    `/api/v1/reports/${id}/receipt-pdf`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetReportReceiptPdfQueryOptions = <TData = Awaited<ReturnType<typeof getReportReceiptPdf>>, TError = ProblemDetails>(id: string,
+    params: GetReportReceiptPdfParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReceiptPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportReceiptPdfQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportReceiptPdf>>> = ({ signal }) => getReportReceiptPdf(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportReceiptPdf>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReportReceiptPdfQueryResult = NonNullable<Awaited<ReturnType<typeof getReportReceiptPdf>>>
+export type GetReportReceiptPdfQueryError = ProblemDetails
+
+
+export function useGetReportReceiptPdf<TData = Awaited<ReturnType<typeof getReportReceiptPdf>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReceiptPdfParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReceiptPdf>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportReceiptPdf>>,
+          TError,
+          Awaited<ReturnType<typeof getReportReceiptPdf>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportReceiptPdf<TData = Awaited<ReturnType<typeof getReportReceiptPdf>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReceiptPdfParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReceiptPdf>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportReceiptPdf>>,
+          TError,
+          Awaited<ReturnType<typeof getReportReceiptPdf>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportReceiptPdf<TData = Awaited<ReturnType<typeof getReportReceiptPdf>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReceiptPdfParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReceiptPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetReportReceiptPdf<TData = Awaited<ReturnType<typeof getReportReceiptPdf>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportReceiptPdfParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportReceiptPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReportReceiptPdfQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSubmitReportUrl = (id: string,
+    params: SubmitReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/submit?${stringifiedParams}` : `/api/v1/reports/${id}/submit`
+}
+
+export const submitReport = async (id: string,
+    submitReportRequest: SubmitReportRequest,
+    params: SubmitReportParams, options?: Parameters<typeof customFetch>[1]): Promise<SubmitReportResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SubmitReportResult>(getSubmitReportUrl(id,params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(submitReportRequest)
+  }
+);}
+
+
+
+
+
+export const getSubmitReportMutationKey = () => ['submitReport'] as const;
+
+export const getSubmitReportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitReport>>, TError,SubmitReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitReport>>, TError,SubmitReportMutationVariables, TContext> => {
+
+const mutationKey = getSubmitReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitReport>>, SubmitReportMutationVariables> = (props) => {
+          const {id,data,params} = props ?? {};
+
+          return  submitReport(id,data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitReportMutationResult = NonNullable<Awaited<ReturnType<typeof submitReport>>>
+    export type SubmitReportMutationBody = SubmitReportRequest
+    export type SubmitReportMutationError = ProblemDetails
+    export type SubmitReportMutationVariables = {id: string;data: SubmitReportRequest;params: SubmitReportParams}
+
+    export const useSubmitReport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitReport>>, TError,SubmitReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitReport>>,
+        TError,
+        SubmitReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitReportMutationOptions(options), queryClient);
     }
     export const getPresignAttachmentUploadUrl = (id: string,
     params: PresignAttachmentUploadParams,) => {

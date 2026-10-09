@@ -47,7 +47,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
         instance.Open();
         instance.Return("Please fix figure 2", Now);
 
@@ -70,32 +70,34 @@ public class ReportInstanceTests
     }
 
     [Fact]
-    public void SubmitFromDraftSetsSubmittedAtAndIsLate()
+    public void SubmitFromDraftSetsSubmittedAtIsLateAndReferenceNumber()
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
 
-        instance.Submit(isLate: true, Now);
+        instance.Submit(isLate: true, "GMR-2026-09-Z03D12M04", Now);
 
         Assert.Equal(ReportInstanceStatus.Submitted, instance.Status);
         Assert.Equal(Now, instance.SubmittedAt);
         Assert.True(instance.IsLate);
+        Assert.Equal("GMR-2026-09-Z03D12M04", instance.ReferenceNumber);
     }
 
     [Fact]
-    public void ResubmitFromReturnedClearsReturnCommentAndRevisionDeadline()
+    public void ResubmitFromReturnedClearsReturnCommentAndRevisionDeadlineButKeepsTheOriginalReferenceNumber()
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "GMR-2026-09-Z03D12M04", Now);
         instance.Open();
         instance.Return("Please fix figure 2", Now);
 
-        instance.Submit(isLate: false, Now.AddDays(1));
+        instance.Submit(isLate: false, "GMR-2026-10-Z03D12M04", Now.AddDays(1));
 
         Assert.Equal(ReportInstanceStatus.Submitted, instance.Status);
         Assert.Null(instance.ReturnComment);
         Assert.Null(instance.RevisionDeadline);
+        Assert.Equal("GMR-2026-09-Z03D12M04", instance.ReferenceNumber);
     }
 
     [Theory]
@@ -108,7 +110,7 @@ public class ReportInstanceTests
     {
         var instance = Move(CreateInstance(), status);
 
-        Assert.Throws<InvalidOperationException>(() => instance.Submit(isLate: false, Now));
+        Assert.Throws<InvalidOperationException>(() => instance.Submit(isLate: false, "REF-TEST", Now));
     }
 
     [Fact]
@@ -116,7 +118,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
 
         instance.Open();
 
@@ -136,7 +138,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
 
         instance.Withdraw();
 
@@ -148,7 +150,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
         instance.Open();
 
         Assert.Throws<InvalidOperationException>(instance.Withdraw);
@@ -159,7 +161,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
         instance.Open();
 
         instance.Acknowledge(Now.AddHours(1));
@@ -173,7 +175,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
 
         Assert.Throws<InvalidOperationException>(() => instance.Acknowledge(Now));
     }
@@ -183,7 +185,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
         instance.Open();
 
         instance.Return("Please fix figure 2", Now);
@@ -198,7 +200,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
         instance.Open();
 
         instance.Return("Please fix figure 2", Now, Now.AddDays(14));
@@ -242,7 +244,7 @@ public class ReportInstanceTests
     {
         var instance = CreateInstance();
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
 
         Assert.Throws<InvalidOperationException>(instance.MarkMissed);
     }
@@ -310,22 +312,22 @@ public class ReportInstanceTests
                 return instance;
             case ReportInstanceStatus.Submitted:
                 instance.Save("""{"q1":"a"}""");
-                instance.Submit(isLate: false, Now);
+                instance.Submit(isLate: false, "REF-TEST", Now);
                 return instance;
             case ReportInstanceStatus.InReview:
                 instance.Save("""{"q1":"a"}""");
-                instance.Submit(isLate: false, Now);
+                instance.Submit(isLate: false, "REF-TEST", Now);
                 instance.Open();
                 return instance;
             case ReportInstanceStatus.Returned:
                 instance.Save("""{"q1":"a"}""");
-                instance.Submit(isLate: false, Now);
+                instance.Submit(isLate: false, "REF-TEST", Now);
                 instance.Open();
                 instance.Return("Reason", Now);
                 return instance;
             case ReportInstanceStatus.Acknowledged:
                 instance.Save("""{"q1":"a"}""");
-                instance.Submit(isLate: false, Now);
+                instance.Submit(isLate: false, "REF-TEST", Now);
                 instance.Open();
                 instance.Acknowledge(Now);
                 return instance;

@@ -216,6 +216,38 @@
     "back": "Back",
     "nextSection": "Next: {title}"
   },
+  "ReportReview": {
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load this report",
+    "notReviewable": "This report isn't ready to review — it may already have been submitted.",
+    "title": "Review and submit",
+    "downloadDraftPdf": "Download draft PDF",
+    "sections": "Sections",
+    "allComplete": "All complete",
+    "someIncomplete": "Some sections need attention",
+    "checks": "Checks",
+    "noWarnings": "No warnings",
+    "warningsToLookAt": "{count} warnings to look at",
+    "window": "Window",
+    "noDueDate": "No due date",
+    "edit": "Edit",
+    "declaration": "I confirm this report is accurate and complete to the best of my knowledge, as Head of {unitName}.",
+    "routingNote": "It goes to the National Secretariat.",
+    "backToForm": "Back to form",
+    "submitReport": "Submit report"
+  },
+  "ReportSubmitted": {
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load this report",
+    "title": "Report submitted",
+    "body": "The National Secretariat has your {period} report. A PDF copy is on its way to your email.",
+    "reference": "Reference",
+    "submitted": "Submitted",
+    "status": "Status",
+    "downloadPdf": "Download PDF",
+    "backToHome": "Back to home",
+    "withdrawNote": "You can withdraw it until the Secretariat opens it."
+  },
   "AcceptInvitation": {
     "appName": "Reporting Service",
     "welcomeBadge": "You've been invited",

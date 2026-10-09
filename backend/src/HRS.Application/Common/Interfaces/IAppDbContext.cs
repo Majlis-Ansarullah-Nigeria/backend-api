@@ -1,4 +1,5 @@
 using HRS.Domain.Access;
+using HRS.Domain.Common;
 using HRS.Domain.Invitations;
 using HRS.Domain.Organization;
 using HRS.Domain.Submissions;
@@ -11,6 +12,8 @@ namespace HRS.Application.Common.Interfaces;
 
 public interface IAppDbContext
 {
+    DbSet<IdempotencyRecord> IdempotencyRecords { get; }
+
     DbSet<Invitation> Invitations { get; }
 
     DbSet<ReportAttachment> ReportAttachments { get; }

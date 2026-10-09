@@ -129,7 +129,7 @@ public class ReportInstancesEndpointsTests(ApiFactory factory)
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var instance = await db.ReportInstances.FirstAsync(i => i.WindowId == windowId && i.UnitId == unitId);
-        instance.Submit(isLate: false, Now);
+        instance.Submit(isLate: false, "REF-TEST", Now);
         await db.SaveChangesAsync();
     }
 

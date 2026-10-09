@@ -2,6 +2,7 @@ using HRS.Api.Common;
 using HRS.Application.Features.Submissions.Attachments;
 using HRS.Application.Features.Submissions.MyReports;
 using HRS.Application.Features.Submissions.ReportInstances;
+using HRS.Application.Features.Submissions.Review;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
@@ -83,6 +84,62 @@ public static class SubmissionsEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
+        reports.MapGet("/review-warnings", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetReportReviewWarningsQuery(user.GetUserId(), id, unitId), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetReportReviewWarnings")
+            .Produces<ReviewWarningsResult>()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        reports.MapGet("/receipt-pdf", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetReportReceiptPdfQuery(user.GetUserId(), id, unitId), cancellationToken);
+
+                return result.IsSuccess
+                    ? Results.File(result.Value, "application/pdf", "receipt.pdf")
+                    : result.ToProblemDetails();
+            })
+            .WithName("GetReportReceiptPdf")
+            .Produces(StatusCodes.Status200OK, contentType: "application/pdf")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        reports.MapPost("/submit", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                [FromBody] SubmitReportRequest request,
+                [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new SubmitReportCommand(user.GetUserId(), id, unitId, request.Confirmed, idempotencyKey);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("SubmitReport")
+            .Produces<SubmitReportResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         var attachments = app.MapGroup("/api/v1/reports/{id:guid}/attachments").WithTags("Submissions").RequireAuthorization();
 
         attachments.MapPost("/presign", async (
@@ -150,3 +207,5 @@ public static class SubmissionsEndpoints
 public sealed record SaveReportDraftRequest(Dictionary<string, object?> Answers);
 
 public sealed record PresignAttachmentRequest(string FieldKey, string FileName, string ContentType, long SizeBytes);
+
+public sealed record SubmitReportRequest(bool Confirmed);

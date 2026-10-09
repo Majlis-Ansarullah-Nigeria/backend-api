@@ -28,4 +28,6 @@ public sealed record ReportInstanceForEditing(
     DateTimeOffset? DueAt,
     DateTimeOffset ClosesAt,
     DateTimeOffset? RevisionDeadline,
-    string? RowVersion);
+    string? RowVersion,
+    string? ReferenceNumber,
+    DateTimeOffset? SubmittedAt);

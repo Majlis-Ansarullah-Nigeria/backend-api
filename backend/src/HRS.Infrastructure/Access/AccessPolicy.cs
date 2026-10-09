@@ -41,4 +41,22 @@ public sealed class AccessPolicy(IAppDbContext db, IClock clock) : IAccessPolicy
     public async Task<bool> CanEditReportForUnitAsync(Guid userId, Guid unitId, CancellationToken cancellationToken) =>
         await HasRoleForUnitAsync(userId, unitId, RoleName.UnitHead, cancellationToken)
             || await HasRoleForUnitAsync(userId, unitId, RoleName.Delegate, cancellationToken);
+
+    public async Task<bool> CanSubmitReportForUnitAsync(Guid userId, Guid unitId, CancellationToken cancellationToken)
+    {
+        if (await HasRoleForUnitAsync(userId, unitId, RoleName.UnitHead, cancellationToken))
+        {
+            return true;
+        }
+
+        var now = clock.UtcNow;
+        return await db.RoleAssignments.AsNoTracking().AnyAsync(
+            a => a.UserId == userId
+                && a.UnitId == unitId
+                && a.Role == RoleName.Delegate
+                && a.DelegateScope == DelegateScope.DraftAndSubmit
+                && a.StartsAt <= now
+                && (a.EndsAt == null || a.EndsAt > now),
+            cancellationToken);
+    }
 }

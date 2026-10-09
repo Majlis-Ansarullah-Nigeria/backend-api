@@ -10,4 +10,6 @@ public interface IEmailSender
     Task QueueAsync(EmailMessage message, CancellationToken cancellationToken);
 }
 
-public sealed record EmailMessage(string ToAddress, string Subject, string TextBody);
+public sealed record EmailMessage(string ToAddress, string Subject, string TextBody, EmailAttachment? Attachment = null);
+
+public sealed record EmailAttachment(string FileName, string ContentType, byte[] Content);

@@ -41,4 +41,9 @@ public interface IAccessPolicy
     /// DraftAndSubmit-scope check on top of this for delegates.
     /// </summary>
     Task<bool> CanEditReportForUnitAsync(Guid userId, Guid unitId, CancellationToken cancellationToken);
+
+    /// <summary>UnitHead or Delegate with DraftAndSubmit scope specifically — a DraftOnly
+    /// delegate can save (see <see cref="CanEditReportForUnitAsync"/>) but not submit
+    /// (hrs-domain: "DELEGATE (scope DraftOnly | DraftAndSubmit, max 2 per unit)").</summary>
+    Task<bool> CanSubmitReportForUnitAsync(Guid userId, Guid unitId, CancellationToken cancellationToken);
 }
