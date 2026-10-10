@@ -1,8 +1,9 @@
-import { Bell, Calendar, FileText, History, Home, LayoutTemplate, Network, User, Users, type LucideIcon } from "lucide-react";
+import { Bell, Building2, Calendar, FileText, History, Home, LayoutTemplate, Network, User, Users, type LucideIcon } from "lucide-react";
 
 export type NavItemKey =
   | "home"
   | "reports"
+  | "units"
   | "history"
   | "notifications"
   | "profile"
@@ -24,6 +25,7 @@ export interface NavItem {
 export const PRIMARY_NAV_ITEMS: NavItem[] = [
   { href: "/home", key: "home", icon: Home },
   { href: "/reports", key: "reports", icon: FileText },
+  { href: "/units", key: "units", icon: Building2 },
   { href: "/history", key: "history", icon: History },
   { href: "/notifications", key: "notifications", icon: Bell },
   { href: "/profile", key: "profile", icon: User },

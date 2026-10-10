@@ -63,6 +63,57 @@ export interface BulkImportSummary {
   rows: BulkImportRow[];
 }
 
+export type ReportLineStatus = number;
+
+export interface ComplianceGridCell {
+  windowId: string;
+  status: ReportLineStatus;
+  /** @nullable */
+  reportInstanceId: string | null;
+}
+
+export interface ObservableUnitOption {
+  id: string;
+  name: string;
+}
+
+export interface ReportTypeOption {
+  id: string;
+  name: string;
+}
+
+export interface CompliancePeriod {
+  windowId: string;
+  periodLabel: string;
+  dueAt: string;
+}
+
+export interface ComplianceGridRow {
+  unitId: string;
+  unitName: string;
+  /** @nullable */
+  headName: string | null;
+  hasVacantHead: boolean;
+  cells: ComplianceGridCell[];
+}
+
+export interface ComplianceGridResult {
+  /** @nullable */
+  parentUnitId: string | null;
+  /** @nullable */
+  parentUnitName: string | null;
+  /** @nullable */
+  childLevelName: string | null;
+  /** @nullable */
+  childLevelPluralName: string | null;
+  availableParentUnits: ObservableUnitOption[];
+  availableReportTypes: ReportTypeOption[];
+  /** @nullable */
+  selectedReportTypeId: string | null;
+  periods: CompliancePeriod[];
+  rows: ComplianceGridRow[];
+}
+
 export interface ConfirmTotpEnrollmentRequest {
   code: string;
 }
@@ -309,8 +360,6 @@ export interface MfaVerifyRequest {
 export interface MoveUnitRequest {
   newParentId: string;
 }
-
-export type ReportLineStatus = number;
 
 export interface MyReportSummary {
   /** @nullable */
@@ -787,5 +836,14 @@ unit: string;
 
 export type DeleteAttachmentParams = {
 unit: string;
+};
+
+export type GetComplianceGridParams = {
+parentUnitId?: string;
+reportTypeId?: string;
+/**
+ * @pattern ^-?(?:0|[1-9]\d*)$
+ */
+periods?: number | string;
 };
 

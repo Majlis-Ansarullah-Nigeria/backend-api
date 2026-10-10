@@ -48,7 +48,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M5.6 Withdraw (FR-SUB-009); copy from last period (FR-SUB-008); nil report (FR-SUB-012).
 
 ## M6 — Observer views (FR-OBS)
-- [ ] M6.1 Compliance grid for Dila/Zone heads (FR-OBS-001).
+- [x] M6.1 Compliance grid for Dila/Zone heads (FR-OBS-001).
 - [ ] M6.2 Read-only child report + PDF; confidential fields hidden (FR-OBS-002, FR-AC-005, FR-AC-006).
 - [ ] M6.3 Pull from children with included/missing list and overrides (FR-SUB-007, FR-OBS-005).
 - [ ] M6.4 Nudge and private notes (FR-OBS-003, FR-OBS-004).
