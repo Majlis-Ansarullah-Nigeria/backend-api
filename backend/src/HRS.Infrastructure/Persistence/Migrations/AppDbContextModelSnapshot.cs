@@ -462,6 +462,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("submitted_at");
 
+                    b.Property<Guid?>("SubmittedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submitted_by_user_id");
+
                     b.Property<Guid>("TemplateVersionId")
                         .HasColumnType("uuid")
                         .HasColumnName("template_version_id");

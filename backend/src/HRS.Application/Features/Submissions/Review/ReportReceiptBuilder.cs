@@ -13,6 +13,10 @@ namespace HRS.Application.Features.Submissions.Review;
 /// which re-fetches and, pre-submit, has no reference number yet).</summary>
 internal static class ReportReceiptBuilder
 {
+    /// <summary>"Hidden from observers" (FR-AC-006) — the field's row still renders with its
+    /// label, only the value is replaced, matching the Dila-ChildReport mockup exactly.</summary>
+    private const string ConfidentialPlaceholder = "Hidden from observers";
+
     public static async Task<ReportReceiptData> BuildAsync(
         IAppDbContext db,
         ReportInstance instance,
@@ -23,7 +27,8 @@ internal static class ReportReceiptBuilder
         int unitLevel,
         string? referenceNumber,
         DateTimeOffset generatedAt,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool hideConfidentialValues = false)
     {
         var answers = JsonSerializer.Deserialize<Dictionary<string, object?>>(instance.AnswersJson, JsonSerializerOptions.Web) ?? [];
 
@@ -39,7 +44,12 @@ internal static class ReportReceiptBuilder
                 section.Title,
                 [.. FieldVisibility.VisibleFields(section.Fields, (Domain.Organization.UnitLevelCode)unitLevel, answers)
                     .Where(f => f.Type != TemplateFieldType.Computed)
-                    .Select(f => new ReportReceiptField(f.Label, AnswerDisplay.Format(f, answers.GetValueOrDefault(f.Key), attachmentsByField)))]))
+                    .Select(f =>
+                    {
+                        var isMasked = hideConfidentialValues && f.Confidential;
+                        var value = isMasked ? ConfidentialPlaceholder : AnswerDisplay.Format(f, answers.GetValueOrDefault(f.Key), attachmentsByField);
+                        return new ReportReceiptField(f.Label, value, isMasked);
+                    })]))
             .Where(s => s.Fields.Count > 0)
             .ToList();
 

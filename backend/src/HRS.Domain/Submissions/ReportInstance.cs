@@ -74,6 +74,11 @@ public sealed class ReportInstance
     /// otherwise).</summary>
     public bool IsNil { get; private set; }
 
+    /// <summary>Who ran Submit (FR-OBS-002's "submitted ... by {name}" on the observer's read-only
+    /// view). Null for reports submitted before this field existed. Re-set on every resubmit after
+    /// a Return, so it always reflects the most recent submitter, unlike ReferenceNumber.</summary>
+    public Guid? SubmittedByUserId { get; private set; }
+
     public static ReportInstance Create(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now) =>
         new(id, windowId, unitId, templateVersionId, now);
 
@@ -102,7 +107,7 @@ public sealed class ReportInstance
     /// data this type doesn't have); only assigned the first time, preserved across a
     /// Returned-then-resubmit cycle. isNil is FR-SUB-012's "No activity this period" — the caller
     /// is responsible for skipping the usual required-field check when it's set.</summary>
-    public void Submit(bool isLate, string referenceNumber, bool isNil, DateTimeOffset now)
+    public void Submit(bool isLate, string referenceNumber, bool isNil, DateTimeOffset now, Guid? submittedByUserId = null)
     {
         if (Status is not (ReportInstanceStatus.Draft or ReportInstanceStatus.Returned))
         {
@@ -116,6 +121,7 @@ public sealed class ReportInstance
         RevisionDeadline = null;
         ReferenceNumber ??= referenceNumber;
         IsNil = isNil;
+        SubmittedByUserId = submittedByUserId;
     }
 
     /// <summary>The Secretariat opens a submitted report — this is what "unread" structurally

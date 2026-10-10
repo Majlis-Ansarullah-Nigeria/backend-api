@@ -126,7 +126,7 @@ public sealed class SubmitReportCommandHandler(
         var referenceNumber = instance.ReferenceNumber
             ?? ReportReferenceNumber.Generate(reportType.Category, window.PeriodLabel, now, unitRow.Code);
 
-        instance.Submit(isLate, referenceNumber, request.IsNil, now);
+        instance.Submit(isLate, referenceNumber, request.IsNil, now, request.UserId);
 
         var result = new SubmitReportResult(instance.Id, instance.ReferenceNumber!, now, isLate);
 

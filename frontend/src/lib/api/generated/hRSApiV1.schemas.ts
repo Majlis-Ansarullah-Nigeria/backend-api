@@ -63,6 +63,39 @@ export interface BulkImportSummary {
   rows: BulkImportRow[];
 }
 
+export interface ReportReceiptField {
+  label: string;
+  value: string;
+  isMasked?: boolean;
+}
+
+export interface ReportReceiptSection {
+  title: string;
+  fields: ReportReceiptField[];
+}
+
+export interface ReportReceiptData {
+  reportTypeName: string;
+  periodLabel: string;
+  unitName: string;
+  /** @nullable */
+  referenceNumber: string | null;
+  generatedAt: string;
+  sections: ReportReceiptSection[];
+}
+
+export interface ChildReportView {
+  reportId: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  status: number | string;
+  isLate: boolean;
+  /** @nullable */
+  submittedAt: string | null;
+  /** @nullable */
+  submittedByName: string | null;
+  receipt: ReportReceiptData;
+}
+
 export type ReportLineStatus = number;
 
 export interface ComplianceGridCell {

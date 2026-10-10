@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ChildReportView,
   ComplianceGridResult,
   GetComplianceGridParams,
   ProblemDetails
@@ -137,6 +138,210 @@ export function useGetComplianceGrid<TData = Awaited<ReturnType<typeof getCompli
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetComplianceGridQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetChildReportUrl = (unitId: string,
+    reportId: string,) => {
+
+
+
+
+  return `/api/v1/units/${unitId}/reports/${reportId}`
+}
+
+export const getChildReport = async (unitId: string,
+    reportId: string, options?: Parameters<typeof customFetch>[1]): Promise<ChildReportView> => {
+
+  return customFetch<ChildReportView>(getGetChildReportUrl(unitId,reportId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetChildReportQueryKey = (unitId: string,
+    reportId: string,) => {
+    return [
+    `/api/v1/units/${unitId}/reports/${reportId}`
+    ] as const;
+    }
+
+
+export const getGetChildReportQueryOptions = <TData = Awaited<ReturnType<typeof getChildReport>>, TError = ProblemDetails>(unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChildReportQueryKey(unitId,reportId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChildReport>>> = ({ signal }) => getChildReport(unitId,reportId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: unitId !== null && unitId !== undefined && reportId !== null && reportId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChildReport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetChildReportQueryResult = NonNullable<Awaited<ReturnType<typeof getChildReport>>>
+export type GetChildReportQueryError = ProblemDetails
+
+
+export function useGetChildReport<TData = Awaited<ReturnType<typeof getChildReport>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReport>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChildReport>>,
+          TError,
+          Awaited<ReturnType<typeof getChildReport>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChildReport<TData = Awaited<ReturnType<typeof getChildReport>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReport>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChildReport>>,
+          TError,
+          Awaited<ReturnType<typeof getChildReport>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChildReport<TData = Awaited<ReturnType<typeof getChildReport>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetChildReport<TData = Awaited<ReturnType<typeof getChildReport>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetChildReportQueryOptions(unitId,reportId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetChildReportPdfUrl = (unitId: string,
+    reportId: string,) => {
+
+
+
+
+  return `/api/v1/units/${unitId}/reports/${reportId}/pdf`
+}
+
+export const getChildReportPdf = async (unitId: string,
+    reportId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getGetChildReportPdfUrl(unitId,reportId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetChildReportPdfQueryKey = (unitId: string,
+    reportId: string,) => {
+    return [
+    `/api/v1/units/${unitId}/reports/${reportId}/pdf`
+    ] as const;
+    }
+
+
+export const getGetChildReportPdfQueryOptions = <TData = Awaited<ReturnType<typeof getChildReportPdf>>, TError = ProblemDetails>(unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReportPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChildReportPdfQueryKey(unitId,reportId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChildReportPdf>>> = ({ signal }) => getChildReportPdf(unitId,reportId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: unitId !== null && unitId !== undefined && reportId !== null && reportId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChildReportPdf>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetChildReportPdfQueryResult = NonNullable<Awaited<ReturnType<typeof getChildReportPdf>>>
+export type GetChildReportPdfQueryError = ProblemDetails
+
+
+export function useGetChildReportPdf<TData = Awaited<ReturnType<typeof getChildReportPdf>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReportPdf>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChildReportPdf>>,
+          TError,
+          Awaited<ReturnType<typeof getChildReportPdf>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChildReportPdf<TData = Awaited<ReturnType<typeof getChildReportPdf>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReportPdf>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChildReportPdf>>,
+          TError,
+          Awaited<ReturnType<typeof getChildReportPdf>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChildReportPdf<TData = Awaited<ReturnType<typeof getChildReportPdf>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReportPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetChildReportPdf<TData = Awaited<ReturnType<typeof getChildReportPdf>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildReportPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetChildReportPdfQueryOptions(unitId,reportId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

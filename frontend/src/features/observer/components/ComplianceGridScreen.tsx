@@ -2,6 +2,7 @@
 
 import { Building2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -149,11 +150,19 @@ function GridRow({ row, headFallback }: { row: ComplianceGridRow; headFallback: 
         <p className="font-medium text-ink">{row.unitName}</p>
         <p className={cn("text-xs", row.hasVacantHead ? "font-semibold text-danger" : "text-ink-muted")}>{row.headName ?? headFallback}</p>
       </td>
-      {row.cells.map((cell) => (
-        <td key={cell.windowId} className="px-4 py-3">
-          <StatusChip status={reportStatusChipVariant(cell.status)} />
-        </td>
-      ))}
+      {row.cells.map((cell) =>
+        cell.reportInstanceId ? (
+          <td key={cell.windowId} className="px-4 py-3">
+            <Link href={`/units/${row.unitId}/reports/${cell.reportInstanceId}`} className="inline-block">
+              <StatusChip status={reportStatusChipVariant(cell.status)} />
+            </Link>
+          </td>
+        ) : (
+          <td key={cell.windowId} className="px-4 py-3">
+            <StatusChip status={reportStatusChipVariant(cell.status)} />
+          </td>
+        ),
+      )}
     </tr>
   );
 }

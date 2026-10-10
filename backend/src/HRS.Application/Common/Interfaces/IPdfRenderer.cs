@@ -17,4 +17,4 @@ public sealed record ReportReceiptData(
 
 public sealed record ReportReceiptSection(string Title, IReadOnlyList<ReportReceiptField> Fields);
 
-public sealed record ReportReceiptField(string Label, string Value);
+public sealed record ReportReceiptField(string Label, string Value, bool IsMasked = false);

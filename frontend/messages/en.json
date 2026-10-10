@@ -256,6 +256,18 @@
     "withdrawNote": "You can withdraw it until the Secretariat opens it.",
     "nilReportNote": "No activity was reported for this period."
   },
+  "ChildReport": {
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load this report",
+    "notSubmittedTitle": "Not submitted yet",
+    "backToGrid": "Back to compliance grid",
+    "submittedMeta": "submitted {date} by {name}",
+    "unknownSubmitter": "unknown",
+    "readOnlyBanner": "Read-only. This report goes to the National Secretariat; {unitName} can view it but not act on it.",
+    "onTime": "On time",
+    "late": "Late",
+    "downloadPdf": "Download PDF"
+  },
   "ComplianceGrid": {
     "loading": "Loading…",
     "loadErrorTitle": "We couldn't load this grid",
