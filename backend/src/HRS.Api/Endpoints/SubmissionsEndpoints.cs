@@ -128,7 +128,7 @@ public static class SubmissionsEndpoints
                 ISender sender,
                 CancellationToken cancellationToken) =>
             {
-                var command = new SubmitReportCommand(user.GetUserId(), id, unitId, request.Confirmed, idempotencyKey);
+                var command = new SubmitReportCommand(user.GetUserId(), id, unitId, request.Confirmed, request.IsNil, idempotencyKey);
                 var result = await sender.Send(command, cancellationToken);
 
                 return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
@@ -139,6 +139,49 @@ public static class SubmissionsEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
+
+        reports.MapPost("/withdraw", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new WithdrawReportCommand(user.GetUserId(), id, unitId);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("WithdrawReport")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        reports.MapGet("/previous-answers", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetReportPreviousAnswersQuery(user.GetUserId(), id, unitId), cancellationToken);
+
+                if (result.IsFailure)
+                {
+                    return result.ToProblemDetails();
+                }
+
+                // No prior submission: 204 rather than a 200 with a null body — unambiguous for
+                // the frontend's generated client, which already special-cases 204 as "no data"
+                // (a 200 with an empty body isn't valid JSON and would throw on parse).
+                return result.Value is null ? Results.NoContent() : Results.Ok(result.Value);
+            })
+            .WithName("GetReportPreviousAnswers")
+            .Produces<PreviousReportAnswers>()
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         var attachments = app.MapGroup("/api/v1/reports/{id:guid}/attachments").WithTags("Submissions").RequireAuthorization();
 
@@ -208,4 +251,4 @@ public sealed record SaveReportDraftRequest(Dictionary<string, object?> Answers)
 
 public sealed record PresignAttachmentRequest(string FieldKey, string FileName, string ContentType, long SizeBytes);
 
-public sealed record SubmitReportRequest(bool Confirmed);
+public sealed record SubmitReportRequest(bool Confirmed, bool IsNil = false);

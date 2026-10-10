@@ -143,6 +143,8 @@ public sealed class GetReportInstanceForEditingQueryHandler(IAppDbContext db, IA
             instance?.RevisionDeadline,
             instance is null ? null : instance.RowVersion.ToString(CultureInfo.InvariantCulture),
             instance?.ReferenceNumber,
-            instance?.SubmittedAt);
+            instance?.SubmittedAt,
+            instance?.IsNil ?? false,
+            reportType.AllowNilReport);
     }
 }

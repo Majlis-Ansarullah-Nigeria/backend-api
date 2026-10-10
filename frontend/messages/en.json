@@ -214,7 +214,12 @@
     "sectionsLabel": "Sections",
     "sectionOf": "Section {number} of {total}",
     "back": "Back",
-    "nextSection": "Next: {title}"
+    "nextSection": "Next: {title}",
+    "withdraw": "Withdraw",
+    "copyFromLastPeriod": "Copy from last period",
+    "copyingFromLastPeriod": "Copying…",
+    "noActivityThisPeriod": "No activity this period",
+    "noPreviousSubmission": "No previous submission found"
   },
   "ReportReview": {
     "loading": "Loading…",
@@ -246,7 +251,8 @@
     "status": "Status",
     "downloadPdf": "Download PDF",
     "backToHome": "Back to home",
-    "withdrawNote": "You can withdraw it until the Secretariat opens it."
+    "withdrawNote": "You can withdraw it until the Secretariat opens it.",
+    "nilReportNote": "No activity was reported for this period."
   },
   "AcceptInvitation": {
     "appName": "Reporting Service",
@@ -399,6 +405,7 @@
     "columnName": "Report type",
     "columnWhoSubmits": "Who submits",
     "columnAttachments": "Attachments",
+    "columnNilReport": "Nil report",
     "yes": "Yes",
     "no": "No",
     "nameLabel": "Name",
@@ -409,6 +416,7 @@
     "recipientLevelLabel": "Recipient level",
     "observerDepthLabel": "Observer depth",
     "allowAttachmentsLabel": "Allow attachments",
+    "allowNilReportLabel": "Allow a one-click \"No activity this period\" submission",
     "selectPlaceholder": "Select…",
     "create": "Create report type",
     "creating": "Creating…",

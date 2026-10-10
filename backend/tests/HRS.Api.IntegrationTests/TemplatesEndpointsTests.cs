@@ -22,7 +22,7 @@ public class TemplatesEndpointsTests(ApiFactory factory)
         [UnitLevelCode.Muqam],
         UnitLevelCode.National,
         1,
-        AllowAttachments: true);
+        AllowAttachments: true, AllowNilReport: false);
 
     private async Task<HttpClient> CreateSecretariatClientAsync()
     {
@@ -106,7 +106,7 @@ public class TemplatesEndpointsTests(ApiFactory factory)
     {
         using var client = await CreateSecretariatClientAsync();
         var request = new CreateReportTypeRequest(
-            "Empty Levels", null, ReportTypeCategory.AdHoc, ReportTypeFrequency.AdHoc, [], UnitLevelCode.National, 0, false);
+            "Empty Levels", null, ReportTypeCategory.AdHoc, ReportTypeFrequency.AdHoc, [], UnitLevelCode.National, 0, false, false);
 
         var response = await client.PostAsJsonAsync("/api/v1/report-types", request);
 
@@ -169,6 +169,7 @@ public class TemplatesEndpointsTests(ApiFactory factory)
             [UnitLevelCode.Dila, UnitLevelCode.Zone],
             UnitLevelCode.National,
             2,
+            false,
             false);
         var response = await client.PutAsJsonAsync($"/api/v1/report-types/{created!.Id}", update);
 

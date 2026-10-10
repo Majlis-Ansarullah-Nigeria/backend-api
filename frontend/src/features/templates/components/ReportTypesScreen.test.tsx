@@ -40,6 +40,7 @@ const ACTIVE_TYPE = {
   recipientLevel: 0,
   observerDepth: 1,
   allowAttachments: true,
+  allowNilReport: false,
   createdAt: "2026-01-01T00:00:00Z",
   archivedAt: null,
 };
@@ -54,6 +55,7 @@ const ARCHIVED_TYPE = {
   recipientLevel: 0,
   observerDepth: 0,
   allowAttachments: false,
+  allowNilReport: false,
   createdAt: "2026-01-01T00:00:00Z",
   archivedAt: "2026-02-01T00:00:00Z",
 };

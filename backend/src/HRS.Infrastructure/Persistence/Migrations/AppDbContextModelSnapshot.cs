@@ -424,6 +424,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_late");
 
+                    b.Property<bool>("IsNil")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_nil");
+
                     b.Property<string>("ReferenceNumber")
                         .HasColumnType("text")
                         .HasColumnName("reference_number");
@@ -500,6 +504,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.Property<bool>("AllowAttachments")
                         .HasColumnType("boolean")
                         .HasColumnName("allow_attachments");
+
+                    b.Property<bool>("AllowNilReport")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_nil_report");
 
                     b.PrimitiveCollection<int[]>("ApplicableLevels")
                         .IsRequired()

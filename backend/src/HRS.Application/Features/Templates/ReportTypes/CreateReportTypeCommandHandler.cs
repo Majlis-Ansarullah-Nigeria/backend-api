@@ -26,6 +26,7 @@ public sealed class CreateReportTypeCommandHandler(IAppDbContext db, IAccessPoli
             request.RecipientLevel,
             request.ObserverDepth,
             request.AllowAttachments,
+            request.AllowNilReport,
             clock.UtcNow);
 
         db.ReportTypes.Add(reportType);

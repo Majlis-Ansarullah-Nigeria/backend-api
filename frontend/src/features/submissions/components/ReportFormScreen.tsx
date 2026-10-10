@@ -2,9 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Copy, Send, Undo2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -15,21 +16,47 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
 import type { ReportInstanceForEditing } from "@/lib/api/generated/hRSApiV1.schemas";
 import { getGetMyReportsQueryKey } from "@/lib/api/generated/submissions/submissions";
-import { saveReportDraft, useGetReportInstanceForEditing } from "@/lib/api/generated/submissions/submissions";
+import {
+  getReportPreviousAnswers,
+  saveReportDraft,
+  submitReport,
+  useGetReportInstanceForEditing,
+  withdrawReport,
+} from "@/lib/api/generated/submissions/submissions";
 import { buildFormSchema } from "@/lib/form-engine/field-schema";
 import { TEMPLATE_FIELD_TYPE } from "@/lib/form-engine/field-types";
 import { SectionForm } from "@/lib/form-engine/components/SectionForm";
 import { clearPendingDraft, draftKey, getPendingDraft, savePendingDraft } from "@/lib/offline/draft-queue";
 import { countdownText } from "@/features/submissions/utils/countdown";
-import { canSubmitFromStatus, reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
+import {
+  canSubmitFromStatus,
+  REPORT_INSTANCE_STATUS,
+  reportInstanceStatusChipVariant,
+} from "@/features/submissions/utils/report-status";
 import { sectionProgress } from "@/features/submissions/utils/section-progress";
 
 const AUTOSAVE_DELAY_MS = 10_000;
 
+/** FR-SUB-008's "text and settings fields" — figures (Number/Currency/Percentage), dates,
+ * location, attachments and structural list fields (RepeatableTable/MemberList) don't carry over
+ * from one period to the next the way a description or a yes/no setting does. */
+const COPYABLE_FIELD_TYPES: ReadonlySet<number> = new Set([
+  TEMPLATE_FIELD_TYPE.ShortText,
+  TEMPLATE_FIELD_TYPE.LongText,
+  TEMPLATE_FIELD_TYPE.YesNo,
+  TEMPLATE_FIELD_TYPE.SingleChoice,
+  TEMPLATE_FIELD_TYPE.MultipleChoice,
+  TEMPLATE_FIELD_TYPE.Dropdown,
+  TEMPLATE_FIELD_TYPE.Rating,
+]);
+
 export function ReportFormScreen({ id, unitId }: { id: string; unitId: string }) {
   const t = useTranslations("ReportForm");
+  const router = useRouter();
   const queryClient = useQueryClient();
   const key = draftKey(id, unitId);
+  const nilSubmitIdempotencyKey = useRef(crypto.randomUUID());
+  const [copyStatus, setCopyStatus] = useState<"idle" | "loading" | "none">("idle");
 
   const query = useGetReportInstanceForEditing<ReportInstanceForEditing, ApiError>(id, { unit: unitId });
 
@@ -135,6 +162,28 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
     },
   });
 
+  const withdrawMutation = useMutation({
+    mutationFn: () => withdrawReport(id, { unit: unitId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetMyReportsQueryKey() });
+      query.refetch();
+    },
+  });
+
+  const nilSubmitMutation = useMutation({
+    mutationFn: () =>
+      submitReport(
+        id,
+        { confirmed: true, isNil: true },
+        { unit: unitId },
+        { headers: { "Idempotency-Key": nilSubmitIdempotencyKey.current } },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetMyReportsQueryKey() });
+      router.push(`/reports/${id}/submitted?unit=${unitId}`);
+    },
+  });
+
   const canSave = query.data?.canSave ?? false;
 
   // Refs, not deps — the debounce effect should only restart when the answers themselves change,
@@ -214,6 +263,37 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
   const goNext = () => setActiveSectionIndex((index) => Math.min(index + 1, sections.length - 1));
   const goBack = () => setActiveSectionIndex((index) => Math.max(index - 1, 0));
 
+  // FR-SUB-008: prefills text/settings fields (not figures — see COPYABLE_FIELD_TYPES) from the
+  // unit's last submission of the same report type, then saves immediately rather than waiting
+  // for the 10s autosave timer.
+  const copyFromLastPeriod = async () => {
+    setCopyStatus("loading");
+    try {
+      const previous = await getReportPreviousAnswers(id, { unit: unitId });
+      if (!previous) {
+        setCopyStatus("none");
+        return;
+      }
+
+      const copyableFieldKeys = new Set(
+        sections.flatMap((section) => section.fields).filter((f) => COPYABLE_FIELD_TYPES.has(f.type)).map((f) => f.key),
+      );
+      const merged = { ...form.getValues() };
+      for (const [fieldKey, value] of Object.entries(previous.answers)) {
+        if (copyableFieldKeys.has(fieldKey)) {
+          merged[fieldKey] = value;
+        }
+      }
+
+      form.reset(merged);
+      setCopyStatus("idle");
+      setSaveStatus("saving");
+      latest.current.saveMutation.mutate({ answers: merged, ifMatch: latest.current.rowVersion });
+    } catch {
+      setCopyStatus("none");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -245,9 +325,41 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
             <Button type="button">{t("reviewAndSubmit")}</Button>
           </Link>
         ) : null}
+
+        {data.status === REPORT_INSTANCE_STATUS.Submitted ? (
+          <Button type="button" variant="outline" onClick={() => withdrawMutation.mutate()} disabled={withdrawMutation.isPending}>
+            <Undo2 className="size-4" aria-hidden="true" />
+            {t("withdraw")}
+          </Button>
+        ) : null}
       </div>
 
+      {withdrawMutation.error instanceof ApiError ? <p className="text-sm text-danger">{withdrawMutation.error.message}</p> : null}
+      {nilSubmitMutation.error instanceof ApiError ? <p className="text-sm text-danger">{nilSubmitMutation.error.message}</p> : null}
+
       {!canSave ? <ReadOnlyBanner /> : null}
+
+      {canSave ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => void copyFromLastPeriod()} disabled={copyStatus === "loading"}>
+            <Copy className="size-4" aria-hidden="true" />
+            {copyStatus === "loading" ? t("copyingFromLastPeriod") : t("copyFromLastPeriod")}
+          </Button>
+          {data.allowNilReport ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => nilSubmitMutation.mutate()}
+              disabled={nilSubmitMutation.isPending}
+            >
+              <Send className="size-4" aria-hidden="true" />
+              {t("noActivityThisPeriod")}
+            </Button>
+          ) : null}
+          {copyStatus === "none" ? <span className="text-sm text-ink-muted">{t("noPreviousSubmission")}</span> : null}
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-4 lg:flex-row">
         <aside className="hidden lg:block lg:w-64 lg:shrink-0">

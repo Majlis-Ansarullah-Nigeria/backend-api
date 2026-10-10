@@ -30,4 +30,6 @@ public sealed record ReportInstanceForEditing(
     DateTimeOffset? RevisionDeadline,
     string? RowVersion,
     string? ReferenceNumber,
-    DateTimeOffset? SubmittedAt);
+    DateTimeOffset? SubmittedAt,
+    bool IsNil,
+    bool AllowNilReport);

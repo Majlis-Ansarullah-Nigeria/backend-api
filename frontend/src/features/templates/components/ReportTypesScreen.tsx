@@ -87,6 +87,9 @@ export function ReportTypesScreen() {
                   <th scope="col" className="px-4 py-3 font-medium">
                     {t("columnAttachments")}
                   </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    {t("columnNilReport")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -107,6 +110,7 @@ export function ReportTypesScreen() {
                     </td>
                     <td className="px-4 py-3 text-ink-muted">{applicableLevelsLabel(reportType.applicableLevels)}</td>
                     <td className="px-4 py-3 text-ink-muted">{reportType.allowAttachments ? t("yes") : t("no")}</td>
+                    <td className="px-4 py-3 text-ink-muted">{reportType.allowNilReport ? t("yes") : t("no")}</td>
                   </tr>
                 ))}
               </tbody>

@@ -5,6 +5,7 @@ using HRS.Application.Features.Submissions.ReportInstances;
 using HRS.Application.Features.Templates.TemplateVersions;
 using HRS.Domain.Common;
 using HRS.Domain.Submissions;
+using HRS.Domain.Templates;
 using HRS.Domain.Windows;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -37,12 +38,8 @@ public sealed class SubmitReportCommandHandler(
         var instance = await db.ReportInstances.FirstOrDefaultAsync(i => i.Id == request.ReportId && i.UnitId == request.UnitId, cancellationToken);
         instance ??= await db.ReportInstances.FirstOrDefaultAsync(i => i.WindowId == request.ReportId && i.UnitId == request.UnitId, cancellationToken);
 
-        if (instance is null)
-        {
-            return Result.Failure<SubmitReportResult>(Error.Conflict("NOTHING_TO_SUBMIT", "Save a draft before submitting."));
-        }
-
-        var window = await db.SubmissionWindows.AsNoTracking().FirstOrDefaultAsync(w => w.Id == instance.WindowId, cancellationToken);
+        var window = await db.SubmissionWindows.AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == (instance != null ? instance.WindowId : request.ReportId), cancellationToken);
         if (window is null)
         {
             return Result.Failure<SubmitReportResult>(Error.NotFound("REPORT_NOT_FOUND", "Report not found."));
@@ -76,23 +73,60 @@ public sealed class SubmitReportCommandHandler(
                 Error.Validation("DECLARATION_REQUIRED", "Confirm the declaration before submitting."));
         }
 
-        var templateVersion = await db.TemplateVersions.AsNoTracking().FirstAsync(v => v.Id == instance.TemplateVersionId, cancellationToken);
+        if (request.IsNil && !reportType.AllowNilReport)
+        {
+            return Result.Failure<SubmitReportResult>(
+                Error.Validation("NIL_REPORT_NOT_ALLOWED", "This report type doesn't accept a nil submission."));
+        }
+
+        if (instance is null && !request.IsNil)
+        {
+            return Result.Failure<SubmitReportResult>(Error.Conflict("NOTHING_TO_SUBMIT", "Save a draft before submitting."));
+        }
+
+        TemplateVersion templateVersion;
+        if (instance is not null)
+        {
+            templateVersion = await db.TemplateVersions.AsNoTracking().FirstAsync(v => v.Id == instance.TemplateVersionId, cancellationToken);
+        }
+        else
+        {
+            // Only reachable when IsNil — a one-click "no activity" submission on a report
+            // nobody ever saved a draft for (FR-SUB-012), the same lazy-creation pattern Save
+            // and Presign already use.
+            var published = await db.TemplateVersions.AsNoTracking()
+                .FirstOrDefaultAsync(v => v.ReportTypeId == reportType.Id && v.Status == TemplateVersionStatus.Published, cancellationToken);
+            if (published is null)
+            {
+                return Result.Failure<SubmitReportResult>(
+                    Error.Conflict("NO_PUBLISHED_TEMPLATE", "This report type has no published template yet."));
+            }
+
+            templateVersion = published;
+            instance = ReportInstance.Create(Guid.CreateVersion7(), window.Id, request.UnitId, published.Id, now);
+            instance.Save("{}");
+            db.ReportInstances.Add(instance);
+        }
+
         var schema = JsonSerializer.Deserialize<TemplateSchema>(templateVersion.SchemaJson, JsonSerializerOptions.Web)!;
         var answers = JsonSerializer.Deserialize<Dictionary<string, object?>>(instance.AnswersJson, JsonSerializerOptions.Web) ?? [];
 
-        var missingFields = ReportCompleteness.FindMissingRequiredFields(schema, unitRow.LevelCode, answers);
-        if (missingFields.Count > 0)
+        if (!request.IsNil)
         {
-            var labels = string.Join(", ", missingFields.Select(f => f.Label));
-            return Result.Failure<SubmitReportResult>(
-                Error.Validation("INCOMPLETE_REQUIRED_FIELDS", $"These required fields are still empty: {labels}."));
+            var missingFields = ReportCompleteness.FindMissingRequiredFields(schema, unitRow.LevelCode, answers);
+            if (missingFields.Count > 0)
+            {
+                var labels = string.Join(", ", missingFields.Select(f => f.Label));
+                return Result.Failure<SubmitReportResult>(
+                    Error.Validation("INCOMPLETE_REQUIRED_FIELDS", $"These required fields are still empty: {labels}."));
+            }
         }
 
         var isLate = window.StatusFor(unitRow.LevelCode, now, request.UnitId) == WindowLevelStatus.Late;
         var referenceNumber = instance.ReferenceNumber
             ?? ReportReferenceNumber.Generate(reportType.Category, window.PeriodLabel, now, unitRow.Code);
 
-        instance.Submit(isLate, referenceNumber, now);
+        instance.Submit(isLate, referenceNumber, request.IsNil, now);
 
         var result = new SubmitReportResult(instance.Id, instance.ReferenceNumber!, now, isLate);
 

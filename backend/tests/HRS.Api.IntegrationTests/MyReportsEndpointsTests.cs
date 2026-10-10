@@ -29,7 +29,7 @@ public class MyReportsEndpointsTests(ApiFactory factory)
         levels,
         UnitLevelCode.National,
         1,
-        AllowAttachments: true);
+        AllowAttachments: true, AllowNilReport: false);
 
     private async Task<(HttpClient Client, Guid UserId)> CreateAuthenticatedUserAsync()
     {

@@ -53,6 +53,7 @@ const REPORT_TYPE = {
   recipientLevel: 0,
   observerDepth: 1,
   allowAttachments: true,
+  allowNilReport: false,
   createdAt: "2026-01-01T00:00:00Z",
   archivedAt: null,
 };

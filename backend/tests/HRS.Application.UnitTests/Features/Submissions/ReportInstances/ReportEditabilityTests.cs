@@ -90,7 +90,7 @@ public class ReportEditabilityTests
     {
         var window = CreateWindow(Now, 3, Now.AddDays(12), Now.AddDays(10));
         var instance = DraftInstance();
-        instance.Submit(isLate: false, "REF-TEST", Now);
+        instance.Submit(isLate: false, "REF-TEST", false, Now);
         instance.Open();
         instance.Return("Please fix figure 2", Now.AddDays(13), Now.AddDays(20));
 
@@ -104,7 +104,7 @@ public class ReportEditabilityTests
     {
         var window = CreateWindow(Now, 3, Now.AddDays(12), Now.AddDays(10));
         var instance = DraftInstance();
-        instance.Submit(isLate: false, "REF-TEST", Now);
+        instance.Submit(isLate: false, "REF-TEST", false, Now);
         instance.Open();
         instance.Return("Please fix figure 2", Now.AddDays(13), Now.AddDays(20));
 
@@ -140,7 +140,7 @@ public class ReportEditabilityTests
         }
 
         instance.Save("""{"q1":"a"}""");
-        instance.Submit(isLate: false, "REF-TEST", Now);
+        instance.Submit(isLate: false, "REF-TEST", false, Now);
         if (target == ReportInstanceStatus.Submitted)
         {
             return instance;

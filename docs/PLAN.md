@@ -45,7 +45,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M5.3 Report form with autosave, `If-Match`, offline queue (FR-SUB-002..004, NFR-RES-01).
 - [x] M5.4 Attachments: presigned upload, ClamAV scan, limits (FR-SUB-005).
 - [x] M5.5 Review-and-submit, declaration, idempotent submit, reference number, receipt PDF by email (FR-SUB-006, FR-SUB-010).
-- [ ] M5.6 Withdraw (FR-SUB-009); copy from last period (FR-SUB-008); nil report (FR-SUB-012).
+- [x] M5.6 Withdraw (FR-SUB-009); copy from last period (FR-SUB-008); nil report (FR-SUB-012).
 
 ## M6 — Observer views (FR-OBS)
 - [ ] M6.1 Compliance grid for Dila/Zone heads (FR-OBS-001).

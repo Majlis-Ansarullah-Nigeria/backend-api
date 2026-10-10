@@ -33,7 +33,8 @@ public class ReportAttachmentsEndpointsTests(ApiFactory factory)
         [UnitLevelCode.Muqam],
         UnitLevelCode.National,
         1,
-        allowAttachments);
+        allowAttachments,
+        AllowNilReport: false);
 
     private async Task<HttpClient> CreateSecretariatClientAsync()
     {

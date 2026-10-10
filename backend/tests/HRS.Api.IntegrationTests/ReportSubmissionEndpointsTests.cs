@@ -3,13 +3,17 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using HRS.Api.Endpoints;
 using HRS.Application.Features.Organization.Units;
+using HRS.Application.Features.Submissions.ReportInstances;
 using HRS.Application.Features.Submissions.Review;
 using HRS.Application.Features.Templates.ReportTypes;
 using HRS.Application.Features.Templates.TemplateVersions;
 using HRS.Application.Features.Windows.SubmissionWindows;
 using HRS.Domain.Access;
 using HRS.Domain.Organization;
+using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
+using HRS.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HRS.Api.IntegrationTests;
@@ -21,9 +25,9 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
 
     private static string UniqueEmail() => $"{Guid.NewGuid():N}@example.org";
 
-    private static CreateReportTypeRequest MonthlyReport(string name) => new(
+    private static CreateReportTypeRequest MonthlyReport(string name, bool allowNilReport = false) => new(
         name, "Monthly activity figures", ReportTypeCategory.GeneralMonthly, ReportTypeFrequency.Monthly,
-        [UnitLevelCode.Muqam], UnitLevelCode.National, 1, AllowAttachments: true);
+        [UnitLevelCode.Muqam], UnitLevelCode.National, 1, AllowAttachments: true, AllowNilReport: allowNilReport);
 
     private async Task<HttpClient> CreateSecretariatClientAsync()
     {
@@ -50,9 +54,9 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
         return (client, userId, email);
     }
 
-    private static async Task<Guid> CreateReportTypeAsync(HttpClient client, string name)
+    private static async Task<Guid> CreateReportTypeAsync(HttpClient client, string name, bool allowNilReport = false)
     {
-        var created = await (await client.PostAsJsonAsync("/api/v1/report-types", MonthlyReport(name)))
+        var created = await (await client.PostAsJsonAsync("/api/v1/report-types", MonthlyReport(name, allowNilReport)))
             .Content.ReadFromJsonAsync<ReportTypeSummary>();
         return created!.Id;
     }
@@ -109,11 +113,11 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
     private static Task<HttpResponseMessage> SaveAsync(HttpClient client, Guid reportId, Guid unitId, Dictionary<string, object?> answers) =>
         client.PutAsJsonAsync($"/api/v1/reports/{reportId}?unit={unitId}", new SaveReportDraftRequest(answers));
 
-    private static HttpRequestMessage SubmitRequest(Guid reportId, Guid unitId, bool confirmed, string? idempotencyKey = null)
+    private static HttpRequestMessage SubmitRequest(Guid reportId, Guid unitId, bool confirmed, string? idempotencyKey = null, bool isNil = false)
     {
         var message = new HttpRequestMessage(HttpMethod.Post, new Uri($"/api/v1/reports/{reportId}/submit?unit={unitId}", UriKind.Relative))
         {
-            Content = JsonContent.Create(new SubmitReportRequest(confirmed)),
+            Content = JsonContent.Create(new SubmitReportRequest(confirmed, isNil)),
         };
 
         if (idempotencyKey is not null)
@@ -123,6 +127,9 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
 
         return message;
     }
+
+    private static Task<HttpResponseMessage> WithdrawAsync(HttpClient client, Guid reportId, Guid unitId) =>
+        client.PostAsync(new Uri($"/api/v1/reports/{reportId}/withdraw?unit={unitId}", UriKind.Relative), null);
 
     /// <summary>Full setup: a secretariat-created report type with a published template (one
     /// required "notes" field, one optional numeric "funds_collected" field), a Muqam unit, an
@@ -359,5 +366,126 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(bytes.Length > 0);
+    }
+
+    [Fact]
+    public async Task WithdrawMovesASubmittedUnreadReportBackToDraft()
+    {
+        var (client, reportId, unitId, _) = await SetUpReadyToSubmitAsync("13");
+        using var submit = SubmitRequest(reportId, unitId, confirmed: true);
+        await client.SendAsync(submit);
+
+        var response = await WithdrawAsync(client, reportId, unitId);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var getResponse = await client.GetAsync(new Uri($"/api/v1/reports/{reportId}?unit={unitId}", UriKind.Relative));
+        var report = await getResponse.Content.ReadFromJsonAsync<ReportInstanceForEditing>();
+        Assert.Equal(ReportInstanceStatus.Draft, report!.Status);
+    }
+
+    [Fact]
+    public async Task WithdrawFailsWhenTheReportWasNeverSubmitted()
+    {
+        var (client, reportId, unitId, _) = await SetUpReadyToSubmitAsync("14");
+
+        var response = await WithdrawAsync(client, reportId, unitId);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task WithdrawFailsOnceTheSecretariatHasOpenedIt()
+    {
+        var (client, reportId, unitId, _) = await SetUpReadyToSubmitAsync("15");
+        using var submit = SubmitRequest(reportId, unitId, confirmed: true);
+        await client.SendAsync(submit);
+        await OpenInstanceAsync(reportId, unitId);
+
+        var response = await WithdrawAsync(client, reportId, unitId);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NilSubmitSucceedsFromAReportThatWasNeverSaved()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Report Submission Nil Report", allowNilReport: true);
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "16");
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId, Now.AddDays(-1), 3, Now.AddDays(30), Now.AddDays(10));
+
+        var (client, userId, _) = await CreateAuthenticatedUserAsync();
+        await factory.CreateRoleAssignmentAsync(userId, muqamId, RoleName.UnitHead);
+
+        // Nothing was ever saved — "notes" (required) was never filled in — yet the nil
+        // submission still succeeds, bypassing the completeness gate entirely.
+        using var request = SubmitRequest(windowId, muqamId, confirmed: true, isNil: true);
+        var response = await client.SendAsync(request);
+        var result = await response.Content.ReadFromJsonAsync<SubmitReportResult>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var getResponse = await client.GetAsync(new Uri($"/api/v1/reports/{windowId}?unit={muqamId}", UriKind.Relative));
+        var report = await getResponse.Content.ReadFromJsonAsync<ReportInstanceForEditing>();
+        Assert.True(report!.IsNil);
+        Assert.Equal(result!.Id, report.Id);
+    }
+
+    [Fact]
+    public async Task NilSubmitFailsWhenTheReportTypeDoesNotAllowIt()
+    {
+        var (client, reportId, unitId, _) = await SetUpReadyToSubmitAsync("17");
+
+        using var request = SubmitRequest(reportId, unitId, confirmed: true, isNil: true);
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PreviousAnswersIsNoContentWithNoPriorSubmission()
+    {
+        var (client, reportId, unitId, _) = await SetUpReadyToSubmitAsync("18");
+
+        var response = await client.GetAsync(new Uri($"/api/v1/reports/{reportId}/previous-answers?unit={unitId}", UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PreviousAnswersReturnsTheMostRecentPriorSubmission()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Report Submission Previous Answers Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "19");
+
+        var (client, userId, _) = await CreateAuthenticatedUserAsync();
+        await factory.CreateRoleAssignmentAsync(userId, muqamId, RoleName.UnitHead);
+
+        var firstWindowId = await CreateWindowAsync(secretariat, reportTypeId, Now.AddDays(-5), 3, Now.AddDays(60), Now.AddDays(20));
+        await SaveAsync(client, firstWindowId, muqamId, new Dictionary<string, object?> { ["notes"] = "From last period" });
+        using var firstSubmit = SubmitRequest(firstWindowId, muqamId, confirmed: true);
+        await client.SendAsync(firstSubmit);
+
+        var secondWindowId = await CreateWindowAsync(secretariat, reportTypeId, Now.AddDays(-1), 3, Now.AddDays(30), Now.AddDays(10));
+
+        var response = await client.GetAsync(new Uri($"/api/v1/reports/{secondWindowId}/previous-answers?unit={muqamId}", UriKind.Relative));
+        var previous = await response.Content.ReadFromJsonAsync<PreviousReportAnswers>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("From last period", previous!.Answers["notes"]!.ToString());
+    }
+
+    private async Task OpenInstanceAsync(Guid windowOrInstanceId, Guid unitId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var instance = await db.ReportInstances.FirstAsync(i => i.UnitId == unitId
+            && (i.Id == windowOrInstanceId || i.WindowId == windowOrInstanceId));
+        instance.Open();
+        await db.SaveChangesAsync();
     }
 }

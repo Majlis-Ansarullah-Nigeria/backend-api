@@ -31,7 +31,8 @@ public sealed class UpdateReportTypeCommandHandler(IAppDbContext db, IAccessPoli
             request.ApplicableLevels,
             request.RecipientLevel,
             request.ObserverDepth,
-            request.AllowAttachments);
+            request.AllowAttachments,
+            request.AllowNilReport);
 
         await db.SaveChangesAsync(cancellationToken);
 

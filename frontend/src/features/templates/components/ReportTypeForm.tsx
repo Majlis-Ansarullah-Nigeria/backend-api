@@ -49,6 +49,7 @@ export function ReportTypeForm({
 
   const applicableLevels = useWatch({ control: form.control, name: "applicableLevels" });
   const allowAttachments = useWatch({ control: form.control, name: "allowAttachments" });
+  const allowNilReport = useWatch({ control: form.control, name: "allowNilReport" });
 
   const toggleLevel = (level: number, checked: boolean) => {
     const value = String(level);
@@ -169,6 +170,15 @@ export function ReportTypeForm({
           disabled={disabled}
         />
         {t("allowAttachmentsLabel")}
+      </label>
+
+      <label className="flex items-center gap-2 text-sm text-ink">
+        <Checkbox
+          checked={allowNilReport}
+          onCheckedChange={(checked) => form.setValue("allowNilReport", checked === true)}
+          disabled={disabled}
+        />
+        {t("allowNilReportLabel")}
       </label>
 
       {errorMessage ? (

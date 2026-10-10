@@ -68,6 +68,7 @@ function ReportTypeDetailForm({ reportType }: { reportType: ReportTypeSummary })
           recipientLevel: Number(values.recipientLevel),
           observerDepth: Number(values.observerDepth),
           allowAttachments: values.allowAttachments,
+          allowNilReport: values.allowNilReport,
         },
       },
       { onSuccess: invalidate },
@@ -100,6 +101,7 @@ function ReportTypeDetailForm({ reportType }: { reportType: ReportTypeSummary })
           recipientLevel: String(reportType.recipientLevel),
           observerDepth: String(reportType.observerDepth),
           allowAttachments: reportType.allowAttachments,
+          allowNilReport: reportType.allowNilReport,
         }}
         onSubmit={onSubmit}
         onCancel={() => setResetKey((key) => key + 1)}

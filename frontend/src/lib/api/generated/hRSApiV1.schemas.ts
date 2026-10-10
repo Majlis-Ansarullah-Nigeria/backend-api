@@ -99,6 +99,7 @@ export interface CreateReportTypeRequest {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   observerDepth: number | string;
   allowAttachments: boolean;
+  allowNilReport: boolean;
 }
 
 export type RoleName = number;
@@ -348,6 +349,13 @@ export interface PresignedAttachmentUpload {
   uploadUrl: string;
 }
 
+export type PreviousReportAnswersAnswers = { [key: string]: unknown };
+
+export interface PreviousReportAnswers {
+  periodLabel: string;
+  answers: PreviousReportAnswersAnswers;
+}
+
 export interface ProblemDetails {
   /** @nullable */
   type?: string | null;
@@ -466,6 +474,8 @@ export interface ReportInstanceForEditing {
   referenceNumber: string | null;
   /** @nullable */
   submittedAt: string | null;
+  isNil: boolean;
+  allowNilReport: boolean;
 }
 
 export interface ReportTypeSummary {
@@ -480,6 +490,7 @@ export interface ReportTypeSummary {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   observerDepth: number | string;
   allowAttachments: boolean;
+  allowNilReport: boolean;
   createdAt: string;
   /** @nullable */
   archivedAt: string | null;
@@ -524,6 +535,7 @@ export interface SetActiveAssignmentRequest {
 
 export interface SubmitReportRequest {
   confirmed: boolean;
+  isNil?: boolean;
 }
 
 export interface SubmitReportResult {
@@ -635,6 +647,7 @@ export interface UpdateReportTypeRequest {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   observerDepth: number | string;
   allowAttachments: boolean;
+  allowNilReport: boolean;
 }
 
 export interface UpdateSubmissionWindowRequest {
@@ -753,6 +766,14 @@ unit: string;
 };
 
 export type SubmitReportParams = {
+unit: string;
+};
+
+export type WithdrawReportParams = {
+unit: string;
+};
+
+export type GetReportPreviousAnswersParams = {
 unit: string;
 };
 

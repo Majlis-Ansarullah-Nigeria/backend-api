@@ -54,7 +54,8 @@ public static class TemplatesEndpoints
                     request.ApplicableLevels,
                     request.RecipientLevel,
                     request.ObserverDepth,
-                    request.AllowAttachments);
+                    request.AllowAttachments,
+                    request.AllowNilReport);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -84,7 +85,8 @@ public static class TemplatesEndpoints
                     request.ApplicableLevels,
                     request.RecipientLevel,
                     request.ObserverDepth,
-                    request.AllowAttachments);
+                    request.AllowAttachments,
+                    request.AllowNilReport);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -202,7 +204,8 @@ public sealed record CreateReportTypeRequest(
     IReadOnlyList<UnitLevelCode> ApplicableLevels,
     UnitLevelCode RecipientLevel,
     int ObserverDepth,
-    bool AllowAttachments);
+    bool AllowAttachments,
+    bool AllowNilReport);
 
 public sealed record UpdateReportTypeRequest(
     string Name,
@@ -212,6 +215,7 @@ public sealed record UpdateReportTypeRequest(
     IReadOnlyList<UnitLevelCode> ApplicableLevels,
     UnitLevelCode RecipientLevel,
     int ObserverDepth,
-    bool AllowAttachments);
+    bool AllowAttachments,
+    bool AllowNilReport);
 
 public sealed record UpdateTemplateSchemaRequest(TemplateSchema Schema);

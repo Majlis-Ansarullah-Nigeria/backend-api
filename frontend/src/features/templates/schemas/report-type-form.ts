@@ -18,6 +18,7 @@ export const reportTypeFormSchema = z.object({
     .min(1, "Enter an observer depth")
     .refine((value) => Number.isInteger(Number(value)) && Number(value) >= 0, "Must be a whole number, 0 or more"),
   allowAttachments: z.boolean(),
+  allowNilReport: z.boolean(),
 });
 
 export type ReportTypeFormValues = z.infer<typeof reportTypeFormSchema>;

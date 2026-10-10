@@ -28,12 +28,14 @@ import type {
   CompleteAttachmentUploadParams,
   DeleteAttachmentParams,
   GetReportInstanceForEditingParams,
+  GetReportPreviousAnswersParams,
   GetReportReceiptPdfParams,
   GetReportReviewWarningsParams,
   MyReportSummary,
   PresignAttachmentRequest,
   PresignAttachmentUploadParams,
   PresignedAttachmentUpload,
+  PreviousReportAnswers,
   ProblemDetails,
   ReportInstanceForEditing,
   ReviewWarningsResult,
@@ -42,7 +44,8 @@ import type {
   SaveReportDraftResult,
   SubmitReportParams,
   SubmitReportRequest,
-  SubmitReportResult
+  SubmitReportResult,
+  WithdrawReportParams
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -670,7 +673,192 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSubmitReportMutationOptions(options), queryClient);
     }
-    export const getPresignAttachmentUploadUrl = (id: string,
+    export const getWithdrawReportUrl = (id: string,
+    params: WithdrawReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/withdraw?${stringifiedParams}` : `/api/v1/reports/${id}/withdraw`
+}
+
+export const withdrawReport = async (id: string,
+    params: WithdrawReportParams, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getWithdrawReportUrl(id,params),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getWithdrawReportMutationKey = () => ['withdrawReport'] as const;
+
+export const getWithdrawReportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawReport>>, TError,WithdrawReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawReport>>, TError,WithdrawReportMutationVariables, TContext> => {
+
+const mutationKey = getWithdrawReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawReport>>, WithdrawReportMutationVariables> = (props) => {
+          const {id,params} = props ?? {};
+
+          return  withdrawReport(id,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawReportMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawReport>>>
+
+    export type WithdrawReportMutationError = ProblemDetails
+    export type WithdrawReportMutationVariables = {id: string;params: WithdrawReportParams}
+
+    export const useWithdrawReport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawReport>>, TError,WithdrawReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawReport>>,
+        TError,
+        WithdrawReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getWithdrawReportMutationOptions(options), queryClient);
+    }
+    export const getGetReportPreviousAnswersUrl = (id: string,
+    params: GetReportPreviousAnswersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reports/${id}/previous-answers?${stringifiedParams}` : `/api/v1/reports/${id}/previous-answers`
+}
+
+export const getReportPreviousAnswers = async (id: string,
+    params: GetReportPreviousAnswersParams, options?: Parameters<typeof customFetch>[1]): Promise<PreviousReportAnswers | void> => {
+
+  return customFetch<PreviousReportAnswers | void>(getGetReportPreviousAnswersUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReportPreviousAnswersQueryKey = (id: string,
+    params?: GetReportPreviousAnswersParams,) => {
+    return [
+    `/api/v1/reports/${id}/previous-answers`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetReportPreviousAnswersQueryOptions = <TData = Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError = ProblemDetails>(id: string,
+    params: GetReportPreviousAnswersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportPreviousAnswersQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportPreviousAnswers>>> = ({ signal }) => getReportPreviousAnswers(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReportPreviousAnswersQueryResult = NonNullable<Awaited<ReturnType<typeof getReportPreviousAnswers>>>
+export type GetReportPreviousAnswersQueryError = ProblemDetails
+
+
+export function useGetReportPreviousAnswers<TData = Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportPreviousAnswersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportPreviousAnswers>>,
+          TError,
+          Awaited<ReturnType<typeof getReportPreviousAnswers>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportPreviousAnswers<TData = Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportPreviousAnswersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportPreviousAnswers>>,
+          TError,
+          Awaited<ReturnType<typeof getReportPreviousAnswers>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportPreviousAnswers<TData = Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportPreviousAnswersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetReportPreviousAnswers<TData = Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError = ProblemDetails>(
+ id: string,
+    params: GetReportPreviousAnswersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportPreviousAnswers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReportPreviousAnswersQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPresignAttachmentUploadUrl = (id: string,
     params: PresignAttachmentUploadParams,) => {
   const normalizedParams = new URLSearchParams();
 

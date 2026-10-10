@@ -25,7 +25,7 @@ public class WindowsEndpointsTests(ApiFactory factory)
         levels,
         UnitLevelCode.National,
         1,
-        AllowAttachments: true);
+        AllowAttachments: true, AllowNilReport: false);
 
     private async Task<HttpClient> CreateSecretariatClientAsync()
     {

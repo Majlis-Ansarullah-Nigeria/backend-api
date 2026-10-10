@@ -13,6 +13,7 @@ public sealed record ReportTypeSummary(
     UnitLevelCode RecipientLevel,
     int ObserverDepth,
     bool AllowAttachments,
+    bool AllowNilReport,
     DateTimeOffset CreatedAt,
     DateTimeOffset? ArchivedAt)
 {
@@ -26,6 +27,7 @@ public sealed record ReportTypeSummary(
         reportType.RecipientLevel,
         reportType.ObserverDepth,
         reportType.AllowAttachments,
+        reportType.AllowNilReport,
         reportType.CreatedAt,
         reportType.ArchivedAt);
 }

@@ -49,6 +49,7 @@ export function SubmittedScreen({ id, unitId }: { id: string; unitId: string }) 
       </div>
       <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
       <p className="text-sm text-ink-muted">{t("body", { period: data.periodLabel })}</p>
+      {data.isNil ? <p className="text-sm text-ink-muted">{t("nilReportNote")}</p> : null}
 
       <div className="mt-2 flex w-full flex-col gap-3 rounded-lg border border-line bg-surface p-4 text-left">
         <div className="flex items-baseline justify-between gap-3 text-sm">

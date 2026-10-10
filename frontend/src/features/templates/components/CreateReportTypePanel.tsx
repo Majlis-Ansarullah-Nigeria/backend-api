@@ -16,6 +16,7 @@ const EMPTY_DEFAULTS: ReportTypeFormValues = {
   recipientLevel: "0",
   observerDepth: "1",
   allowAttachments: false,
+  allowNilReport: false,
 };
 
 export function CreateReportTypePanel({ onCancel, onCreated }: { onCancel: () => void; onCreated: (id: string) => void }) {
@@ -35,6 +36,7 @@ export function CreateReportTypePanel({ onCancel, onCreated }: { onCancel: () =>
           recipientLevel: Number(values.recipientLevel),
           observerDepth: Number(values.observerDepth),
           allowAttachments: values.allowAttachments,
+          allowNilReport: values.allowNilReport,
         },
       },
       {

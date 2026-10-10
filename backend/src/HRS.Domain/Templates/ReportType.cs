@@ -25,6 +25,7 @@ public sealed class ReportType
         UnitLevelCode recipientLevel,
         int observerDepth,
         bool allowAttachments,
+        bool allowNilReport,
         DateTimeOffset createdAt)
     {
         Id = id;
@@ -36,6 +37,7 @@ public sealed class ReportType
         RecipientLevel = recipientLevel;
         ObserverDepth = observerDepth;
         AllowAttachments = allowAttachments;
+        AllowNilReport = allowNilReport;
         CreatedAt = createdAt;
     }
 
@@ -62,6 +64,10 @@ public sealed class ReportType
 
     public bool AllowAttachments { get; private set; }
 
+    /// <summary>FR-SUB-012's "where the template allows it" — a one-click "No activity this
+    /// period" submission, opt-in per report type like AllowAttachments.</summary>
+    public bool AllowNilReport { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset? ArchivedAt { get; private set; }
@@ -78,8 +84,9 @@ public sealed class ReportType
         UnitLevelCode recipientLevel,
         int observerDepth,
         bool allowAttachments,
+        bool allowNilReport,
         DateTimeOffset now) =>
-        new(id, name, description, category, frequency, applicableLevels, recipientLevel, observerDepth, allowAttachments, now);
+        new(id, name, description, category, frequency, applicableLevels, recipientLevel, observerDepth, allowAttachments, allowNilReport, now);
 
     public void Update(
         string name,
@@ -89,7 +96,8 @@ public sealed class ReportType
         IEnumerable<UnitLevelCode> applicableLevels,
         UnitLevelCode recipientLevel,
         int observerDepth,
-        bool allowAttachments)
+        bool allowAttachments,
+        bool allowNilReport)
     {
         Name = name;
         Description = description;
@@ -100,6 +108,7 @@ public sealed class ReportType
         RecipientLevel = recipientLevel;
         ObserverDepth = observerDepth;
         AllowAttachments = allowAttachments;
+        AllowNilReport = allowNilReport;
     }
 
     public void Archive(DateTimeOffset now) => ArchivedAt = now;
