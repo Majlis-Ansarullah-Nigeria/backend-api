@@ -221,7 +221,17 @@
     "copyFromLastPeriod": "Copy from last period",
     "copyingFromLastPeriod": "Copying…",
     "noActivityThisPeriod": "No activity this period",
-    "noPreviousSubmission": "No previous submission found"
+    "noPreviousSubmission": "No previous submission found",
+    "pullFromChildren": "Pull from {plural}",
+    "includedChildrenLabel": "Included {plural}",
+    "onlySubmittedCanBePulledHint": "Only submitted reports can be pulled.",
+    "noteOnOverridesLabel": "Note on overrides",
+    "pullButton": "Pull figures",
+    "pullAgainButton": "Pull again",
+    "pulledSummaryLine": "Figures pulled from {includedCount} submitted reports.",
+    "pulledSummaryMissing": "{missingCount} haven't submitted yet; pull again later to update.",
+    "pulledTag": "Pulled · {rule}",
+    "overriddenTag": "Overridden · pulled {value}"
   },
   "ReportReview": {
     "loading": "Loading…",

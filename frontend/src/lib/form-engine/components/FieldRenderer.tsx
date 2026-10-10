@@ -3,7 +3,7 @@ import { Controller, type FieldErrors, type UseFormReturn } from "react-hook-for
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { TemplateField } from "@/lib/api/generated/hRSApiV1.schemas";
+import type { PullSummaryField, TemplateField } from "@/lib/api/generated/hRSApiV1.schemas";
 import { TEMPLATE_FIELD_TYPE } from "../field-types";
 import { FieldShell } from "./FieldShell";
 import { FileUploadField } from "./FileUploadField";
@@ -19,14 +19,17 @@ export function FieldRenderer({
   field,
   form,
   uploadContext,
+  pullMeta,
 }: {
   field: TemplateField;
   form: UseFormReturn<Record<string, unknown>>;
   uploadContext?: { reportId: string; unitId: string };
+  /** FR-SUB-007: only ever set for a Number/Currency/Percentage field the last pull touched. */
+  pullMeta?: PullSummaryField;
 }) {
   const t = useTranslations("FormEngine");
   const error = errorMessage(form.formState.errors, field.key);
-  const shellProps = { fieldKey: field.key, label: field.label, helpText: field.helpText, required: field.required, error };
+  const shellProps = { fieldKey: field.key, label: field.label, helpText: field.helpText, required: field.required, error, pullMeta };
 
   switch (field.type) {
     case TEMPLATE_FIELD_TYPE.ShortText:

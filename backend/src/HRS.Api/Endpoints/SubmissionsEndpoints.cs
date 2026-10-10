@@ -1,6 +1,7 @@
 using HRS.Api.Common;
 using HRS.Application.Features.Submissions.Attachments;
 using HRS.Application.Features.Submissions.MyReports;
+using HRS.Application.Features.Submissions.PullFigures;
 using HRS.Application.Features.Submissions.ReportInstances;
 using HRS.Application.Features.Submissions.Review;
 using Mediator;
@@ -183,6 +184,48 @@ public static class SubmissionsEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        reports.MapGet("/pull-context", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetPullContextQuery(user.GetUserId(), id, unitId), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetPullContext")
+            .Produces<PullContextView>()
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        reports.MapPost("/pull", async (
+                Guid id,
+                [FromQuery(Name = "unit")] Guid unitId,
+                [FromBody] PullChildFiguresRequest request,
+                [FromHeader(Name = "If-Match")] string? ifMatch,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                HttpContext httpContext,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new PullChildFiguresCommand(user.GetUserId(), id, unitId, request.IncludedUnitIds, request.OverrideNote, ifMatch);
+                var result = await sender.Send(command, cancellationToken);
+
+                if (result.IsFailure)
+                {
+                    return result.ToProblemDetails();
+                }
+
+                httpContext.Response.Headers.ETag = $"\"{result.Value.RowVersion}\"";
+                return Results.Ok(result.Value);
+            })
+            .WithName("PullChildFigures")
+            .Produces<PullChildFiguresResult>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         var attachments = app.MapGroup("/api/v1/reports/{id:guid}/attachments").WithTags("Submissions").RequireAuthorization();
 
         attachments.MapPost("/presign", async (
@@ -252,3 +295,5 @@ public sealed record SaveReportDraftRequest(Dictionary<string, object?> Answers)
 public sealed record PresignAttachmentRequest(string FieldKey, string FileName, string ContentType, long SizeBytes);
 
 public sealed record SubmitReportRequest(bool Confirmed, bool IsNil = false);
+
+public sealed record PullChildFiguresRequest(IReadOnlyList<Guid>? IncludedUnitIds, string? OverrideNote);

@@ -454,6 +454,61 @@ export interface ProblemDetails {
   instance?: string | null;
 }
 
+export interface PullChildFiguresRequest {
+  /** @nullable */
+  includedUnitIds: string[] | null;
+  /** @nullable */
+  overrideNote: string | null;
+}
+
+export interface PullSummaryFieldBreakdownEntry {
+  unitId: string;
+  unitName: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$ */
+  value: number | string;
+}
+
+export interface PullSummaryField {
+  fieldKey: string;
+  aggregation: AggregationRule;
+  /** @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$ */
+  value: number | string;
+  isOverridden: boolean;
+  breakdown: PullSummaryFieldBreakdownEntry[];
+}
+
+export interface PullSummary {
+  pulledAt: string;
+  includedUnitIds: string[];
+  missingUnitIds: string[];
+  /** @nullable */
+  overrideNote: string | null;
+  fields: PullSummaryField[];
+}
+
+export interface PullChildFiguresResult {
+  id: string;
+  rowVersion: string;
+  summary: PullSummary;
+}
+
+export interface PullChildUnitOption {
+  unitId: string;
+  unitName: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  status: number | string;
+}
+
+export interface PullContextView {
+  eligible: boolean;
+  /** @nullable */
+  childLevelName: string | null;
+  /** @nullable */
+  childLevelPluralName: string | null;
+  children: PullChildUnitOption[];
+  summary: null | PullSummary;
+}
+
 export interface ReopenWindowRequest {
   unitIds: string[];
   reopenedUntil: string;
@@ -856,6 +911,14 @@ unit: string;
 };
 
 export type GetReportPreviousAnswersParams = {
+unit: string;
+};
+
+export type GetPullContextParams = {
+unit: string;
+};
+
+export type PullChildFiguresParams = {
 unit: string;
 };
 

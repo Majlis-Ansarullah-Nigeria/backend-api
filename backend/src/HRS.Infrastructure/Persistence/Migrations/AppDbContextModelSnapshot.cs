@@ -428,6 +428,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_nil");
 
+                    b.Property<string>("PullSummaryJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("pull_summary_json");
+
                     b.Property<string>("ReferenceNumber")
                         .HasColumnType("text")
                         .HasColumnName("reference_number");

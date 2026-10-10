@@ -79,6 +79,11 @@ public sealed class ReportInstance
     /// a Return, so it always reflects the most recent submitter, unlike ReferenceNumber.</summary>
     public Guid? SubmittedByUserId { get; private set; }
 
+    /// <summary>FR-SUB-007's "pull from children" result, opaque here for the same reason
+    /// AnswersJson is — structure and merge logic belong to Application. Null until the first
+    /// pull; overwritten (not appended) by each later pull, same way AnswersJson works for Save.</summary>
+    public string? PullSummaryJson { get; private set; }
+
     public static ReportInstance Create(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now) =>
         new(id, windowId, unitId, templateVersionId, now);
 
@@ -98,6 +103,15 @@ public sealed class ReportInstance
         {
             Status = ReportInstanceStatus.Draft;
         }
+    }
+
+    /// <summary>FR-SUB-007: merges pulled figures into the draft's answers and records the pull
+    /// summary (for display, and so a later re-pull can tell a pulled value from a head's manual
+    /// override). Same status guard as Save — pulling is just another way to fill the draft.</summary>
+    public void RecordPull(string answersJson, string pullSummaryJson)
+    {
+        Save(answersJson);
+        PullSummaryJson = pullSummaryJson;
     }
 
     /// <summary>Submits a Draft, or resubmits a Returned report (FR-SUB-009, BR-WIN-06). IsLate is

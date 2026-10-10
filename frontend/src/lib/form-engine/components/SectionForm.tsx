@@ -1,5 +1,5 @@
 import { useWatch, type UseFormReturn } from "react-hook-form";
-import type { TemplateField, TemplateSection } from "@/lib/api/generated/hRSApiV1.schemas";
+import type { PullSummaryField, TemplateField, TemplateSection } from "@/lib/api/generated/hRSApiV1.schemas";
 import { TEMPLATE_FIELD_TYPE } from "../field-types";
 import { visibleFields } from "../field-visibility";
 import { useComputedFields } from "../use-computed-fields";
@@ -14,11 +14,14 @@ export function SectionForm({
   unitLevel,
   form,
   uploadContext,
+  pulledFields,
 }: {
   section: TemplateSection;
   unitLevel: number;
   form: UseFormReturn<Record<string, unknown>>;
   uploadContext?: { reportId: string; unitId: string };
+  /** FR-SUB-007: the last "Pull from children" result, keyed by field key. */
+  pulledFields?: Record<string, PullSummaryField>;
 }) {
   const answers = useWatch({ control: form.control });
   const shown = visibleFields(section.fields, unitLevel, answers);
@@ -35,7 +38,13 @@ export function SectionForm({
             </p>
           </FieldShell>
         ) : (
-          <FieldRenderer key={field.key} field={field} form={form} uploadContext={uploadContext} />
+          <FieldRenderer
+            key={field.key}
+            field={field}
+            form={form}
+            uploadContext={uploadContext}
+            pullMeta={pulledFields?.[field.key]}
+          />
         ),
       )}
     </div>

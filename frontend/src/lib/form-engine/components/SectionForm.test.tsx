@@ -4,8 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { useForm } from "react-hook-form";
 import { describe, expect, it } from "vitest";
 import messages from "../../../../messages/en.json";
-import type { TemplateField, TemplateSection } from "@/lib/api/generated/hRSApiV1.schemas";
-import { TEMPLATE_FIELD_TYPE } from "../field-types";
+import type { PullSummaryField, TemplateField, TemplateSection } from "@/lib/api/generated/hRSApiV1.schemas";
+import { AGGREGATION_RULE, TEMPLATE_FIELD_TYPE } from "../field-types";
 import { SectionForm } from "./SectionForm";
 
 function field(overrides: Partial<TemplateField>): TemplateField {
@@ -32,15 +32,23 @@ function field(overrides: Partial<TemplateField>): TemplateField {
   };
 }
 
-function Harness({ section, unitLevel = 3 }: { section: TemplateSection; unitLevel?: number }) {
+function Harness({
+  section,
+  unitLevel = 3,
+  pulledFields,
+}: {
+  section: TemplateSection;
+  unitLevel?: number;
+  pulledFields?: Record<string, PullSummaryField>;
+}) {
   const form = useForm<Record<string, unknown>>();
-  return <SectionForm section={section} unitLevel={unitLevel} form={form} />;
+  return <SectionForm section={section} unitLevel={unitLevel} form={form} pulledFields={pulledFields} />;
 }
 
-function renderSection(fields: TemplateField[], unitLevel = 3) {
+function renderSection(fields: TemplateField[], unitLevel = 3, pulledFields?: Record<string, PullSummaryField>) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <Harness section={{ key: "s1", title: "Section 1", fields }} unitLevel={unitLevel} />
+      <Harness section={{ key: "s1", title: "Section 1", fields }} unitLevel={unitLevel} pulledFields={pulledFields} />
     </NextIntlClientProvider>,
   );
 }
@@ -142,5 +150,49 @@ describe("SectionForm", () => {
 
     await user.click(screen.getByRole("button", { name: /remove member 1/i }));
     expect(screen.getByText(/no members yet/i)).toBeInTheDocument();
+  });
+
+  it("shows a 'pulled' tag with breakdown on a numeric field that was pulled and not overridden", () => {
+    const pulledFields: Record<string, PullSummaryField> = {
+      total_members: {
+        fieldKey: "total_members",
+        aggregation: AGGREGATION_RULE.Sum,
+        value: 250,
+        isOverridden: false,
+        breakdown: [
+          { unitId: "m1", unitName: "Bodija", value: 176 },
+          { unitId: "m2", unitName: "Challenge", value: 74 },
+        ],
+      },
+    };
+
+    renderSection(
+      [field({ key: "total_members", label: "Total members", type: TEMPLATE_FIELD_TYPE.Number })],
+      3,
+      pulledFields,
+    );
+
+    expect(screen.getByText(/pulled · sum/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bodija 176 · Challenge 74/)).toBeInTheDocument();
+  });
+
+  it("shows an 'overridden' tag when the head's answer differs from the last pulled value", () => {
+    const pulledFields: Record<string, PullSummaryField> = {
+      total_members: {
+        fieldKey: "total_members",
+        aggregation: AGGREGATION_RULE.Sum,
+        value: 250,
+        isOverridden: true,
+        breakdown: [{ unitId: "m1", unitName: "Bodija", value: 176 }],
+      },
+    };
+
+    renderSection(
+      [field({ key: "total_members", label: "Total members", type: TEMPLATE_FIELD_TYPE.Number })],
+      3,
+      pulledFields,
+    );
+
+    expect(screen.getByText(/overridden · pulled 250/i)).toBeInTheDocument();
   });
 });

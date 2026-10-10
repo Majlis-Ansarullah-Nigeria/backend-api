@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Copy, Send, Undo2 } from "lucide-react";
+import { ArrowDownToLine, ArrowLeft, ArrowRight, Check, Copy, Send, Undo2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,12 +14,14 @@ import { SaveIndicator, type SaveStatus } from "@/components/shared/SaveIndicato
 import { StatusChip } from "@/components/shared/StatusChip";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
-import type { ReportInstanceForEditing } from "@/lib/api/generated/hRSApiV1.schemas";
+import type { PullContextView, ReportInstanceForEditing } from "@/lib/api/generated/hRSApiV1.schemas";
 import { getGetMyReportsQueryKey } from "@/lib/api/generated/submissions/submissions";
 import {
   getReportPreviousAnswers,
+  pullChildFigures,
   saveReportDraft,
   submitReport,
+  useGetPullContext,
   useGetReportInstanceForEditing,
   withdrawReport,
 } from "@/lib/api/generated/submissions/submissions";
@@ -27,6 +29,7 @@ import { buildFormSchema } from "@/lib/form-engine/field-schema";
 import { TEMPLATE_FIELD_TYPE } from "@/lib/form-engine/field-types";
 import { SectionForm } from "@/lib/form-engine/components/SectionForm";
 import { clearPendingDraft, draftKey, getPendingDraft, savePendingDraft } from "@/lib/offline/draft-queue";
+import { PullFiguresPanel } from "@/features/submissions/components/PullFiguresPanel";
 import { countdownText } from "@/features/submissions/utils/countdown";
 import {
   canSubmitFromStatus,
@@ -57,8 +60,10 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
   const key = draftKey(id, unitId);
   const nilSubmitIdempotencyKey = useRef(crypto.randomUUID());
   const [copyStatus, setCopyStatus] = useState<"idle" | "loading" | "none">("idle");
+  const [pullPanelOpen, setPullPanelOpen] = useState(false);
 
   const query = useGetReportInstanceForEditing<ReportInstanceForEditing, ApiError>(id, { unit: unitId });
+  const pullContextQuery = useGetPullContext<PullContextView, ApiError>(id, { unit: unitId });
 
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [saveStatus, setSaveStatus] = useState<SaveStatus | null>(null);
@@ -184,6 +189,28 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
     },
   });
 
+  // FR-SUB-007: pulls child figures into this draft. The response only carries the new
+  // RowVersion and Summary, not the merged answers themselves, so a refetch + form.reset is what
+  // actually gets the pulled values on screen — same "re-sync the form after a server-side
+  // mutation" shape as copyFromLastPeriod below.
+  const pullMutation = useMutation({
+    mutationFn: (vars: { includedUnitIds: string[]; overrideNote: string }) =>
+      pullChildFigures(
+        id,
+        { includedUnitIds: vars.includedUnitIds, overrideNote: vars.overrideNote || null },
+        { unit: unitId },
+        rowVersion ? { headers: { "If-Match": `"${rowVersion}"` } } : undefined,
+      ),
+    onSuccess: async (result) => {
+      setRowVersion(result.rowVersion);
+      queryClient.invalidateQueries({ queryKey: getGetMyReportsQueryKey() });
+      const [refreshed] = await Promise.all([query.refetch(), pullContextQuery.refetch()]);
+      if (refreshed.data) {
+        form.reset(refreshed.data.answers as Record<string, unknown>);
+      }
+    },
+  });
+
   const canSave = query.data?.canSave ?? false;
 
   // Refs, not deps — the debounce effect should only restart when the answers themselves change,
@@ -259,6 +286,7 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
   const sections = data.schema.sections;
   const activeSection = sections[activeSectionIndex];
   const progress = sectionProgress(sections, Number(data.unitLevel), (answers as Record<string, unknown>) ?? {});
+  const pulledFieldsByKey = Object.fromEntries((pullContextQuery.data?.summary?.fields ?? []).map((field) => [field.fieldKey, field]));
 
   const goNext = () => setActiveSectionIndex((index) => Math.min(index + 1, sections.length - 1));
   const goBack = () => setActiveSectionIndex((index) => Math.max(index - 1, 0));
@@ -358,7 +386,22 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
             </Button>
           ) : null}
           {copyStatus === "none" ? <span className="text-sm text-ink-muted">{t("noPreviousSubmission")}</span> : null}
+          {pullContextQuery.data?.eligible ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => setPullPanelOpen((open) => !open)}>
+              <ArrowDownToLine className="size-4" aria-hidden="true" />
+              {t("pullFromChildren", { plural: pullContextQuery.data.childLevelPluralName ?? "" })}
+            </Button>
+          ) : null}
         </div>
+      ) : null}
+
+      {pullPanelOpen && pullContextQuery.data?.eligible ? (
+        <PullFiguresPanel
+          pullContext={pullContextQuery.data}
+          isPending={pullMutation.isPending}
+          error={pullMutation.error instanceof ApiError ? pullMutation.error.message : undefined}
+          onPull={(includedUnitIds, overrideNote) => pullMutation.mutate({ includedUnitIds, overrideNote })}
+        />
       ) : null}
 
       <div className="flex flex-col gap-4 lg:flex-row">
@@ -427,6 +470,7 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
                   unitLevel={Number(data.unitLevel)}
                   form={form}
                   uploadContext={{ reportId: id, unitId }}
+                  pulledFields={pulledFieldsByKey}
                 />
               </fieldset>
 
