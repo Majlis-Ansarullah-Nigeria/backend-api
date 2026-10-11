@@ -51,7 +51,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M6.1 Compliance grid for Dila/Zone heads (FR-OBS-001).
 - [x] M6.2 Read-only child report + PDF; confidential fields hidden (FR-OBS-002, FR-AC-005, FR-AC-006).
 - [x] M6.3 Pull from children with included/missing list and overrides (FR-SUB-007, FR-OBS-005).
-- [ ] M6.4 Nudge and private notes (FR-OBS-003, FR-OBS-004).
+- [x] M6.4 Nudge and private notes (FR-OBS-003, FR-OBS-004).
 
 ## M7 — Review at National (FR-REV)
 - [ ] M7.1 Secretariat inbox with filters and saved views (FR-REV-001).

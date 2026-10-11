@@ -8,9 +8,11 @@ import messages from "../../../../messages/en.json";
 import { ComplianceGridScreen } from "./ComplianceGridScreen";
 
 const useGetComplianceGrid = vi.fn();
+const sendNudge = vi.fn();
 
 vi.mock("@/lib/api/generated/observer/observer", () => ({
   useGetComplianceGrid: (...args: unknown[]) => useGetComplianceGrid(...args),
+  sendNudge: (...args: unknown[]) => sendNudge(...args),
 }));
 
 function renderWithProviders(ui: ReactElement) {
@@ -49,8 +51,17 @@ const FULL_GRID = {
   ],
 };
 
+const OVERDUE_GRID = {
+  ...FULL_GRID,
+  rows: [
+    ...FULL_GRID.rows,
+    { unitId: "m-3", unitName: "Challenge Muqam", headName: "F. Lawal", hasVacantHead: false, cells: [{ windowId: "w-1", status: 3, reportInstanceId: null }] },
+  ],
+};
+
 beforeEach(() => {
   useGetComplianceGrid.mockReset();
+  sendNudge.mockReset();
 });
 
 describe("ComplianceGridScreen", () => {
@@ -132,5 +143,38 @@ describe("ComplianceGridScreen", () => {
 
     const lastCallParams = useGetComplianceGrid.mock.calls.at(-1)?.[0];
     expect(lastCallParams).toMatchObject({ reportTypeId: "rt-2" });
+  });
+
+  it("shows a Nudge button only for the row whose latest status is Overdue", () => {
+    useGetComplianceGrid.mockReturnValue({ isPending: false, isError: false, data: OVERDUE_GRID });
+
+    renderWithProviders(<ComplianceGridScreen />);
+
+    expect(screen.getByRole("button", { name: /^nudge$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /nudge all overdue \(1\)/i })).toBeInTheDocument();
+  });
+
+  it("sends a nudge for the right unit and window on row-button click", async () => {
+    useGetComplianceGrid.mockReturnValue({ isPending: false, isError: false, data: OVERDUE_GRID });
+    sendNudge.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    renderWithProviders(<ComplianceGridScreen />);
+    await user.click(screen.getByRole("button", { name: /^nudge$/i }));
+
+    expect(sendNudge).toHaveBeenCalledWith("m-3", { windowId: "w-1" });
+    expect(await screen.findByText(/nudged/i)).toBeInTheDocument();
+  });
+
+  it("'Nudge all overdue' sends a nudge for every currently-overdue row", async () => {
+    useGetComplianceGrid.mockReturnValue({ isPending: false, isError: false, data: OVERDUE_GRID });
+    sendNudge.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    renderWithProviders(<ComplianceGridScreen />);
+    await user.click(screen.getByRole("button", { name: /nudge all overdue/i }));
+
+    expect(sendNudge).toHaveBeenCalledTimes(1);
+    expect(sendNudge).toHaveBeenCalledWith("m-3", { windowId: "w-1" });
   });
 });

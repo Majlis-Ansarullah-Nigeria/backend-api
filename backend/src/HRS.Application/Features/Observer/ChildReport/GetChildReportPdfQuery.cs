@@ -19,7 +19,7 @@ public sealed class GetChildReportPdfQueryHandler(IAppDbContext db, IAccessPolic
             return Result.Failure<byte[]>(resolved.Error);
         }
 
-        var (_, childUnitName, childLevelCode, instance, window, reportType, schema) = resolved.Value;
+        var (_, childUnitName, childLevelCode, instance, window, reportType, schema, _) = resolved.Value;
 
         var receipt = await ReportReceiptBuilder.BuildAsync(
             db, instance, schema, reportType.Name, window.PeriodLabel, childUnitName, (int)childLevelCode,

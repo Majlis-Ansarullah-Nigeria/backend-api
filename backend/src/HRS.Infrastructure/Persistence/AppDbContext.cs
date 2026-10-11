@@ -2,6 +2,7 @@ using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Invitations;
+using HRS.Domain.Observer;
 using HRS.Domain.Organization;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
@@ -21,6 +22,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    public DbSet<Nudge> Nudges => Set<Nudge>();
+
+    public DbSet<PrivateNote> PrivateNotes => Set<PrivateNote>();
 
     public DbSet<ReportAttachment> ReportAttachments => Set<ReportAttachment>();
 
@@ -244,6 +249,38 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasOne<ReportInstance>()
                 .WithMany()
                 .HasForeignKey(a => a.ReportInstanceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Nudge>(nudge =>
+        {
+            nudge.ToTable("nudges");
+            nudge.HasKey(n => n.Id);
+            // The 24h-cooldown lookup (FR-OBS-003) is "any nudge for this unit since X" — this
+            // index covers it directly.
+            nudge.HasIndex(n => new { n.UnitId, n.SentAt });
+            nudge
+                .HasOne<Unit>()
+                .WithMany()
+                .HasForeignKey(n => n.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<PrivateNote>(note =>
+        {
+            note.ToTable("private_notes");
+            note.HasKey(n => n.Id);
+            note.Property(n => n.Body).IsRequired();
+            note.HasIndex(n => new { n.ReportInstanceId, n.ObserverUnitId });
+            note
+                .HasOne<ReportInstance>()
+                .WithMany()
+                .HasForeignKey(n => n.ReportInstanceId)
+                .OnDelete(DeleteBehavior.Restrict);
+            note
+                .HasOne<Unit>()
+                .WithMany()
+                .HasForeignKey(n => n.ObserverUnitId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

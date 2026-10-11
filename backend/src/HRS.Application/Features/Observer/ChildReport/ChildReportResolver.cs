@@ -25,7 +25,8 @@ internal static class ChildReportResolver
         ReportInstance Instance,
         SubmissionWindow Window,
         ReportType ReportType,
-        TemplateSchema Schema);
+        TemplateSchema Schema,
+        Guid ParentUnitId);
 
     public static async Task<Result<Resolved>> ResolveAsync(
         IAppDbContext db, IAccessPolicy accessPolicy, Guid userId, Guid childUnitId, Guid reportId, CancellationToken cancellationToken)
@@ -72,6 +73,6 @@ internal static class ChildReportResolver
         var templateVersion = await db.TemplateVersions.AsNoTracking().FirstAsync(v => v.Id == instance.TemplateVersionId, cancellationToken);
         var schema = JsonSerializer.Deserialize<TemplateSchema>(templateVersion.SchemaJson, JsonSerializerOptions.Web)!;
 
-        return Result.Success(new Resolved(childUnitId, childUnit.Name, childUnit.LevelCode, instance, window, reportType, schema));
+        return Result.Success(new Resolved(childUnitId, childUnit.Name, childUnit.LevelCode, instance, window, reportType, schema, parentId));
     }
 }

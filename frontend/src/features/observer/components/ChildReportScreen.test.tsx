@@ -10,10 +10,15 @@ import { ChildReportScreen } from "./ChildReportScreen";
 
 const useGetChildReport = vi.fn();
 const getChildReportPdf = vi.fn();
+const useGetPrivateNotes = vi.fn();
+const addPrivateNote = vi.fn();
 
 vi.mock("@/lib/api/generated/observer/observer", () => ({
   useGetChildReport: (...args: unknown[]) => useGetChildReport(...args),
   getChildReportPdf: (...args: unknown[]) => getChildReportPdf(...args),
+  useGetPrivateNotes: (...args: unknown[]) => useGetPrivateNotes(...args),
+  addPrivateNote: (...args: unknown[]) => addPrivateNote(...args),
+  getGetPrivateNotesQueryKey: (unitId: string, reportId: string) => ["getPrivateNotes", unitId, reportId],
 }));
 
 vi.mock("@/features/organization/utils/bulk-import", () => ({
@@ -56,6 +61,9 @@ const VIEW = {
 beforeEach(() => {
   useGetChildReport.mockReset();
   getChildReportPdf.mockReset();
+  useGetPrivateNotes.mockReset();
+  useGetPrivateNotes.mockReturnValue({ isPending: false, isError: false, data: [] });
+  addPrivateNote.mockReset();
 });
 
 describe("ChildReportScreen", () => {

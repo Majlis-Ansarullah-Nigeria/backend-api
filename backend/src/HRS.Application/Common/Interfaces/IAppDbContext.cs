@@ -1,6 +1,7 @@
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Invitations;
+using HRS.Domain.Observer;
 using HRS.Domain.Organization;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
@@ -15,6 +16,10 @@ public interface IAppDbContext
     DbSet<IdempotencyRecord> IdempotencyRecords { get; }
 
     DbSet<Invitation> Invitations { get; }
+
+    DbSet<Nudge> Nudges { get; }
+
+    DbSet<PrivateNote> PrivateNotes { get; }
 
     DbSet<ReportAttachment> ReportAttachments { get; }
 

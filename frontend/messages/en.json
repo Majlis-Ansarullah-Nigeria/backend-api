@@ -276,7 +276,11 @@
     "readOnlyBanner": "Read-only. This report goes to the National Secretariat; {unitName} can view it but not act on it.",
     "onTime": "On time",
     "late": "Late",
-    "downloadPdf": "Download PDF"
+    "downloadPdf": "Download PDF",
+    "privateNotesTitle": "Private notes",
+    "privateNotesHint": "Only you and future heads of your unit see these.",
+    "addNotePlaceholder": "Add a private note",
+    "saveNote": "Save note"
   },
   "ComplianceGrid": {
     "loading": "Loading…",
@@ -298,7 +302,12 @@
     "draftingCardLabel": "Still drafting",
     "notStartedCardLabel": "Not started",
     "columnUnit": "Unit",
-    "headColumnFallback": "Vacant"
+    "headColumnFallback": "Vacant",
+    "nudgeAllOverdue": "Nudge all overdue ({count})",
+    "nudgeColumnLabel": "Nudge",
+    "nudgeButton": "Nudge",
+    "nudgeSent": "Nudged",
+    "nudgeFailed": "Couldn't send the nudge"
   },
   "AcceptInvitation": {
     "appName": "Reporting Service",

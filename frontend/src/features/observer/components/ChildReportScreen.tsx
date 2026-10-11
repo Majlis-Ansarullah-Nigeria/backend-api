@@ -13,6 +13,7 @@ import { ApiError } from "@/lib/api/client";
 import type { ChildReportView } from "@/lib/api/generated/hRSApiV1.schemas";
 import { getChildReportPdf, useGetChildReport } from "@/lib/api/generated/observer/observer";
 import { downloadBlob } from "@/features/organization/utils/bulk-import";
+import { PrivateNotesCard } from "@/features/observer/components/PrivateNotesCard";
 import { reportInstanceStatusChipVariant, REPORT_INSTANCE_STATUS } from "@/features/submissions/utils/report-status";
 
 export function ChildReportScreen({ unitId, reportId }: { unitId: string; reportId: string }) {
@@ -134,6 +135,8 @@ export function ChildReportScreen({ unitId, reportId }: { unitId: string; report
           </div>
         ))}
       </div>
+
+      <PrivateNotesCard unitId={unitId} reportId={reportId} />
     </div>
   );
 }

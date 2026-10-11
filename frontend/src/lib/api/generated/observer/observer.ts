@@ -5,25 +5,32 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
+  AddPrivateNoteRequest,
   ChildReportView,
   ComplianceGridResult,
   GetComplianceGridParams,
-  ProblemDetails
+  PrivateNoteView,
+  ProblemDetails,
+  SendNudgeRequest
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -149,7 +156,89 @@ export function useGetComplianceGrid<TData = Awaited<ReturnType<typeof getCompli
 
 
 
-export const getGetChildReportUrl = (unitId: string,
+export const getSendNudgeUrl = (unitId: string,) => {
+
+
+
+
+  return `/api/v1/units/${unitId}/nudge`
+}
+
+export const sendNudge = async (unitId: string,
+    sendNudgeRequest: SendNudgeRequest, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getSendNudgeUrl(unitId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sendNudgeRequest)
+  }
+);}
+
+
+
+
+
+export const getSendNudgeMutationKey = () => ['sendNudge'] as const;
+
+export const getSendNudgeMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendNudge>>, TError,SendNudgeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendNudge>>, TError,SendNudgeMutationVariables, TContext> => {
+
+const mutationKey = getSendNudgeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendNudge>>, SendNudgeMutationVariables> = (props) => {
+          const {unitId,data} = props ?? {};
+
+          return  sendNudge(unitId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendNudgeMutationResult = NonNullable<Awaited<ReturnType<typeof sendNudge>>>
+    export type SendNudgeMutationBody = SendNudgeRequest
+    export type SendNudgeMutationError = ProblemDetails
+    export type SendNudgeMutationVariables = {unitId: string;data: SendNudgeRequest}
+
+    export const useSendNudge = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendNudge>>, TError,SendNudgeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sendNudge>>,
+        TError,
+        SendNudgeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendNudgeMutationOptions(options), queryClient);
+    }
+    export const getGetChildReportUrl = (unitId: string,
     reportId: string,) => {
 
 
@@ -353,3 +442,189 @@ export function useGetChildReportPdf<TData = Awaited<ReturnType<typeof getChildR
 
 
 
+export const getGetPrivateNotesUrl = (unitId: string,
+    reportId: string,) => {
+
+
+
+
+  return `/api/v1/units/${unitId}/reports/${reportId}/private-notes`
+}
+
+export const getPrivateNotes = async (unitId: string,
+    reportId: string, options?: Parameters<typeof customFetch>[1]): Promise<PrivateNoteView[]> => {
+
+  return customFetch<PrivateNoteView[]>(getGetPrivateNotesUrl(unitId,reportId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPrivateNotesQueryKey = (unitId: string,
+    reportId: string,) => {
+    return [
+    `/api/v1/units/${unitId}/reports/${reportId}/private-notes`
+    ] as const;
+    }
+
+
+export const getGetPrivateNotesQueryOptions = <TData = Awaited<ReturnType<typeof getPrivateNotes>>, TError = ProblemDetails>(unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPrivateNotesQueryKey(unitId,reportId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPrivateNotes>>> = ({ signal }) => getPrivateNotes(unitId,reportId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: unitId !== null && unitId !== undefined && reportId !== null && reportId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPrivateNotes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPrivateNotesQueryResult = NonNullable<Awaited<ReturnType<typeof getPrivateNotes>>>
+export type GetPrivateNotesQueryError = ProblemDetails
+
+
+export function useGetPrivateNotes<TData = Awaited<ReturnType<typeof getPrivateNotes>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateNotes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPrivateNotes>>,
+          TError,
+          Awaited<ReturnType<typeof getPrivateNotes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPrivateNotes<TData = Awaited<ReturnType<typeof getPrivateNotes>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateNotes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPrivateNotes>>,
+          TError,
+          Awaited<ReturnType<typeof getPrivateNotes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPrivateNotes<TData = Awaited<ReturnType<typeof getPrivateNotes>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPrivateNotes<TData = Awaited<ReturnType<typeof getPrivateNotes>>, TError = ProblemDetails>(
+ unitId: string,
+    reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPrivateNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPrivateNotesQueryOptions(unitId,reportId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getAddPrivateNoteUrl = (unitId: string,
+    reportId: string,) => {
+
+
+
+
+  return `/api/v1/units/${unitId}/reports/${reportId}/private-notes`
+}
+
+export const addPrivateNote = async (unitId: string,
+    reportId: string,
+    addPrivateNoteRequest: AddPrivateNoteRequest, options?: Parameters<typeof customFetch>[1]): Promise<PrivateNoteView> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PrivateNoteView>(getAddPrivateNoteUrl(unitId,reportId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(addPrivateNoteRequest)
+  }
+);}
+
+
+
+
+
+export const getAddPrivateNoteMutationKey = () => ['addPrivateNote'] as const;
+
+export const getAddPrivateNoteMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPrivateNote>>, TError,AddPrivateNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addPrivateNote>>, TError,AddPrivateNoteMutationVariables, TContext> => {
+
+const mutationKey = getAddPrivateNoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addPrivateNote>>, AddPrivateNoteMutationVariables> = (props) => {
+          const {unitId,reportId,data} = props ?? {};
+
+          return  addPrivateNote(unitId,reportId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddPrivateNoteMutationResult = NonNullable<Awaited<ReturnType<typeof addPrivateNote>>>
+    export type AddPrivateNoteMutationBody = AddPrivateNoteRequest
+    export type AddPrivateNoteMutationError = ProblemDetails
+    export type AddPrivateNoteMutationVariables = {unitId: string;reportId: string;data: AddPrivateNoteRequest}
+
+    export const useAddPrivateNote = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPrivateNote>>, TError,AddPrivateNoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addPrivateNote>>,
+        TError,
+        AddPrivateNoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddPrivateNoteMutationOptions(options), queryClient);
+    }

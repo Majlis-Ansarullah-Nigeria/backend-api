@@ -182,6 +182,74 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("invitations", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Observer.Nudge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<Guid>("SentByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sent_by_user_id");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_nudges");
+
+                    b.HasIndex("UnitId", "SentAt")
+                        .HasDatabaseName("ix_nudges_unit_id_sent_at");
+
+                    b.ToTable("nudges", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Observer.PrivateNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_user_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("ObserverUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("observer_unit_id");
+
+                    b.Property<Guid>("ReportInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_instance_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_private_notes");
+
+                    b.HasIndex("ObserverUnitId")
+                        .HasDatabaseName("ix_private_notes_observer_unit_id");
+
+                    b.HasIndex("ReportInstanceId", "ObserverUnitId")
+                        .HasDatabaseName("ix_private_notes_report_instance_id_observer_unit_id");
+
+                    b.ToTable("private_notes", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Organization.Unit", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1007,6 +1075,33 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("PendingHeadOfUnitId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_invitations_units_pending_head_of_unit_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Observer.Nudge", b =>
+                {
+                    b.HasOne("HRS.Domain.Organization.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_nudges_units_unit_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Observer.PrivateNote", b =>
+                {
+                    b.HasOne("HRS.Domain.Organization.Unit", null)
+                        .WithMany()
+                        .HasForeignKey("ObserverUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_private_notes_units_observer_unit_id");
+
+                    b.HasOne("HRS.Domain.Submissions.ReportInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ReportInstanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_private_notes_report_instances_report_instance_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Organization.Unit", b =>

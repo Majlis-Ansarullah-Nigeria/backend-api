@@ -12,6 +12,10 @@ export interface AcceptInvitationRequest {
   agreedToPrivacyNotice: boolean;
 }
 
+export interface AddPrivateNoteRequest {
+  body: string;
+}
+
 export type AggregationRule = number;
 
 export interface AttachmentSummary {
@@ -438,6 +442,13 @@ export interface PreviousReportAnswers {
   answers: PreviousReportAnswersAnswers;
 }
 
+export interface PrivateNoteView {
+  id: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface ProblemDetails {
   /** @nullable */
   type?: string | null;
@@ -653,6 +664,10 @@ export interface SaveReportDraftResult {
   id: string;
   status: ReportInstanceStatus;
   rowVersion: string;
+}
+
+export interface SendNudgeRequest {
+  windowId: string;
 }
 
 export interface SessionSummary {
