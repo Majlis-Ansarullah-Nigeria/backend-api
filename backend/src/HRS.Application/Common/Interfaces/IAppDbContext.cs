@@ -3,6 +3,7 @@ using HRS.Domain.Common;
 using HRS.Domain.Invitations;
 using HRS.Domain.Observer;
 using HRS.Domain.Organization;
+using HRS.Domain.Review;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
 using HRS.Domain.Windows;
@@ -28,6 +29,8 @@ public interface IAppDbContext
     DbSet<ReportType> ReportTypes { get; }
 
     DbSet<RoleAssignment> RoleAssignments { get; }
+
+    DbSet<SavedView> SavedViews { get; }
 
     DbSet<SubmissionWindow> SubmissionWindows { get; }
 

@@ -4,6 +4,7 @@ export * from './identity/identity';
 export * from './invitations/invitations';
 export * from './observer/observer';
 export * from './organization/organization';
+export * from './review/review';
 export * from './submissions/submissions';
 export * from './templates/templates';
 export * from './windows/windows';

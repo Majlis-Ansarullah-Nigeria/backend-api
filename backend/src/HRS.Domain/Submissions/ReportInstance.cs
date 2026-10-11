@@ -84,6 +84,11 @@ public sealed class ReportInstance
     /// pull; overwritten (not appended) by each later pull, same way AnswersJson works for Save.</summary>
     public string? PullSummaryJson { get; private set; }
 
+    /// <summary>FR-REV-002's "flag for follow-up" — a Secretariat reviewer's own marker, not part
+    /// of the lifecycle state machine (can be set or cleared in any post-submission status). The
+    /// action that flips this is M7.2's; this milestone only needs the column to filter by.</summary>
+    public bool IsFlagged { get; private set; }
+
     public static ReportInstance Create(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now) =>
         new(id, windowId, unitId, templateVersionId, now);
 
@@ -218,4 +223,6 @@ public sealed class ReportInstance
     /// its due date.</summary>
     public bool IsOverdue(DateTimeOffset now, DateTimeOffset dueAt) =>
         (Status is ReportInstanceStatus.NotStarted or ReportInstanceStatus.Draft) && now > dueAt;
+
+    public void SetFlagged(bool isFlagged) => IsFlagged = isFlagged;
 }

@@ -210,6 +210,28 @@ export interface CreateRoleAssignmentResult {
   invited: boolean;
 }
 
+export type ReportInstanceStatus = number;
+
+export interface InboxFilter {
+  /** @nullable */
+  reportTypeId: string | null;
+  /** @nullable */
+  windowId: string | null;
+  unitLevel: null | UnitLevelCode;
+  /** @nullable */
+  zoneUnitId: string | null;
+  status: null | ReportInstanceStatus;
+  /** @nullable */
+  isLate: boolean | null;
+  /** @nullable */
+  isFlagged: boolean | null;
+}
+
+export interface CreateSavedViewRequest {
+  name: string;
+  filter: InboxFilter;
+}
+
 export interface WindowDueDate {
   level: UnitLevelCode;
   dueAt: string;
@@ -346,6 +368,36 @@ export interface GrantWindowExtensionRequest {
 }
 
 export type IFormFile = Blob;
+
+export interface InboxItem {
+  reportId: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  unitId: string;
+  unitName: string;
+  unitLevel: UnitLevelCode;
+  /** @nullable */
+  zoneUnitId: string | null;
+  /** @nullable */
+  zoneName: string | null;
+  windowId: string;
+  periodLabel: string;
+  status: ReportInstanceStatus;
+  isLate: boolean;
+  isFlagged: boolean;
+  /** @nullable */
+  submittedAt: string | null;
+  /** @nullable */
+  referenceNumber: string | null;
+}
+
+export interface InboxReportDetail {
+  status: ReportInstanceStatus;
+  isLate: boolean;
+  /** @nullable */
+  submittedAt: string | null;
+  receipt: ReportReceiptData;
+}
 
 export interface InvitationPreview {
   name: string;
@@ -590,8 +642,6 @@ export interface TemplateSchema {
   sections: TemplateSection[];
 }
 
-export type ReportInstanceStatus = number;
-
 export interface ReportInstanceForEditing {
   /** @nullable */
   id: string | null;
@@ -652,6 +702,12 @@ export interface ResetPasswordRequest {
 
 export interface ReviewWarningsResult {
   warnings: string[];
+}
+
+export interface SavedViewSummary {
+  id: string;
+  name: string;
+  filter: InboxFilter;
 }
 
 export type SaveReportDraftRequestAnswers = { [key: string]: unknown };
@@ -956,5 +1012,15 @@ reportTypeId?: string;
  * @pattern ^-?(?:0|[1-9]\d*)$
  */
 periods?: number | string;
+};
+
+export type GetInboxParams = {
+reportTypeId?: string;
+windowId?: string;
+unitLevel?: UnitLevelCode;
+zoneUnitId?: string;
+status?: ReportInstanceStatus;
+isLate?: boolean;
+isFlagged?: boolean;
 };
 

@@ -412,6 +412,40 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HRS.Domain.Review.SavedView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FilterJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("filter_json");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_saved_views");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_saved_views_user_id");
+
+                    b.ToTable("saved_views", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Submissions.ReportAttachment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -487,6 +521,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<bool>("IsFlagged")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_flagged");
 
                     b.Property<bool>("IsLate")
                         .HasColumnType("boolean")
@@ -1118,6 +1156,16 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_units_units_parent_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Review.SavedView", b =>
+                {
+                    b.HasOne("HRS.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_saved_views_users_user_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Submissions.ReportAttachment", b =>

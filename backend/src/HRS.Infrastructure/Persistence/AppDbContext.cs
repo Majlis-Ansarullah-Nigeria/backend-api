@@ -4,6 +4,7 @@ using HRS.Domain.Common;
 using HRS.Domain.Invitations;
 using HRS.Domain.Observer;
 using HRS.Domain.Organization;
+using HRS.Domain.Review;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
 using HRS.Domain.Windows;
@@ -34,6 +35,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
 
     public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();
+
+    public DbSet<SavedView> SavedViews => Set<SavedView>();
 
     public DbSet<SubmissionWindow> SubmissionWindows => Set<SubmissionWindow>();
 
@@ -282,6 +285,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(n => n.ObserverUnitId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<SavedView>(view =>
+        {
+            view.ToTable("saved_views");
+            view.HasKey(v => v.Id);
+            view.Property(v => v.Name).IsRequired();
+            view.Property(v => v.FilterJson).HasColumnType("jsonb").IsRequired();
+            view.HasIndex(v => v.UserId);
+            view
+                .HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(v => v.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<SubmissionWindow>(window =>

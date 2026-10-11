@@ -124,6 +124,7 @@ try
     app.MapWindowSchedulesEndpoints();
     app.MapSubmissionsEndpoints();
     app.MapObserverEndpoints();
+    app.MapReviewEndpoints();
 
     app.MapGet("/", () => "HRS API");
 
