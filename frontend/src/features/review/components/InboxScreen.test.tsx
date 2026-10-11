@@ -12,7 +12,12 @@ const useGetInboxReportDetail = vi.fn();
 const useGetSavedViews = vi.fn();
 const useCreateSavedView = vi.fn();
 const useDeleteSavedView = vi.fn();
+const useOpenInboxReport = vi.fn();
+const useAcknowledgeInboxReport = vi.fn();
+const useReturnInboxReport = vi.fn();
+const useSetInboxReportFlagged = vi.fn();
 const getGetInboxQueryKey = (params?: unknown) => ["getInbox", params];
+const getGetInboxReportDetailQueryKey = (id: string) => ["getInboxReportDetail", id];
 
 vi.mock("@/lib/api/generated/review/review", () => ({
   useGetInbox: (...args: unknown[]) => useGetInbox(...args),
@@ -20,7 +25,12 @@ vi.mock("@/lib/api/generated/review/review", () => ({
   useGetSavedViews: (...args: unknown[]) => useGetSavedViews(...args),
   useCreateSavedView: (...args: unknown[]) => useCreateSavedView(...args),
   useDeleteSavedView: (...args: unknown[]) => useDeleteSavedView(...args),
+  useOpenInboxReport: (...args: unknown[]) => useOpenInboxReport(...args),
+  useAcknowledgeInboxReport: (...args: unknown[]) => useAcknowledgeInboxReport(...args),
+  useReturnInboxReport: (...args: unknown[]) => useReturnInboxReport(...args),
+  useSetInboxReportFlagged: (...args: unknown[]) => useSetInboxReportFlagged(...args),
   getGetInboxQueryKey: (params?: unknown) => getGetInboxQueryKey(params),
+  getGetInboxReportDetailQueryKey: (id: string) => getGetInboxReportDetailQueryKey(id),
 }));
 
 const useGetReportTypes = vi.fn();
@@ -73,6 +83,10 @@ beforeEach(() => {
   useGetSavedViews.mockReset();
   useCreateSavedView.mockReset();
   useDeleteSavedView.mockReset();
+  useOpenInboxReport.mockReset();
+  useAcknowledgeInboxReport.mockReset();
+  useReturnInboxReport.mockReset();
+  useSetInboxReportFlagged.mockReset();
   useGetReportTypes.mockReset();
   useGetSubmissionWindows.mockReset();
   useGetUnitLevels.mockReset();
@@ -85,6 +99,10 @@ beforeEach(() => {
   useGetSavedViews.mockReturnValue({ data: [], refetch: vi.fn() });
   useCreateSavedView.mockReturnValue({ mutate: vi.fn(), isPending: false });
   useDeleteSavedView.mockReturnValue({ mutate: vi.fn() });
+  useOpenInboxReport.mockReturnValue({ mutate: vi.fn(), isPending: false });
+  useAcknowledgeInboxReport.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null });
+  useReturnInboxReport.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null });
+  useSetInboxReportFlagged.mockReturnValue({ mutate: vi.fn(), isPending: false });
 });
 
 describe("InboxScreen", () => {
@@ -124,7 +142,7 @@ describe("InboxScreen", () => {
     expect(screen.getByText(/Zone 3/)).toBeInTheDocument();
   });
 
-  it("selecting a row shows the read-only detail panel with no action buttons", async () => {
+  it("selecting a row shows the read-only report content and no download/comment/assign actions", async () => {
     useGetInbox.mockReturnValue({ isPending: false, isError: false, data: [INBOX_ITEM] });
     useGetInboxReportDetail.mockReturnValue({
       isPending: false,
@@ -132,7 +150,9 @@ describe("InboxScreen", () => {
       data: {
         status: 2,
         isLate: false,
+        isFlagged: false,
         submittedAt: "2026-10-01T10:00:00Z",
+        returnComment: null,
         receipt: {
           reportTypeName: "Dila Monthly Activities Report",
           periodLabel: "September 2026",
@@ -149,7 +169,8 @@ describe("InboxScreen", () => {
 
     expect(screen.getByText("Umumi")).toBeInTheDocument();
     expect(screen.getByText("Tajnid")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /flag|acknowledge|return|download/i })).not.toBeInTheDocument();
+    // Acknowledge/Return/Flag (M7.2) are in scope now; download/comment/assign (M7.3+) are not.
+    expect(screen.queryByRole("button", { name: /download|comment|assign/i })).not.toBeInTheDocument();
   });
 
   it("switching to the Flagged tab filters by isFlagged instead of status", async () => {

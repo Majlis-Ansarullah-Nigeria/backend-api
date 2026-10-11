@@ -50,6 +50,71 @@ public static class ReviewEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        secretariat.MapPost("/inbox/{id:guid}/open", async (
+                Guid id,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new OpenReportCommand(user.GetUserId(), id), cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("OpenInboxReport")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        secretariat.MapPost("/inbox/{id:guid}/acknowledge", async (
+                Guid id,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new AcknowledgeReportCommand(user.GetUserId(), id), cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("AcknowledgeInboxReport")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        secretariat.MapPost("/inbox/{id:guid}/return", async (
+                Guid id,
+                [FromBody] ReturnInboxReportRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new ReturnReportCommand(user.GetUserId(), id, request.Comment), cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("ReturnInboxReport")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        secretariat.MapPut("/inbox/{id:guid}/flag", async (
+                Guid id,
+                [FromBody] SetInboxReportFlaggedRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new SetReportFlaggedCommand(user.GetUserId(), id, request.IsFlagged), cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("SetInboxReportFlagged")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         secretariat.MapGet("/saved-views", async (
                 System.Security.Claims.ClaimsPrincipal user,
                 ISender sender,
@@ -96,3 +161,7 @@ public static class ReviewEndpoints
 }
 
 public sealed record CreateSavedViewRequest(string Name, InboxFilter Filter);
+
+public sealed record ReturnInboxReportRequest(string Comment);
+
+public sealed record SetInboxReportFlaggedRequest(bool IsFlagged);

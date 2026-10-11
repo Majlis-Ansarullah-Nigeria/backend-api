@@ -365,6 +365,16 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
       {withdrawMutation.error instanceof ApiError ? <p className="text-sm text-danger">{withdrawMutation.error.message}</p> : null}
       {nilSubmitMutation.error instanceof ApiError ? <p className="text-sm text-danger">{nilSubmitMutation.error.message}</p> : null}
 
+      {data.status === REPORT_INSTANCE_STATUS.Returned && data.returnComment ? (
+        <div className="rounded-lg bg-status-returned-bg p-4 text-sm text-status-returned-fg">
+          <p className="font-semibold">{t("returnedBannerTitle")}</p>
+          <p className="mt-1">{data.returnComment}</p>
+          {data.revisionDeadline ? (
+            <p className="mt-2 text-xs">{t("revisionDeadline", { date: new Date(data.revisionDeadline).toLocaleString() })}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       {!canSave ? <ReadOnlyBanner /> : null}
 
       {canSave ? (

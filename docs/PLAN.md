@@ -55,7 +55,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 
 ## M7 — Review at National (FR-REV)
 - [x] M7.1 Secretariat inbox with filters and saved views (FR-REV-001).
-- [ ] M7.2 Mark read, acknowledge, return with comment, flag (FR-REV-002); returned-report screen for heads.
+- [x] M7.2 Mark read, acknowledge, return with comment, flag (FR-REV-002); returned-report screen for heads.
 - [ ] M7.3 Field-anchored comment threads (FR-REV-003); assignment to staff (FR-REV-004).
 - [ ] M7.4 Department officer access to their sections across all units (FR-REV-005).
 

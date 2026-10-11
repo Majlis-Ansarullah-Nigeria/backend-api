@@ -141,6 +141,7 @@ public sealed class GetReportInstanceForEditingQueryHandler(IAppDbContext db, IA
             window.DueAtFor(unitRow.Code, request.UnitId),
             window.EffectiveClosesAtFor(request.UnitId),
             instance?.RevisionDeadline,
+            instance?.ReturnComment,
             instance is null ? null : instance.RowVersion.ToString(CultureInfo.InvariantCulture),
             instance?.ReferenceNumber,
             instance?.SubmittedAt,

@@ -394,8 +394,11 @@ export interface InboxItem {
 export interface InboxReportDetail {
   status: ReportInstanceStatus;
   isLate: boolean;
+  isFlagged: boolean;
   /** @nullable */
   submittedAt: string | null;
+  /** @nullable */
+  returnComment: string | null;
   receipt: ReportReceiptData;
 }
 
@@ -667,6 +670,8 @@ export interface ReportInstanceForEditing {
   /** @nullable */
   revisionDeadline: string | null;
   /** @nullable */
+  returnComment: string | null;
+  /** @nullable */
   rowVersion: string | null;
   /** @nullable */
   referenceNumber: string | null;
@@ -698,6 +703,10 @@ export interface ResetPasswordRequest {
   email: string;
   token: string;
   newPassword: string;
+}
+
+export interface ReturnInboxReportRequest {
+  comment: string;
 }
 
 export interface ReviewWarningsResult {
@@ -739,6 +748,10 @@ export interface SessionSummary {
 
 export interface SetActiveAssignmentRequest {
   roleAssignmentId: string;
+}
+
+export interface SetInboxReportFlaggedRequest {
+  isFlagged: boolean;
 }
 
 export interface SubmitReportRequest {

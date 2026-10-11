@@ -29,7 +29,9 @@ import type {
   InboxItem,
   InboxReportDetail,
   ProblemDetails,
-  SavedViewSummary
+  ReturnInboxReportRequest,
+  SavedViewSummary,
+  SetInboxReportFlaggedRequest
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -249,7 +251,305 @@ export function useGetInboxReportDetail<TData = Awaited<ReturnType<typeof getInb
 
 
 
-export const getGetSavedViewsUrl = () => {
+export const getOpenInboxReportUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/secretariat/inbox/${id}/open`
+}
+
+export const openInboxReport = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getOpenInboxReportUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getOpenInboxReportMutationKey = () => ['openInboxReport'] as const;
+
+export const getOpenInboxReportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openInboxReport>>, TError,OpenInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof openInboxReport>>, TError,OpenInboxReportMutationVariables, TContext> => {
+
+const mutationKey = getOpenInboxReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof openInboxReport>>, OpenInboxReportMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  openInboxReport(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OpenInboxReportMutationResult = NonNullable<Awaited<ReturnType<typeof openInboxReport>>>
+
+    export type OpenInboxReportMutationError = ProblemDetails
+    export type OpenInboxReportMutationVariables = {id: string}
+
+    export const useOpenInboxReport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openInboxReport>>, TError,OpenInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof openInboxReport>>,
+        TError,
+        OpenInboxReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOpenInboxReportMutationOptions(options), queryClient);
+    }
+    export const getAcknowledgeInboxReportUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/secretariat/inbox/${id}/acknowledge`
+}
+
+export const acknowledgeInboxReport = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getAcknowledgeInboxReportUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAcknowledgeInboxReportMutationKey = () => ['acknowledgeInboxReport'] as const;
+
+export const getAcknowledgeInboxReportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acknowledgeInboxReport>>, TError,AcknowledgeInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acknowledgeInboxReport>>, TError,AcknowledgeInboxReportMutationVariables, TContext> => {
+
+const mutationKey = getAcknowledgeInboxReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acknowledgeInboxReport>>, AcknowledgeInboxReportMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  acknowledgeInboxReport(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcknowledgeInboxReportMutationResult = NonNullable<Awaited<ReturnType<typeof acknowledgeInboxReport>>>
+
+    export type AcknowledgeInboxReportMutationError = ProblemDetails
+    export type AcknowledgeInboxReportMutationVariables = {id: string}
+
+    export const useAcknowledgeInboxReport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acknowledgeInboxReport>>, TError,AcknowledgeInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof acknowledgeInboxReport>>,
+        TError,
+        AcknowledgeInboxReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcknowledgeInboxReportMutationOptions(options), queryClient);
+    }
+    export const getReturnInboxReportUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/secretariat/inbox/${id}/return`
+}
+
+export const returnInboxReport = async (id: string,
+    returnInboxReportRequest: ReturnInboxReportRequest, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getReturnInboxReportUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(returnInboxReportRequest)
+  }
+);}
+
+
+
+
+
+export const getReturnInboxReportMutationKey = () => ['returnInboxReport'] as const;
+
+export const getReturnInboxReportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof returnInboxReport>>, TError,ReturnInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof returnInboxReport>>, TError,ReturnInboxReportMutationVariables, TContext> => {
+
+const mutationKey = getReturnInboxReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof returnInboxReport>>, ReturnInboxReportMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  returnInboxReport(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReturnInboxReportMutationResult = NonNullable<Awaited<ReturnType<typeof returnInboxReport>>>
+    export type ReturnInboxReportMutationBody = ReturnInboxReportRequest
+    export type ReturnInboxReportMutationError = ProblemDetails
+    export type ReturnInboxReportMutationVariables = {id: string;data: ReturnInboxReportRequest}
+
+    export const useReturnInboxReport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof returnInboxReport>>, TError,ReturnInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof returnInboxReport>>,
+        TError,
+        ReturnInboxReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReturnInboxReportMutationOptions(options), queryClient);
+    }
+    export const getSetInboxReportFlaggedUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/secretariat/inbox/${id}/flag`
+}
+
+export const setInboxReportFlagged = async (id: string,
+    setInboxReportFlaggedRequest: SetInboxReportFlaggedRequest, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getSetInboxReportFlaggedUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setInboxReportFlaggedRequest)
+  }
+);}
+
+
+
+
+
+export const getSetInboxReportFlaggedMutationKey = () => ['setInboxReportFlagged'] as const;
+
+export const getSetInboxReportFlaggedMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setInboxReportFlagged>>, TError,SetInboxReportFlaggedMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setInboxReportFlagged>>, TError,SetInboxReportFlaggedMutationVariables, TContext> => {
+
+const mutationKey = getSetInboxReportFlaggedMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setInboxReportFlagged>>, SetInboxReportFlaggedMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setInboxReportFlagged(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetInboxReportFlaggedMutationResult = NonNullable<Awaited<ReturnType<typeof setInboxReportFlagged>>>
+    export type SetInboxReportFlaggedMutationBody = SetInboxReportFlaggedRequest
+    export type SetInboxReportFlaggedMutationError = ProblemDetails
+    export type SetInboxReportFlaggedMutationVariables = {id: string;data: SetInboxReportFlaggedRequest}
+
+    export const useSetInboxReportFlagged = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setInboxReportFlagged>>, TError,SetInboxReportFlaggedMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setInboxReportFlagged>>,
+        TError,
+        SetInboxReportFlaggedMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetInboxReportFlaggedMutationOptions(options), queryClient);
+    }
+    export const getGetSavedViewsUrl = () => {
 
 
 

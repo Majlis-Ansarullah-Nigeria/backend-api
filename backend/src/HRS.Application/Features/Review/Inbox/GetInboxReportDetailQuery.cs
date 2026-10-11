@@ -10,14 +10,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Application.Features.Review.Inbox;
 
-/// <summary>FR-REV-001's read-only detail pane — no action buttons here (mark-read, acknowledge,
-/// return, flag are M7.2; comments/assignment are M7.3). Unlike the observer's child-report view
-/// (M6.2), confidential fields are NOT masked: that hiding rule is for observers, not the
-/// recipient who is meant to review everything (hrs-domain: confidentiality hides fields "from
-/// observers").</summary>
+/// <summary>FR-REV-001's detail pane, now carrying what M7.2's mark-read/acknowledge/return/flag
+/// actions need to render (IsFlagged, ReturnComment) — comments/assignment are still M7.3. Unlike
+/// the observer's child-report view (M6.2), confidential fields are NOT masked: that hiding rule is
+/// for observers, not the recipient who is meant to review everything (hrs-domain: confidentiality
+/// hides fields "from observers").</summary>
 public sealed record GetInboxReportDetailQuery(Guid UserId, Guid ReportId) : IRequest<Result<InboxReportDetail>>;
 
-public sealed record InboxReportDetail(ReportInstanceStatus Status, bool IsLate, DateTimeOffset? SubmittedAt, ReportReceiptData Receipt);
+public sealed record InboxReportDetail(
+    ReportInstanceStatus Status,
+    bool IsLate,
+    bool IsFlagged,
+    DateTimeOffset? SubmittedAt,
+    string? ReturnComment,
+    ReportReceiptData Receipt);
 
 public sealed class GetInboxReportDetailQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetInboxReportDetailQuery, Result<InboxReportDetail>>
@@ -48,6 +54,7 @@ public sealed class GetInboxReportDetailQueryHandler(IAppDbContext db, IAccessPo
             db, instance, schema, reportType.Name, window.PeriodLabel, unitRow.Name, (int)unitRow.LevelCode,
             instance.ReferenceNumber, instance.SubmittedAt ?? clock.UtcNow, cancellationToken, hideConfidentialValues: false);
 
-        return Result.Success(new InboxReportDetail(instance.Status, instance.IsLate, instance.SubmittedAt, receipt));
+        return Result.Success(new InboxReportDetail(
+            instance.Status, instance.IsLate, instance.IsFlagged, instance.SubmittedAt, instance.ReturnComment, receipt));
     }
 }

@@ -233,7 +233,9 @@
     "pulledSummaryLine": "Figures pulled from {includedCount} submitted reports.",
     "pulledSummaryMissing": "{missingCount} haven't submitted yet; pull again later to update.",
     "pulledTag": "Pulled · {rule}",
-    "overriddenTag": "Overridden · pulled {value}"
+    "overriddenTag": "Overridden · pulled {value}",
+    "returnedBannerTitle": "Returned for revision",
+    "revisionDeadline": "Resubmit by {date}"
   },
   "ReportReview": {
     "loading": "Loading…",
@@ -308,6 +310,13 @@
     "statusAcknowledged": "Acknowledged",
     "lateChip": "Late",
     "flaggedChip": "Flagged",
+    "returnCommentLabel": "Returned with this comment",
+    "returnCommentPlaceholder": "Explain what needs to change before returning this report",
+    "flagButton": "Flag",
+    "unflagButton": "Unflag",
+    "acknowledgeButton": "Acknowledge",
+    "returnButton": "Return for revision",
+    "sendReturn": "Send",
     "saveCurrentView": "Save current view",
     "saveSavedView": "Save",
     "savedViewNamePlaceholder": "Name this view",

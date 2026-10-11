@@ -119,8 +119,48 @@ public class InboxEndpointsTests(ApiFactory factory)
         return saved.Id;
     }
 
+    /// <summary>Same as SubmitMuqamReportAsync, but also hands back the head's own client and
+    /// email — needed by the Acknowledge/Return tests to assert the notification landed on the
+    /// current head and that the head's own editing view picks up the change.</summary>
+    private async Task<(Guid ReportId, HttpClient HeadClient, string HeadEmail)> SubmitMuqamReportAsHeadAsync(
+        Guid windowId, Guid muqamId, Dictionary<string, object?> answers)
+    {
+        var email = UniqueEmail();
+        const string password = "Correct-Horse-Inbox3";
+        var userId = await factory.CreateUserAsync(email, password);
+        await factory.CreateRoleAssignmentAsync(userId, muqamId, RoleName.UnitHead);
+
+        var client = factory.CreateAuthenticatedClient();
+        await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(email, password));
+
+        var saved = await (await SaveAsync(client, windowId, muqamId, answers)).Content.ReadFromJsonAsync<SaveReportDraftResult>();
+        await SubmitAsync(client, saved!.Id, muqamId);
+
+        return (saved.Id, client, email);
+    }
+
     private static Task<HttpResponseMessage> GetInboxAsync(HttpClient client, string query = "") =>
         client.GetAsync(new Uri($"/api/v1/secretariat/inbox{query}", UriKind.Relative));
+
+    private static async Task<InboxReportDetail?> GetInboxDetailAsync(HttpClient client, Guid reportId) =>
+        await (await client.GetAsync(new Uri($"/api/v1/secretariat/inbox/{reportId}", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<InboxReportDetail>();
+
+    private static Task<HttpResponseMessage> OpenAsync(HttpClient client, Guid reportId) =>
+        client.PostAsync(new Uri($"/api/v1/secretariat/inbox/{reportId}/open", UriKind.Relative), null);
+
+    private static Task<HttpResponseMessage> AcknowledgeAsync(HttpClient client, Guid reportId) =>
+        client.PostAsync(new Uri($"/api/v1/secretariat/inbox/{reportId}/acknowledge", UriKind.Relative), null);
+
+    private static Task<HttpResponseMessage> ReturnAsync(HttpClient client, Guid reportId, string comment) =>
+        client.PostAsJsonAsync($"/api/v1/secretariat/inbox/{reportId}/return", new ReturnInboxReportRequest(comment));
+
+    private static Task<HttpResponseMessage> SetFlaggedAsync(HttpClient client, Guid reportId, bool isFlagged) =>
+        client.PutAsJsonAsync($"/api/v1/secretariat/inbox/{reportId}/flag", new SetInboxReportFlaggedRequest(isFlagged));
+
+    private static async Task<ReportInstanceForEditing?> GetReportForEditingAsync(HttpClient client, Guid reportId, Guid unitId) =>
+        await (await client.GetAsync(new Uri($"/api/v1/reports/{reportId}?unit={unitId}", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<ReportInstanceForEditing>();
 
     [Fact]
     public async Task InboxListsOnlySubmittedOrLaterReports()
@@ -280,5 +320,142 @@ public class InboxEndpointsTests(ApiFactory factory)
 
         var deleteByOwner = await secretariatA.DeleteAsync(new Uri($"/api/v1/secretariat/saved-views/{created.Id}", UriKind.Relative));
         Assert.Equal(HttpStatusCode.NoContent, deleteByOwner.StatusCode);
+    }
+
+    [Fact]
+    public async Task OpenIsIdempotentAndMovesSubmittedToInReview()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Open Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "06");
+        var reportId = await SubmitMuqamReportAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        var first = await OpenAsync(secretariat, reportId);
+        Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
+        Assert.Equal(ReportInstanceStatus.InReview, (await GetInboxDetailAsync(secretariat, reportId))!.Status);
+
+        // Opening an already-open report is a no-op, not a conflict (FR-REV-002's "mark as read"
+        // is idempotent — every detail-view load fires it).
+        var second = await OpenAsync(secretariat, reportId);
+        Assert.Equal(HttpStatusCode.NoContent, second.StatusCode);
+        Assert.Equal(ReportInstanceStatus.InReview, (await GetInboxDetailAsync(secretariat, reportId))!.Status);
+    }
+
+    [Fact]
+    public async Task AcknowledgeAutoOpensAndNotifiesTheCurrentHead()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Acknowledge Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "07");
+        var (reportId, _, headEmail) = await SubmitMuqamReportAsHeadAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        // Never opened explicitly — Acknowledge must open it itself (Submitted -> InReview -> Acknowledged).
+        var response = await AcknowledgeAsync(secretariat, reportId);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var detail = await GetInboxDetailAsync(secretariat, reportId);
+        Assert.Equal(ReportInstanceStatus.Acknowledged, detail!.Status);
+
+        var sent = factory.EmailSender.LastSentTo(headEmail);
+        Assert.NotNull(sent);
+        Assert.Contains("acknowledged", sent!.Subject, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AcknowledgeFailsWhenTheReportIsAlreadyAcknowledged()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Double Acknowledge Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "08");
+        var reportId = await SubmitMuqamReportAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        Assert.Equal(HttpStatusCode.NoContent, (await AcknowledgeAsync(secretariat, reportId)).StatusCode);
+
+        var second = await AcknowledgeAsync(secretariat, reportId);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReturnRequiresAComment()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Return Validation Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "09");
+        var reportId = await SubmitMuqamReportAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        var response = await ReturnAsync(secretariat, reportId, "   ");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReturnTransitionsToReturnedNotifiesTheHeadAndTheCommentSurfacesOnTheHeadsEditingView()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Return Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "10");
+        var (reportId, headClient, headEmail) = await SubmitMuqamReportAsHeadAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        var response = await ReturnAsync(secretariat, reportId, "Please double-check the welfare figures.");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var detail = await GetInboxDetailAsync(secretariat, reportId);
+        Assert.Equal(ReportInstanceStatus.Returned, detail!.Status);
+        Assert.Equal("Please double-check the welfare figures.", detail.ReturnComment);
+
+        var sent = factory.EmailSender.LastSentTo(headEmail);
+        Assert.NotNull(sent);
+        Assert.Contains("returned", sent!.Subject, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Please double-check the welfare figures.", sent.TextBody);
+
+        var forEditing = await GetReportForEditingAsync(headClient, reportId, muqamId);
+        Assert.Equal("Please double-check the welfare figures.", forEditing!.ReturnComment);
+        Assert.True(forEditing.CanSave);
+        Assert.NotNull(forEditing.RevisionDeadline);
+    }
+
+    [Fact]
+    public async Task FlagCanBeSetAndClearedRegardlessOfStatus()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Flag Action Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "11");
+        var reportId = await SubmitMuqamReportAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        Assert.Equal(HttpStatusCode.NoContent, (await SetFlaggedAsync(secretariat, reportId, true)).StatusCode);
+        Assert.True((await GetInboxDetailAsync(secretariat, reportId))!.IsFlagged);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await SetFlaggedAsync(secretariat, reportId, false)).StatusCode);
+        Assert.False((await GetInboxDetailAsync(secretariat, reportId))!.IsFlagged);
+    }
+
+    [Fact]
+    public async Task InboxActionsAreForbiddenForNonSecretariat()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Action Forbidden Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "12");
+        var reportId = await SubmitMuqamReportAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        var (headClient, _) = await CreateAuthenticatedUserAsync();
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await OpenAsync(headClient, reportId)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await AcknowledgeAsync(headClient, reportId)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ReturnAsync(headClient, reportId, "comment")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await SetFlaggedAsync(headClient, reportId, true)).StatusCode);
     }
 }
