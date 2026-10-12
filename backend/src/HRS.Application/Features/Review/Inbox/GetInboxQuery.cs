@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Organization.Units;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
@@ -111,7 +112,7 @@ public sealed class GetInboxQueryHandler(IAppDbContext db, IAccessPolicy accessP
                 continue;
             }
 
-            var (zoneUnitId, zoneName) = ResolveZone(unitEntry.Unit.Path, unitEntry.LevelCode, unitByPath);
+            var (zoneUnitId, zoneName) = ZoneResolver.Resolve(unitEntry.Unit.Path, unitEntry.LevelCode, unitByPath);
 
             if (request.UnitLevel is { } unitLevel && unitEntry.LevelCode != unitLevel)
             {
@@ -135,20 +136,5 @@ public sealed class GetInboxQueryHandler(IAppDbContext db, IAccessPolicy accessP
 
         IReadOnlyList<InboxItem> sorted = [.. rows.OrderByDescending(r => r.SubmittedAt)];
         return Result.Success(sorted);
-    }
-
-    private static (Guid? ZoneUnitId, string? ZoneName) ResolveZone(
-        string unitPath, UnitLevelCode unitLevel, Dictionary<string, Domain.Organization.Unit> unitByPath)
-    {
-        if (unitLevel is UnitLevelCode.National or UnitLevelCode.Department)
-        {
-            return (null, null);
-        }
-
-        var zonePath = unitLevel == UnitLevelCode.Zone
-            ? unitPath
-            : string.Join('.', unitPath.Split('.').Take(2));
-
-        return unitByPath.TryGetValue(zonePath, out var zoneUnit) ? (zoneUnit.Id, zoneUnit.Name) : (null, null);
     }
 }

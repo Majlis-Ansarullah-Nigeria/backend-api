@@ -387,6 +387,31 @@ export interface CreateWindowScheduleResult {
   windowsGenerated: number | string;
 }
 
+export interface DepartmentFieldValue {
+  fieldKey: string;
+  label: string;
+  value: string;
+}
+
+export interface DepartmentReportRow {
+  reportId: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  unitId: string;
+  unitName: string;
+  unitLevel: UnitLevelCode;
+  /** @nullable */
+  zoneUnitId: string | null;
+  /** @nullable */
+  zoneName: string | null;
+  windowId: string;
+  periodLabel: string;
+  status: ReportInstanceStatus;
+  /** @nullable */
+  submittedAt: string | null;
+  fields: DepartmentFieldValue[];
+}
+
 export interface ForgotPasswordRequest {
   identifier: string;
 }
@@ -1088,5 +1113,12 @@ status?: ReportInstanceStatus;
 isLate?: boolean;
 isFlagged?: boolean;
 assignedToUserId?: string;
+};
+
+export type GetDepartmentReportsParams = {
+reportTypeId?: string;
+windowId?: string;
+unitLevel?: UnitLevelCode;
+zoneUnitId?: string;
 };
 

@@ -354,6 +354,22 @@
     "unassignedLabel": "Unassigned",
     "assignedCountLabel": "assigned"
   },
+  "Department": {
+    "title": "Department data",
+    "subtitle": "Your department's sections across every unit's report, at every level.",
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load your department's data",
+    "notAnOfficerTitle": "No department access",
+    "notAnOfficerDescription": "You aren't currently a department officer for any department.",
+    "emptyTitle": "Nothing here yet",
+    "emptyDescription": "No reports match this filter right now.",
+    "anyOption": "Any",
+    "reportTypeLabel": "Report type",
+    "periodLabel": "Period",
+    "levelLabel": "Level",
+    "zoneLabel": "Zone",
+    "submittedMeta": "Submitted {date}"
+  },
   "ComplianceGrid": {
     "loading": "Loading…",
     "loadErrorTitle": "We couldn't load this grid",
