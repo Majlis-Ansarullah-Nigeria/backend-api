@@ -16,6 +16,8 @@ const useOpenInboxReport = vi.fn();
 const useAcknowledgeInboxReport = vi.fn();
 const useReturnInboxReport = vi.fn();
 const useSetInboxReportFlagged = vi.fn();
+const useAssignInboxReport = vi.fn();
+const useGetWorkload = vi.fn();
 const getGetInboxQueryKey = (params?: unknown) => ["getInbox", params];
 const getGetInboxReportDetailQueryKey = (id: string) => ["getInboxReportDetail", id];
 
@@ -29,8 +31,23 @@ vi.mock("@/lib/api/generated/review/review", () => ({
   useAcknowledgeInboxReport: (...args: unknown[]) => useAcknowledgeInboxReport(...args),
   useReturnInboxReport: (...args: unknown[]) => useReturnInboxReport(...args),
   useSetInboxReportFlagged: (...args: unknown[]) => useSetInboxReportFlagged(...args),
+  useAssignInboxReport: (...args: unknown[]) => useAssignInboxReport(...args),
+  useGetWorkload: (...args: unknown[]) => useGetWorkload(...args),
   getGetInboxQueryKey: (params?: unknown) => getGetInboxQueryKey(params),
   getGetInboxReportDetailQueryKey: (id: string) => getGetInboxReportDetailQueryKey(id),
+}));
+
+const useGetReportComments = vi.fn();
+const useAddReportComment = vi.fn();
+vi.mock("@/lib/api/generated/submissions/submissions", () => ({
+  useGetReportComments: (...args: unknown[]) => useGetReportComments(...args),
+  useAddReportComment: (...args: unknown[]) => useAddReportComment(...args),
+  getGetReportCommentsQueryKey: (id: string) => ["getReportComments", id],
+}));
+
+const useGetMe = vi.fn();
+vi.mock("@/lib/api/generated/identity/identity", () => ({
+  useGetMe: (...args: unknown[]) => useGetMe(...args),
 }));
 
 const useGetReportTypes = vi.fn();
@@ -87,6 +104,11 @@ beforeEach(() => {
   useAcknowledgeInboxReport.mockReset();
   useReturnInboxReport.mockReset();
   useSetInboxReportFlagged.mockReset();
+  useAssignInboxReport.mockReset();
+  useGetWorkload.mockReset();
+  useGetReportComments.mockReset();
+  useAddReportComment.mockReset();
+  useGetMe.mockReset();
   useGetReportTypes.mockReset();
   useGetSubmissionWindows.mockReset();
   useGetUnitLevels.mockReset();
@@ -103,6 +125,11 @@ beforeEach(() => {
   useAcknowledgeInboxReport.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null });
   useReturnInboxReport.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null });
   useSetInboxReportFlagged.mockReturnValue({ mutate: vi.fn(), isPending: false });
+  useAssignInboxReport.mockReturnValue({ mutate: vi.fn(), isPending: false });
+  useGetWorkload.mockReturnValue({ data: { staff: [], unassignedCount: 0 } });
+  useGetReportComments.mockReturnValue({ isPending: false, data: [] });
+  useAddReportComment.mockReturnValue({ mutate: vi.fn(), isPending: false, error: null });
+  useGetMe.mockReturnValue({ data: { id: "me1", name: "Me", email: "me@example.org" } });
 });
 
 describe("InboxScreen", () => {
@@ -142,7 +169,7 @@ describe("InboxScreen", () => {
     expect(screen.getByText(/Zone 3/)).toBeInTheDocument();
   });
 
-  it("selecting a row shows the read-only report content and no download/comment/assign actions", async () => {
+  it("selecting a row shows the read-only report content with no download/export action", async () => {
     useGetInbox.mockReturnValue({ isPending: false, isError: false, data: [INBOX_ITEM] });
     useGetInboxReportDetail.mockReturnValue({
       isPending: false,
@@ -151,6 +178,8 @@ describe("InboxScreen", () => {
         status: 2,
         isLate: false,
         isFlagged: false,
+        assignedToUserId: null,
+        assignedToName: null,
         submittedAt: "2026-10-01T10:00:00Z",
         returnComment: null,
         receipt: {
@@ -159,7 +188,7 @@ describe("InboxScreen", () => {
           unitName: "Dila Ibafo",
           referenceNumber: "GMR-2026-09-Z03D12",
           generatedAt: "2026-10-01T10:00:00Z",
-          sections: [{ title: "Umumi", fields: [{ label: "Tajnid", value: "120", isMasked: false }] }],
+          sections: [{ title: "Umumi", fields: [{ fieldKey: "tajnid", label: "Tajnid", value: "120", isMasked: false }] }],
         },
       },
     });
@@ -169,8 +198,30 @@ describe("InboxScreen", () => {
 
     expect(screen.getByText("Umumi")).toBeInTheDocument();
     expect(screen.getByText("Tajnid")).toBeInTheDocument();
-    // Acknowledge/Return/Flag (M7.2) are in scope now; download/comment/assign (M7.3+) are not.
-    expect(screen.queryByRole("button", { name: /download|comment|assign/i })).not.toBeInTheDocument();
+    // Acknowledge/Return/Flag/Assign/Comment (M7.2/M7.3) are in scope now; download (M9) isn't.
+    expect(screen.queryByRole("button", { name: /download/i })).not.toBeInTheDocument();
+  });
+
+  it("switching to the Assigned to me tab filters by the current user's id", async () => {
+    useGetInbox.mockReturnValue({ isPending: false, isError: false, data: [] });
+
+    renderWithProviders(<InboxScreen />);
+    await userEvent.click(screen.getByRole("tab", { name: "Assigned to me" }));
+
+    const lastCall = useGetInbox.mock.calls.at(-1);
+    expect(lastCall?.[0]).toMatchObject({ assignedToUserId: "me1", isFlagged: undefined, status: undefined });
+  });
+
+  it("shows the assigned staff member's name in the list", () => {
+    useGetInbox.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: [{ ...INBOX_ITEM, assignedToUserId: "staff1", assignedToName: "Amina Bello" }],
+    });
+
+    renderWithProviders(<InboxScreen />);
+
+    expect(screen.getByText("Amina Bello")).toBeInTheDocument();
   });
 
   it("switching to the Flagged tab filters by isFlagged instead of status", async () => {

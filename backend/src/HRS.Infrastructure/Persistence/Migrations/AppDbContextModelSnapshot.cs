@@ -502,6 +502,51 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("report_attachments", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_user_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FieldKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("field_key");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
+                    b.Property<Guid>("ReportInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_instance_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_comments");
+
+                    b.HasIndex("ParentId")
+                        .HasDatabaseName("ix_report_comments_parent_id");
+
+                    b.HasIndex("ReportInstanceId")
+                        .HasDatabaseName("ix_report_comments_report_instance_id");
+
+                    b.ToTable("report_comments", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Submissions.ReportInstance", b =>
                 {
                     b.Property<Guid>("Id")
@@ -517,6 +562,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("answers_json");
+
+                    b.Property<Guid?>("AssignedToUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_to_user_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -1176,6 +1225,22 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_report_attachments_report_instances_report_instance_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportComment", b =>
+                {
+                    b.HasOne("HRS.Domain.Submissions.ReportComment", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_report_comments_report_comments_parent_id");
+
+                    b.HasOne("HRS.Domain.Submissions.ReportInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ReportInstanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_comments_report_instances_report_instance_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Submissions.ReportInstance", b =>

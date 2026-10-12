@@ -1,5 +1,6 @@
 using HRS.Api.Common;
 using HRS.Application.Features.Submissions.Attachments;
+using HRS.Application.Features.Submissions.Comments;
 using HRS.Application.Features.Submissions.MyReports;
 using HRS.Application.Features.Submissions.PullFigures;
 using HRS.Application.Features.Submissions.ReportInstances;
@@ -226,6 +227,39 @@ public static class SubmissionsEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
+        reports.MapGet("/comments", async (
+                Guid id,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetReportCommentsQuery(user.GetUserId(), id), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetReportComments")
+            .Produces<IReadOnlyList<CommentThread>>()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        reports.MapPost("/comments", async (
+                Guid id,
+                [FromBody] AddCommentRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new AddReportCommentCommand(user.GetUserId(), id, request.FieldKey, request.ParentId, request.Body);
+                var result = await sender.Send(command, cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("AddReportComment")
+            .Produces<CommentView>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         var attachments = app.MapGroup("/api/v1/reports/{id:guid}/attachments").WithTags("Submissions").RequireAuthorization();
 
         attachments.MapPost("/presign", async (
@@ -297,3 +331,5 @@ public sealed record PresignAttachmentRequest(string FieldKey, string FileName, 
 public sealed record SubmitReportRequest(bool Confirmed, bool IsNil = false);
 
 public sealed record PullChildFiguresRequest(IReadOnlyList<Guid>? IncludedUnitIds, string? OverrideNote);
+
+public sealed record AddCommentRequest(string? FieldKey, Guid? ParentId, string Body);

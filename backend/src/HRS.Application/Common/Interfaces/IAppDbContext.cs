@@ -24,6 +24,8 @@ public interface IAppDbContext
 
     DbSet<ReportAttachment> ReportAttachments { get; }
 
+    DbSet<ReportComment> ReportComments { get; }
+
     DbSet<ReportInstance> ReportInstances { get; }
 
     DbSet<ReportType> ReportTypes { get; }

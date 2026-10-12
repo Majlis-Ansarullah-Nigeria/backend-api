@@ -24,6 +24,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AssignInboxReportRequest,
   CreateSavedViewRequest,
   GetInboxParams,
   InboxItem,
@@ -31,7 +32,8 @@ import type {
   ProblemDetails,
   ReturnInboxReportRequest,
   SavedViewSummary,
-  SetInboxReportFlaggedRequest
+  SetInboxReportFlaggedRequest,
+  WorkloadView
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -549,7 +551,183 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSetInboxReportFlaggedMutationOptions(options), queryClient);
     }
-    export const getGetSavedViewsUrl = () => {
+    export const getAssignInboxReportUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/secretariat/inbox/${id}/assign`
+}
+
+export const assignInboxReport = async (id: string,
+    assignInboxReportRequest: AssignInboxReportRequest, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getAssignInboxReportUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(assignInboxReportRequest)
+  }
+);}
+
+
+
+
+
+export const getAssignInboxReportMutationKey = () => ['assignInboxReport'] as const;
+
+export const getAssignInboxReportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignInboxReport>>, TError,AssignInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof assignInboxReport>>, TError,AssignInboxReportMutationVariables, TContext> => {
+
+const mutationKey = getAssignInboxReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof assignInboxReport>>, AssignInboxReportMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  assignInboxReport(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AssignInboxReportMutationResult = NonNullable<Awaited<ReturnType<typeof assignInboxReport>>>
+    export type AssignInboxReportMutationBody = AssignInboxReportRequest
+    export type AssignInboxReportMutationError = ProblemDetails
+    export type AssignInboxReportMutationVariables = {id: string;data: AssignInboxReportRequest}
+
+    export const useAssignInboxReport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignInboxReport>>, TError,AssignInboxReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof assignInboxReport>>,
+        TError,
+        AssignInboxReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAssignInboxReportMutationOptions(options), queryClient);
+    }
+    export const getGetWorkloadUrl = () => {
+
+
+
+
+  return `/api/v1/secretariat/workload`
+}
+
+export const getWorkload = async ( options?: Parameters<typeof customFetch>[1]): Promise<WorkloadView> => {
+
+  return customFetch<WorkloadView>(getGetWorkloadUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkloadQueryKey = () => {
+    return [
+    `/api/v1/secretariat/workload`
+    ] as const;
+    }
+
+
+export const getGetWorkloadQueryOptions = <TData = Awaited<ReturnType<typeof getWorkload>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkloadQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkload>>> = ({ signal }) => getWorkload({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkload>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWorkloadQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkload>>>
+export type GetWorkloadQueryError = ProblemDetails
+
+
+export function useGetWorkload<TData = Awaited<ReturnType<typeof getWorkload>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkload>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkload>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkload>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWorkload<TData = Awaited<ReturnType<typeof getWorkload>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkload>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWorkload>>,
+          TError,
+          Awaited<ReturnType<typeof getWorkload>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWorkload<TData = Awaited<ReturnType<typeof getWorkload>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetWorkload<TData = Awaited<ReturnType<typeof getWorkload>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWorkload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWorkloadQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetSavedViewsUrl = () => {
 
 
 

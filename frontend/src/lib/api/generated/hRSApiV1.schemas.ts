@@ -12,11 +12,24 @@ export interface AcceptInvitationRequest {
   agreedToPrivacyNotice: boolean;
 }
 
+export interface AddCommentRequest {
+  /** @nullable */
+  fieldKey: string | null;
+  /** @nullable */
+  parentId: string | null;
+  body: string;
+}
+
 export interface AddPrivateNoteRequest {
   body: string;
 }
 
 export type AggregationRule = number;
+
+export interface AssignInboxReportRequest {
+  /** @nullable */
+  assignedToUserId: string | null;
+}
 
 export interface AttachmentSummary {
   id: string;
@@ -68,6 +81,7 @@ export interface BulkImportSummary {
 }
 
 export interface ReportReceiptField {
+  fieldKey: string;
   label: string;
   value: string;
   isMasked?: boolean;
@@ -98,6 +112,21 @@ export interface ChildReportView {
   /** @nullable */
   submittedByName: string | null;
   receipt: ReportReceiptData;
+}
+
+export interface CommentView {
+  id: string;
+  authorUserId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface CommentThread {
+  fieldKey: string;
+  fieldLabel: string;
+  root: CommentView;
+  replies: CommentView[];
 }
 
 export type ReportLineStatus = number;
@@ -225,6 +254,8 @@ export interface InboxFilter {
   isLate: boolean | null;
   /** @nullable */
   isFlagged: boolean | null;
+  /** @nullable */
+  assignedToUserId: string | null;
 }
 
 export interface CreateSavedViewRequest {
@@ -386,6 +417,10 @@ export interface InboxItem {
   isLate: boolean;
   isFlagged: boolean;
   /** @nullable */
+  assignedToUserId: string | null;
+  /** @nullable */
+  assignedToName: string | null;
+  /** @nullable */
   submittedAt: string | null;
   /** @nullable */
   referenceNumber: string | null;
@@ -395,6 +430,10 @@ export interface InboxReportDetail {
   status: ReportInstanceStatus;
   isLate: boolean;
   isFlagged: boolean;
+  /** @nullable */
+  assignedToUserId: string | null;
+  /** @nullable */
+  assignedToName: string | null;
   /** @nullable */
   submittedAt: string | null;
   /** @nullable */
@@ -754,6 +793,13 @@ export interface SetInboxReportFlaggedRequest {
   isFlagged: boolean;
 }
 
+export interface StaffWorkload {
+  userId: string;
+  name: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  assignedCount: number | string;
+}
+
 export interface SubmitReportRequest {
   confirmed: boolean;
   isNil?: boolean;
@@ -947,6 +993,12 @@ export interface UserListItem {
   roleAssignments: UserRoleAssignmentItem[];
 }
 
+export interface WorkloadView {
+  staff: StaffWorkload[];
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  unassignedCount: number | string;
+}
+
 export type GetOrganizationTreeParams = {
 includeArchived?: boolean;
 };
@@ -1035,5 +1087,6 @@ zoneUnitId?: string;
 status?: ReportInstanceStatus;
 isLate?: boolean;
 isFlagged?: boolean;
+assignedToUserId?: string;
 };
 

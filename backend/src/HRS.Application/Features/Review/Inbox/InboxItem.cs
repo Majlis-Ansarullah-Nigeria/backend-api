@@ -20,5 +20,7 @@ public sealed record InboxItem(
     ReportInstanceStatus Status,
     bool IsLate,
     bool IsFlagged,
+    Guid? AssignedToUserId,
+    string? AssignedToName,
     DateTimeOffset? SubmittedAt,
     string? ReferenceNumber);

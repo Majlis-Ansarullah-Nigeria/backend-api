@@ -9,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace HRS.Application.Features.Review.Inbox;
 
 /// <summary>FR-REV-001: every report the National Secretariat has received, filterable by type,
-/// period (window), the submitting unit's level, zone, status, late and flagged. Never shows
+/// period (window), the submitting unit's level, zone, status, late, flagged and assignee
+/// (FR-REV-004's "assigned to me" tab). Never shows
 /// NotStarted/Draft/Missed — those haven't "arrived" yet; a report counts as incoming from its
 /// first Submit onward (Submitted, InReview, Returned, Acknowledged), matching the mockup's own
 /// "Reports sent to the National Secretariat" subtitle.</summary>
@@ -21,9 +22,10 @@ public sealed record GetInboxQuery(
     Guid? ZoneUnitId,
     ReportInstanceStatus? Status,
     bool? IsLate,
-    bool? IsFlagged) : IRequest<Result<IReadOnlyList<InboxItem>>>;
+    bool? IsFlagged,
+    Guid? AssignedToUserId) : IRequest<Result<IReadOnlyList<InboxItem>>>;
 
-public sealed class GetInboxQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy)
+public sealed class GetInboxQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IIdentityService identityService)
     : IRequestHandler<GetInboxQuery, Result<IReadOnlyList<InboxItem>>>
 {
     private static readonly HashSet<ReportInstanceStatus> IncomingStatuses =
@@ -53,6 +55,11 @@ public sealed class GetInboxQueryHandler(IAppDbContext db, IAccessPolicy accessP
         if (request.IsFlagged is { } isFlagged)
         {
             instances = [.. instances.Where(i => i.IsFlagged == isFlagged)];
+        }
+
+        if (request.AssignedToUserId is { } assignedToUserId)
+        {
+            instances = [.. instances.Where(i => i.AssignedToUserId == assignedToUserId)];
         }
 
         if (instances.Count == 0)
@@ -91,6 +98,9 @@ public sealed class GetInboxQueryHandler(IAppDbContext db, IAccessPolicy accessP
         var allUnits = await db.Units.AsNoTracking().ToListAsync(cancellationToken);
         var unitByPath = allUnits.ToDictionary(u => u.Path);
 
+        var assignedToUserIds = instances.Select(i => i.AssignedToUserId).Where(id => id is not null).Select(id => id!.Value).Distinct().ToList();
+        var namesByUserId = await identityService.GetUserNamesAsync(assignedToUserIds, cancellationToken);
+
         var rows = new List<InboxItem>();
         foreach (var instance in instances)
         {
@@ -113,10 +123,14 @@ public sealed class GetInboxQueryHandler(IAppDbContext db, IAccessPolicy accessP
                 continue;
             }
 
+            var assignedToName = instance.AssignedToUserId is { } assigneeId
+                ? namesByUserId.GetValueOrDefault(assigneeId, "Unknown")
+                : null;
+
             rows.Add(new InboxItem(
                 instance.Id, reportType.Id, reportType.Name, unitEntry.Unit.Id, unitEntry.Unit.Name, unitEntry.LevelCode,
                 zoneUnitId, zoneName, window.Id, window.PeriodLabel, instance.Status, instance.IsLate, instance.IsFlagged,
-                instance.SubmittedAt, instance.ReferenceNumber));
+                instance.AssignedToUserId, assignedToName, instance.SubmittedAt, instance.ReferenceNumber));
         }
 
         IReadOnlyList<InboxItem> sorted = [.. rows.OrderByDescending(r => r.SubmittedAt)];

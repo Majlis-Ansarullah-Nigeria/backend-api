@@ -1,6 +1,7 @@
 using HRS.Api.Common;
 using HRS.Application.Features.Review.Inbox;
 using HRS.Application.Features.Review.SavedViews;
+using HRS.Application.Features.Review.Workload;
 using HRS.Domain.Organization;
 using HRS.Domain.Submissions;
 using Mediator;
@@ -22,11 +23,13 @@ public static class ReviewEndpoints
                 [FromQuery] ReportInstanceStatus? status,
                 [FromQuery] bool? isLate,
                 [FromQuery] bool? isFlagged,
+                [FromQuery] Guid? assignedToUserId,
                 System.Security.Claims.ClaimsPrincipal user,
                 ISender sender,
                 CancellationToken cancellationToken) =>
             {
-                var query = new GetInboxQuery(user.GetUserId(), reportTypeId, windowId, unitLevel, zoneUnitId, status, isLate, isFlagged);
+                var query = new GetInboxQuery(
+                    user.GetUserId(), reportTypeId, windowId, unitLevel, zoneUnitId, status, isLate, isFlagged, assignedToUserId);
                 var result = await sender.Send(query, cancellationToken);
 
                 return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
@@ -115,6 +118,36 @@ public static class ReviewEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        secretariat.MapPut("/inbox/{id:guid}/assign", async (
+                Guid id,
+                [FromBody] AssignInboxReportRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new AssignReportCommand(user.GetUserId(), id, request.AssignedToUserId), cancellationToken);
+
+                return result.IsSuccess ? Results.NoContent() : result.ToProblemDetails();
+            })
+            .WithName("AssignInboxReport")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        secretariat.MapGet("/workload", async (
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetWorkloadQuery(user.GetUserId()), cancellationToken);
+
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetWorkload")
+            .Produces<WorkloadView>()
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
         secretariat.MapGet("/saved-views", async (
                 System.Security.Claims.ClaimsPrincipal user,
                 ISender sender,
@@ -165,3 +198,5 @@ public sealed record CreateSavedViewRequest(string Name, InboxFilter Filter);
 public sealed record ReturnInboxReportRequest(string Comment);
 
 public sealed record SetInboxReportFlaggedRequest(bool IsFlagged);
+
+public sealed record AssignInboxReportRequest(Guid? AssignedToUserId);

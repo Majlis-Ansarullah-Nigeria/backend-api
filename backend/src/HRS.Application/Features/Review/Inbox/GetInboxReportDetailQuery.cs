@@ -21,11 +21,13 @@ public sealed record InboxReportDetail(
     ReportInstanceStatus Status,
     bool IsLate,
     bool IsFlagged,
+    Guid? AssignedToUserId,
+    string? AssignedToName,
     DateTimeOffset? SubmittedAt,
     string? ReturnComment,
     ReportReceiptData Receipt);
 
-public sealed class GetInboxReportDetailQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class GetInboxReportDetailQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IIdentityService identityService, IClock clock)
     : IRequestHandler<GetInboxReportDetailQuery, Result<InboxReportDetail>>
 {
     public async ValueTask<Result<InboxReportDetail>> Handle(GetInboxReportDetailQuery request, CancellationToken cancellationToken)
@@ -54,7 +56,15 @@ public sealed class GetInboxReportDetailQueryHandler(IAppDbContext db, IAccessPo
             db, instance, schema, reportType.Name, window.PeriodLabel, unitRow.Name, (int)unitRow.LevelCode,
             instance.ReferenceNumber, instance.SubmittedAt ?? clock.UtcNow, cancellationToken, hideConfidentialValues: false);
 
+        string? assignedToName = null;
+        if (instance.AssignedToUserId is { } assignedToUserId)
+        {
+            var names = await identityService.GetUserNamesAsync([assignedToUserId], cancellationToken);
+            assignedToName = names.GetValueOrDefault(assignedToUserId, "Unknown");
+        }
+
         return Result.Success(new InboxReportDetail(
-            instance.Status, instance.IsLate, instance.IsFlagged, instance.SubmittedAt, instance.ReturnComment, receipt));
+            instance.Status, instance.IsLate, instance.IsFlagged, instance.AssignedToUserId, assignedToName,
+            instance.SubmittedAt, instance.ReturnComment, receipt));
     }
 }

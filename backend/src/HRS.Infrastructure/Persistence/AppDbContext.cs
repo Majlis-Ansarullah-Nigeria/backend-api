@@ -30,6 +30,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<ReportAttachment> ReportAttachments => Set<ReportAttachment>();
 
+    public DbSet<ReportComment> ReportComments => Set<ReportComment>();
+
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
@@ -252,6 +254,28 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasOne<ReportInstance>()
                 .WithMany()
                 .HasForeignKey(a => a.ReportInstanceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ReportComment>(comment =>
+        {
+            comment.ToTable("report_comments");
+            comment.HasKey(c => c.Id);
+            comment.Property(c => c.FieldKey).IsRequired();
+            comment.Property(c => c.Body).IsRequired();
+            comment.HasIndex(c => c.ReportInstanceId);
+            comment
+                .HasOne<ReportInstance>()
+                .WithMany()
+                .HasForeignKey(c => c.ReportInstanceId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Self-referencing: a reply's ParentId points at its thread's root comment. Restrict,
+            // not Cascade — comments are never deleted, so this never actually fires, but Restrict
+            // is the safer default if that ever changes.
+            comment
+                .HasOne<ReportComment>()
+                .WithMany()
+                .HasForeignKey(c => c.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

@@ -304,7 +304,7 @@ public class InboxEndpointsTests(ApiFactory factory)
         using var secretariatB = await CreateSecretariatClientAsync();
 
         var createResponse = await secretariatA.PostAsJsonAsync(
-            "/api/v1/secretariat/saved-views", new CreateSavedViewRequest("My overdue zone", new InboxFilter(null, null, null, null, null, true, null)));
+            "/api/v1/secretariat/saved-views", new CreateSavedViewRequest("My overdue zone", new InboxFilter(null, null, null, null, null, true, null, null)));
         var created = await createResponse.Content.ReadFromJsonAsync<SavedViewSummary>();
 
         var aViews = await (await secretariatA.GetAsync(new Uri("/api/v1/secretariat/saved-views", UriKind.Relative)))

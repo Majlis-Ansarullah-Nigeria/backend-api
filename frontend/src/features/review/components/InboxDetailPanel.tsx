@@ -7,19 +7,23 @@ import { useEffect, useState } from "react";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api/client";
-import type { InboxReportDetail } from "@/lib/api/generated/hRSApiV1.schemas";
+import type { InboxReportDetail, WorkloadView } from "@/lib/api/generated/hRSApiV1.schemas";
 import {
   getGetInboxQueryKey,
   getGetInboxReportDetailQueryKey,
   useAcknowledgeInboxReport,
+  useAssignInboxReport,
   useGetInboxReportDetail,
+  useGetWorkload,
   useOpenInboxReport,
   useReturnInboxReport,
   useSetInboxReportFlagged,
 } from "@/lib/api/generated/review/review";
 import { REPORT_INSTANCE_STATUS, reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
+import { CommentsPanel } from "./CommentsPanel";
 
 // A report can still be acknowledged/returned from Submitted (the handlers auto-open it first)
 // or InReview; once Returned or Acknowledged, only Flag remains available.
@@ -32,10 +36,12 @@ export function InboxDetailPanel({ reportId }: { reportId: string }) {
   const [returnComment, setReturnComment] = useState("");
 
   const query = useGetInboxReportDetail<InboxReportDetail, ApiError>(reportId);
+  const workload = useGetWorkload<WorkloadView, ApiError>();
   const openMutation = useOpenInboxReport();
   const acknowledgeMutation = useAcknowledgeInboxReport();
   const returnMutation = useReturnInboxReport();
   const flagMutation = useSetInboxReportFlagged();
+  const assignMutation = useAssignInboxReport();
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: getGetInboxQueryKey() });
@@ -109,6 +115,29 @@ export function InboxDetailPanel({ reportId }: { reportId: string }) {
           </div>
         ) : null}
 
+        <div className="mt-4 flex flex-col gap-1.5">
+          <Label htmlFor="inbox-assign-to">{t("assignToLabel")}</Label>
+          <select
+            id="inbox-assign-to"
+            value={data.assignedToUserId ?? ""}
+            onChange={(event) =>
+              assignMutation.mutate(
+                { id: reportId, data: { assignedToUserId: event.target.value || null } },
+                { onSuccess: invalidate },
+              )
+            }
+            disabled={assignMutation.isPending}
+            className="h-11 w-full rounded-sm border border-line-strong bg-surface px-3 text-sm text-ink outline-none focus-visible:border-green-600 focus-visible:ring-2 focus-visible:ring-green-600/40"
+          >
+            <option value="">{t("unassigned")}</option>
+            {(workload.data?.staff ?? []).map((staff) => (
+              <option key={staff.userId} value={staff.userId}>
+                {staff.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             type="button"
@@ -180,7 +209,7 @@ export function InboxDetailPanel({ reportId }: { reportId: string }) {
           <h3 className="font-bold text-ink">{section.title}</h3>
           <dl className="mt-3 flex flex-col gap-2">
             {section.fields.map((field) => (
-              <div key={field.label} className="flex items-baseline justify-between gap-3 text-sm">
+              <div key={field.fieldKey} className="flex items-baseline justify-between gap-3 text-sm">
                 <dt className="text-ink-muted">{field.label}</dt>
                 <dd className="text-right font-medium text-ink">
                   {field.isMasked ? (
@@ -197,6 +226,11 @@ export function InboxDetailPanel({ reportId }: { reportId: string }) {
           </dl>
         </div>
       ))}
+
+      <CommentsPanel
+        reportId={reportId}
+        fields={data.receipt.sections.flatMap((section) => section.fields.map((field) => ({ fieldKey: field.fieldKey, label: field.label })))}
+      />
     </div>
   );
 }

@@ -17,4 +17,7 @@ public sealed record ReportReceiptData(
 
 public sealed record ReportReceiptSection(string Title, IReadOnlyList<ReportReceiptField> Fields);
 
-public sealed record ReportReceiptField(string Label, string Value, bool IsMasked = false);
+/// <summary>FieldKey is the schema's stable key, not the (localized, editable) Label — added for
+/// M7.3 so the inbox detail view can anchor a new FR-REV-003 comment thread to the right field
+/// without guessing from the label text.</summary>
+public sealed record ReportReceiptField(string FieldKey, string Label, string Value, bool IsMasked = false);

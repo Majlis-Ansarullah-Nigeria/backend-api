@@ -48,7 +48,7 @@ internal static class ReportReceiptBuilder
                     {
                         var isMasked = hideConfidentialValues && f.Confidential;
                         var value = isMasked ? ConfidentialPlaceholder : AnswerDisplay.Format(f, answers.GetValueOrDefault(f.Key), attachmentsByField);
-                        return new ReportReceiptField(f.Label, value, isMasked);
+                        return new ReportReceiptField(f.Key, f.Label, value, isMasked);
                     })]))
             .Where(s => s.Fields.Count > 0)
             .ToList();

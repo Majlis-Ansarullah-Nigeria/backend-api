@@ -89,6 +89,12 @@ public sealed class ReportInstance
     /// action that flips this is M7.2's; this milestone only needs the column to filter by.</summary>
     public bool IsFlagged { get; private set; }
 
+    /// <summary>FR-REV-004's "assign reports to Secretariat staff members" — current assignee
+    /// only, not a history (reassigning just overwrites it, same as IsFlagged). Null means
+    /// unassigned. No FK: a user reference here follows SubmittedByUserId's own precedent of not
+    /// tying report rows to Identity's deletion/deactivation.</summary>
+    public Guid? AssignedToUserId { get; private set; }
+
     public static ReportInstance Create(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now) =>
         new(id, windowId, unitId, templateVersionId, now);
 
@@ -225,4 +231,6 @@ public sealed class ReportInstance
         (Status is ReportInstanceStatus.NotStarted or ReportInstanceStatus.Draft) && now > dueAt;
 
     public void SetFlagged(bool isFlagged) => IsFlagged = isFlagged;
+
+    public void AssignTo(Guid? userId) => AssignedToUserId = userId;
 }

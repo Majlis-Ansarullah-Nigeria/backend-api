@@ -17,4 +17,5 @@ public sealed record InboxFilter(
     Guid? ZoneUnitId,
     Domain.Submissions.ReportInstanceStatus? Status,
     bool? IsLate,
-    bool? IsFlagged);
+    bool? IsFlagged,
+    Guid? AssignedToUserId);

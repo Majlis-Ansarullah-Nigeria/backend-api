@@ -1,7 +1,8 @@
 "use client";
 
-import { Bookmark, Inbox as InboxIcon, X } from "lucide-react";
+import { Bookmark, Inbox as InboxIcon, Users, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -14,12 +15,14 @@ import type { ApiError } from "@/lib/api/client";
 import type {
   InboxFilter,
   InboxItem,
+  MeProfile,
   ReportTypeSummary,
   SavedViewSummary,
   SubmissionWindowSummary,
   UnitLevelSummary,
   UnitSummary,
 } from "@/lib/api/generated/hRSApiV1.schemas";
+import { useGetMe } from "@/lib/api/generated/identity/identity";
 import { useGetUnitLevels, useGetUnits } from "@/lib/api/generated/organization/organization";
 import { useCreateSavedView, useDeleteSavedView, useGetInbox, useGetSavedViews } from "@/lib/api/generated/review/review";
 import { useGetReportTypes } from "@/lib/api/generated/templates/templates";
@@ -29,7 +32,7 @@ import { UNIT_LEVEL_CODE, levelLabel } from "@/features/templates/utils/report-t
 import { REPORT_INSTANCE_STATUS, reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
 import { InboxDetailPanel } from "./InboxDetailPanel";
 
-type Tab = "unread" | "flagged" | "all";
+type Tab = "unread" | "flagged" | "mine" | "all";
 
 const INBOX_LEVEL_ORDER = [UNIT_LEVEL_CODE.Zone, UNIT_LEVEL_CODE.Dila, UNIT_LEVEL_CODE.Muqam, UNIT_LEVEL_CODE.Department];
 const INBOX_STATUS_ORDER = [
@@ -47,6 +50,7 @@ interface FilterState {
   status?: number;
   isLate?: boolean;
   isFlagged?: boolean;
+  assignedToUserId?: string;
 }
 
 const EMPTY_FILTER: FilterState = {};
@@ -59,6 +63,7 @@ export function InboxScreen() {
   const [isSavingView, setIsSavingView] = useState(false);
   const [savedViewName, setSavedViewName] = useState("");
 
+  const me = useGetMe<MeProfile, ApiError>();
   const reportTypes = useGetReportTypes<ReportTypeSummary[], ApiError>({ includeArchived: false });
   const nationalReportTypes = (reportTypes.data ?? []).filter((rt) => rt.recipientLevel === UNIT_LEVEL_CODE.National);
 
@@ -77,21 +82,25 @@ export function InboxScreen() {
   const inbox = useGetInbox<InboxItem[], ApiError>(filter);
 
   const activeTab: Tab | null =
-    filter.isFlagged === true && filter.status === undefined
+    filter.isFlagged === true && filter.status === undefined && filter.assignedToUserId === undefined
       ? "flagged"
-      : filter.isFlagged === undefined && filter.status === REPORT_INSTANCE_STATUS.Submitted
+      : filter.isFlagged === undefined && filter.status === REPORT_INSTANCE_STATUS.Submitted && filter.assignedToUserId === undefined
         ? "unread"
-        : filter.isFlagged === undefined && filter.status === undefined
-          ? "all"
-          : null;
+        : filter.isFlagged === undefined && filter.status === undefined && filter.assignedToUserId === me.data?.id && me.data
+          ? "mine"
+          : filter.isFlagged === undefined && filter.status === undefined && filter.assignedToUserId === undefined
+            ? "all"
+            : null;
 
   const selectTab = (tab: Tab) => {
     if (tab === "unread") {
-      setFilter((current) => ({ ...current, status: REPORT_INSTANCE_STATUS.Submitted, isFlagged: undefined }));
+      setFilter((current) => ({ ...current, status: REPORT_INSTANCE_STATUS.Submitted, isFlagged: undefined, assignedToUserId: undefined }));
     } else if (tab === "flagged") {
-      setFilter((current) => ({ ...current, status: undefined, isFlagged: true }));
+      setFilter((current) => ({ ...current, status: undefined, isFlagged: true, assignedToUserId: undefined }));
+    } else if (tab === "mine") {
+      setFilter((current) => ({ ...current, status: undefined, isFlagged: undefined, assignedToUserId: me.data?.id }));
     } else {
-      setFilter((current) => ({ ...current, status: undefined, isFlagged: undefined }));
+      setFilter((current) => ({ ...current, status: undefined, isFlagged: undefined, assignedToUserId: undefined }));
     }
   };
 
@@ -104,6 +113,7 @@ export function InboxScreen() {
       status: savedFilter.status ?? undefined,
       isLate: savedFilter.isLate ?? undefined,
       isFlagged: savedFilter.isFlagged ?? undefined,
+      assignedToUserId: savedFilter.assignedToUserId ?? undefined,
     });
   };
 
@@ -123,6 +133,7 @@ export function InboxScreen() {
             status: filter.status ?? null,
             isLate: filter.isLate ?? null,
             isFlagged: filter.isFlagged ?? null,
+            assignedToUserId: filter.assignedToUserId ?? null,
           },
         },
       },
@@ -138,14 +149,24 @@ export function InboxScreen() {
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
-        <p className="mt-1 text-sm text-ink-muted">{t("subtitle")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("subtitle")}</p>
+        </div>
+        <Link
+          href="/secretariat/workload"
+          className="inline-flex h-9 items-center gap-2 rounded-sm border border-line-strong bg-surface px-3 text-sm font-semibold text-ink hover:bg-ground"
+        >
+          <Users className="size-4" aria-hidden="true" />
+          {t("workloadLink")}
+        </Link>
       </div>
 
       <div className="flex gap-1" role="tablist" aria-label={t("tabsLabel")}>
         <FilterTab active={activeTab === "unread"} onClick={() => selectTab("unread")} label={t("tabUnread")} />
         <FilterTab active={activeTab === "flagged"} onClick={() => selectTab("flagged")} label={t("tabFlagged")} />
+        <FilterTab active={activeTab === "mine"} onClick={() => selectTab("mine")} label={t("tabMine")} />
         <FilterTab active={activeTab === "all"} onClick={() => selectTab("all")} label={t("tabAll")} />
       </div>
 
@@ -328,6 +349,9 @@ export function InboxScreen() {
                   <th scope="col" className="px-4 py-3 font-medium">
                     {t("columnSubmitted")}
                   </th>
+                  <th scope="col" className="px-4 py-3 font-medium">
+                    {t("columnAssignedTo")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -358,6 +382,7 @@ export function InboxScreen() {
                     <td className="px-4 py-3 text-ink-muted">
                       {item.submittedAt ? new Date(item.submittedAt).toLocaleString() : t("notSubmittedYet")}
                     </td>
+                    <td className="px-4 py-3 text-ink-muted">{item.assignedToName ?? t("unassigned")}</td>
                   </tr>
                 ))}
               </tbody>
