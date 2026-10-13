@@ -1,12 +1,15 @@
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
-using HRS.Application.Features.Review.Inbox;
+using HRS.Application.Common.Options;
+using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Templates.TemplateVersions;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
+using HRS.Domain.Notifications;
 using HRS.Domain.Submissions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HRS.Application.Features.Submissions.Comments;
 
@@ -17,7 +20,7 @@ namespace HRS.Application.Features.Submissions.Comments;
 public sealed record AddReportCommentCommand(Guid UserId, Guid ReportId, string? FieldKey, Guid? ParentId, string Body) : IRequest<Result<CommentView>>;
 
 public sealed class AddReportCommentCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IIdentityService identityService, IEmailSender emailSender, IClock clock)
+    IAppDbContext db, IAccessPolicy accessPolicy, IIdentityService identityService, IClock clock, IOptions<AppOptions> appOptions)
     : IRequestHandler<AddReportCommentCommand, Result<CommentView>>
 {
     public async ValueTask<Result<CommentView>> Handle(AddReportCommentCommand request, CancellationToken cancellationToken)
@@ -83,28 +86,40 @@ public sealed class AddReportCommentCommandHandler(
         var body = request.Body.Trim();
         var comment = ReportComment.Create(Guid.CreateVersion7(), instance.Id, fieldKey, parentId, request.UserId, body, now);
         db.ReportComments.Add(comment);
-        await db.SaveChangesAsync(cancellationToken);
 
         var author = await identityService.GetUserAsync(request.UserId, cancellationToken);
 
         var window = await db.SubmissionWindows.AsNoTracking().FirstAsync(w => w.Id == instance.WindowId, cancellationToken);
         var reportType = await db.ReportTypes.AsNoTracking().FirstAsync(r => r.Id == window.ReportTypeId, cancellationToken);
         var unitName = await db.Units.AsNoTracking().Where(u => u.Id == instance.UnitId).Select(u => u.Name).FirstAsync(cancellationToken);
-        var subject = $"{reportType.Name} — {window.PeriodLabel}: new comment";
-        var notificationBody = $"{author?.Name ?? "Someone"} commented on {unitName}'s {window.PeriodLabel} {reportType.Name}:\n\n{body}";
+        var publicUrl = appOptions.Value.PublicUrl.TrimEnd('/');
 
         if (isSecretariat)
         {
-            await ReportNotifier.NotifyUnitHeadsAsync(db, identityService, emailSender, instance.UnitId, now, subject, notificationBody, cancellationToken);
+            var placeholders = new Dictionary<string, string>
+            {
+                ["unitName"] = unitName,
+                ["reportTypeName"] = reportType.Name,
+                ["periodLabel"] = window.PeriodLabel,
+                ["comment"] = body,
+                ["link"] = $"{publicUrl}/reports/{instance.Id}/edit?unit={instance.UnitId}",
+            };
+            await OutboxWriter.EnqueueForUnitHeadsAsync(db, instance.UnitId, NotificationEventType.CommentAdded, placeholders, now, cancellationToken);
         }
         else if (instance.AssignedToUserId is { } assignedToUserId)
         {
-            var assignee = await identityService.GetUserAsync(assignedToUserId, cancellationToken);
-            if (assignee is not null)
+            var placeholders = new Dictionary<string, string>
             {
-                await emailSender.QueueAsync(new EmailMessage(assignee.Email, subject, notificationBody), cancellationToken);
-            }
+                ["unitName"] = unitName,
+                ["reportTypeName"] = reportType.Name,
+                ["periodLabel"] = window.PeriodLabel,
+                ["comment"] = body,
+                ["link"] = $"{publicUrl}/secretariat/inbox",
+            };
+            OutboxWriter.EnqueueForUser(db, assignedToUserId, NotificationEventType.CommentAdded, placeholders, now);
         }
+
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new CommentView(comment.Id, comment.AuthorUserId, author?.Name ?? "Unknown", comment.Body, comment.CreatedAt));
     }

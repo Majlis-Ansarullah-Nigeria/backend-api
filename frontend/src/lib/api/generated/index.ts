@@ -3,6 +3,7 @@ export * from './department/department';
 export * from './hrs-api/hrs-api';
 export * from './identity/identity';
 export * from './invitations/invitations';
+export * from './notifications/notifications';
 export * from './observer/observer';
 export * from './organization/organization';
 export * from './review/review';

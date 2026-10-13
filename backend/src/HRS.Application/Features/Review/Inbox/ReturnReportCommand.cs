@@ -1,9 +1,13 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Options;
+using HRS.Application.Features.Notifications;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
+using HRS.Domain.Notifications;
 using HRS.Domain.Submissions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HRS.Application.Features.Review.Inbox;
 
@@ -14,7 +18,7 @@ namespace HRS.Application.Features.Review.Inbox;
 public sealed record ReturnReportCommand(Guid UserId, Guid ReportId, string Comment) : IRequest<Result>;
 
 public sealed class ReturnReportCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IIdentityService identityService, IEmailSender emailSender, IClock clock)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
     : IRequestHandler<ReturnReportCommand, Result>
 {
     public async ValueTask<Result> Handle(ReturnReportCommand request, CancellationToken cancellationToken)
@@ -52,13 +56,18 @@ public sealed class ReturnReportCommandHandler(
         var now = clock.UtcNow;
         var comment = request.Comment.Trim();
         instance.Return(comment, now);
-        await db.SaveChangesAsync(cancellationToken);
 
-        await ReportNotifier.NotifyUnitHeadsAsync(
-            db, identityService, emailSender, instance.UnitId, now,
-            $"{reportType.Name} — {window.PeriodLabel} returned for revision",
-            $"The National Secretariat has returned {unitName}'s {window.PeriodLabel} {reportType.Name} for revision:\n\n{comment}",
-            cancellationToken);
+        var placeholders = new Dictionary<string, string>
+        {
+            ["unitName"] = unitName,
+            ["reportTypeName"] = reportType.Name,
+            ["periodLabel"] = window.PeriodLabel,
+            ["comment"] = comment,
+            ["link"] = $"{appOptions.Value.PublicUrl.TrimEnd('/')}/reports/{instance.Id}/edit?unit={instance.UnitId}",
+        };
+        await OutboxWriter.EnqueueForUnitHeadsAsync(db, instance.UnitId, NotificationEventType.ReturnedForRevision, placeholders, now, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

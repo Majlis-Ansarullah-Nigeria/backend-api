@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using HRS.Api.Endpoints;
+using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Organization.Units;
 using HRS.Application.Features.Review.Inbox;
 using HRS.Application.Features.Review.Workload;
@@ -14,6 +16,7 @@ using HRS.Domain.Organization;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HRS.Api.IntegrationTests;
 
@@ -139,6 +142,29 @@ public class ReportCommentsAndAssignmentTests(ApiFactory factory)
     private static async Task<InboxReportDetail?> GetInboxDetailAsync(HttpClient client, Guid reportId) =>
         await (await client.GetAsync(new Uri($"/api/v1/secretariat/inbox/{reportId}", UriKind.Relative))).Content.ReadFromJsonAsync<InboxReportDetail>();
 
+    /// <summary>M8.1: a comment now queues an OutboxMessage instead of sending email directly —
+    /// this runs the same dispatcher the Worker's recurring job runs, against the test database,
+    /// so these tests can still assert against factory.EmailSender. Loops until a run sends
+    /// nothing more: every test in HRS.Api.IntegrationTests shares one never-reset Postgres, so
+    /// by the time later test classes run there can be a real backlog of other tests' pending
+    /// messages ahead of this one's in the dispatcher's oldest-first batch.</summary>
+    private async Task RunOutboxDispatcherAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+
+        int sent;
+        var iterations = 0;
+        do
+        {
+            sent = await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, clock, CancellationToken.None);
+            iterations++;
+        }
+        while (sent > 0 && iterations < 200);
+    }
+
     [Fact]
     public async Task SecretariatCanStartAThreadAndTheHeadCanReply()
     {
@@ -153,6 +179,7 @@ public class ReportCommentsAndAssignmentTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, rootResponse.StatusCode);
         var root = await rootResponse.Content.ReadFromJsonAsync<CommentView>();
 
+        await RunOutboxDispatcherAsync();
         var sentToHead = factory.EmailSender.LastSentTo(headEmail);
         Assert.NotNull(sentToHead);
         Assert.Contains("Can you clarify this figure?", sentToHead!.TextBody);
@@ -189,12 +216,14 @@ public class ReportCommentsAndAssignmentTests(ApiFactory factory)
 
         // Unassigned: the head's reply notifies nobody.
         await PostCommentAsync(headClient, reportId, null, root!.Id, "Looking into it.");
+        await RunOutboxDispatcherAsync();
         Assert.Null(factory.EmailSender.LastSentTo(staffEmail));
 
         // Now assign, and reply again: the assignee gets the email.
         await AssignAsync(secretariat, reportId, staffUserId);
         await PostCommentAsync(headClient, reportId, null, root.Id, "Confirmed correct, no change needed.");
 
+        await RunOutboxDispatcherAsync();
         var sentToStaff = factory.EmailSender.LastSentTo(staffEmail);
         Assert.NotNull(sentToStaff);
         Assert.Contains("Confirmed correct, no change needed.", sentToStaff!.TextBody);

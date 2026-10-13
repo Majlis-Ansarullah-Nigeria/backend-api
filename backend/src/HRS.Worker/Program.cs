@@ -34,6 +34,7 @@ try
     builder.Services.AddHangfireServer();
 
     builder.Services.AddScoped<WindowJobsRecurringJob>();
+    builder.Services.AddScoped<OutboxDispatcherRecurringJob>();
 
     var host = builder.Build();
 
@@ -46,6 +47,13 @@ try
             "window-jobs",
             job => job.RunAsync(CancellationToken.None),
             "*/15 * * * *");
+
+        // M8.1: dispatch queued notifications promptly — much tighter than the window jobs'
+        // 15-minute cadence, since these fire right after a user action (acknowledge, comment).
+        recurringJobs.AddOrUpdate<OutboxDispatcherRecurringJob>(
+            "outbox-dispatcher",
+            job => job.RunAsync(CancellationToken.None),
+            "* * * * *");
     }
 
     host.Run();

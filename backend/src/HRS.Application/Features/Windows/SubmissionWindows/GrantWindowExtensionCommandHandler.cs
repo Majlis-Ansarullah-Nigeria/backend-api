@@ -1,11 +1,17 @@
+using System.Globalization;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Options;
+using HRS.Application.Features.Notifications;
 using HRS.Domain.Common;
+using HRS.Domain.Notifications;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HRS.Application.Features.Windows.SubmissionWindows;
 
-public sealed class GrantWindowExtensionCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class GrantWindowExtensionCommandHandler(
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
     : IRequestHandler<GrantWindowExtensionCommand, Result<SubmissionWindowSummary>>
 {
     public async ValueTask<Result<SubmissionWindowSummary>> Handle(GrantWindowExtensionCommand request, CancellationToken cancellationToken)
@@ -37,7 +43,29 @@ public sealed class GrantWindowExtensionCommandHandler(IAppDbContext db, IAccess
             return Result.Failure<SubmissionWindowSummary>(targetUnitError);
         }
 
-        window.GrantExtension(request.UnitIds, request.NewDueAt, request.NewClosesAt, request.Reason, clock.UtcNow);
+        var now = clock.UtcNow;
+        window.GrantExtension(request.UnitIds, request.NewDueAt, request.NewClosesAt, request.Reason, now);
+
+        var reportType = await db.ReportTypes.AsNoTracking().FirstAsync(r => r.Id == window.ReportTypeId, cancellationToken);
+        var unitNamesById = await db.Units.AsNoTracking()
+            .Where(u => request.UnitIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Name, cancellationToken);
+        var publicUrl = appOptions.Value.PublicUrl.TrimEnd('/');
+
+        foreach (var unitId in request.UnitIds)
+        {
+            var placeholders = new Dictionary<string, string>
+            {
+                ["unitName"] = unitNamesById.GetValueOrDefault(unitId, "Your unit"),
+                ["reportTypeName"] = reportType.Name,
+                ["periodLabel"] = window.PeriodLabel,
+                ["dueDate"] = request.NewDueAt.ToString("d MMM yyyy", CultureInfo.InvariantCulture),
+                ["reason"] = request.Reason,
+                ["link"] = $"{publicUrl}/reports/{window.Id}/edit?unit={unitId}",
+            };
+            await OutboxWriter.EnqueueForUnitHeadsAsync(db, unitId, NotificationEventType.ExtensionGranted, placeholders, now, cancellationToken);
+        }
+
         await db.SaveChangesAsync(cancellationToken);
 
         return SubmissionWindowSummary.FromEntity(window);

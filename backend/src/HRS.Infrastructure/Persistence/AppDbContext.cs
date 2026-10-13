@@ -2,6 +2,7 @@ using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Invitations;
+using HRS.Domain.Notifications;
 using HRS.Domain.Observer;
 using HRS.Domain.Organization;
 using HRS.Domain.Review;
@@ -24,7 +25,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
+    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+
     public DbSet<Nudge> Nudges => Set<Nudge>();
+
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     public DbSet<PrivateNote> PrivateNotes => Set<PrivateNote>();
 
@@ -277,6 +282,24 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(c => c.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<OutboxMessage>(message =>
+        {
+            message.ToTable("outbox_messages");
+            message.HasKey(m => m.Id);
+            message.Property(m => m.PayloadJson).HasColumnType("jsonb").IsRequired();
+            // The dispatcher's own query: oldest-first among whatever's still unprocessed.
+            message.HasIndex(m => new { m.ProcessedAt, m.CreatedAt });
+        });
+
+        builder.Entity<NotificationTemplate>(template =>
+        {
+            template.ToTable("notification_templates");
+            template.HasKey(t => t.Id);
+            template.Property(t => t.Subject).IsRequired();
+            template.Property(t => t.Body).IsRequired();
+            template.HasIndex(t => t.EventType).IsUnique();
         });
 
         builder.Entity<Nudge>(nudge =>

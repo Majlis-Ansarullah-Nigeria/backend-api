@@ -165,7 +165,9 @@
       "windows": "Windows",
       "windowsShort": "Windows",
       "inbox": "Inbox",
-      "inboxShort": "Inbox"
+      "inboxShort": "Inbox",
+      "announcements": "Announcements",
+      "announcementsShort": "Announce"
     }
   },
   "HeadHome": {
@@ -369,6 +371,19 @@
     "levelLabel": "Level",
     "zoneLabel": "Zone",
     "submittedMeta": "Submitted {date}"
+  },
+  "Announcements": {
+    "title": "Announcements and email wording",
+    "subtitle": "The wording used in every notification email (FR-NOT-003). Announcements to heads arrive in M8.3.",
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load the notification templates",
+    "emptyTitle": "No templates yet",
+    "emptyDescription": "Notification templates will appear here once seeded.",
+    "subjectLabel": "Subject",
+    "bodyLabel": "Body",
+    "placeholdersLabel": "Available placeholders",
+    "saveButton": "Save",
+    "savedConfirmation": "Saved."
   },
   "ComplianceGrid": {
     "loading": "Loading…",

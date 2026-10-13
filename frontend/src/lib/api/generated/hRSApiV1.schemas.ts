@@ -532,6 +532,16 @@ export interface MyReportSummary {
   status: ReportLineStatus;
 }
 
+export type NotificationEventType = number;
+
+export interface NotificationTemplateSummary {
+  id: string;
+  eventType: NotificationEventType;
+  subject: string;
+  body: string;
+  updatedAt: string;
+}
+
 export interface OtpRequest {
   identifier: string;
 }
@@ -926,6 +936,11 @@ export interface UnitTreeNode {
   /** @nullable */
   headName: string | null;
   hasVacantHead: boolean;
+}
+
+export interface UpdateNotificationTemplateRequest {
+  subject: string;
+  body: string;
 }
 
 export interface UpdateReportTypeRequest {

@@ -1,11 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
 using HRS.Api.Endpoints;
+using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Notifications;
+using HRS.Application.Features.Organization.Units;
+using HRS.Application.Features.Submissions.ReportInstances;
 using HRS.Application.Features.Templates.ReportTypes;
 using HRS.Application.Features.Templates.TemplateVersions;
+using HRS.Application.Features.Windows.SubmissionWindows;
 using HRS.Domain.Access;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HRS.Api.IntegrationTests;
 
@@ -462,5 +468,97 @@ public class TemplatesEndpointsTests(ApiFactory factory)
         Assert.Equal("fav_color", roundTrippedField.Key);
         Assert.Equal(2, roundTrippedField.Options!.Count);
         Assert.Contains(roundTrippedField.Options, o => o.Value == "red" && o.Label == "Red");
+    }
+
+    /// <summary>M8.1: runs the same dispatcher the Worker's recurring job runs, against the test
+    /// database, so these tests can assert against factory.EmailSender. Loops until a run sends
+    /// nothing more: every test in HRS.Api.IntegrationTests shares one never-reset Postgres, so
+    /// by the time later test classes run there can be a real backlog of other tests' pending
+    /// messages ahead of this one's in the dispatcher's oldest-first batch.</summary>
+    private async Task RunOutboxDispatcherAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+
+        int sent;
+        var iterations = 0;
+        do
+        {
+            sent = await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, clock, CancellationToken.None);
+            iterations++;
+        }
+        while (sent > 0 && iterations < 200);
+    }
+
+    [Fact]
+    public async Task PublishingANewVersionNotifiesOnlyHeadsWithAStaleDraftOnTheSupersededVersion()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Template Changed Notify Report");
+
+        var firstVersionId = (await (await secretariat.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/template-versions",
+                new UpdateTemplateSchemaRequest(SimpleSchema("notes_v1"))))
+            .Content.ReadFromJsonAsync<TemplateVersionSummary>())!.Id;
+        await secretariat.PostAsync(new Uri($"/api/v1/report-types/{reportTypeId}/template-versions/{firstVersionId}/publish", UriKind.Relative), null);
+
+        var zone = await (await secretariat.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest("TPLZcs", "Template Notify Zone", OrganizationSeedIds.ZoneLevelId, OrganizationSeedIds.NationalUnitId, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var dila = await (await secretariat.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest("TPLDcs", "Template Notify Dila", OrganizationSeedIds.DilaLevelId, zone!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var draftingMuqam = await (await secretariat.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest("TPLMa", "Drafting Muqam", OrganizationSeedIds.MuqamLevelId, dila!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var untouchedMuqam = await (await secretariat.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest("TPLMb", "Untouched Muqam", OrganizationSeedIds.MuqamLevelId, dila.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        var now = DateTimeOffset.UtcNow;
+        var window = await (await secretariat.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                new CreateSubmissionWindowRequest(
+                    "Template Notify Window", now.AddDays(-1), 3, now.AddDays(30), [new WindowDueDate(UnitLevelCode.Muqam, now.AddDays(10))])))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        var draftingHeadEmail = UniqueEmail();
+        var draftingHeadUserId = await factory.CreateUserAsync(draftingHeadEmail, "Correct-Horse-Tpl3");
+        await factory.CreateRoleAssignmentAsync(draftingHeadUserId, draftingMuqam!.Id, RoleName.UnitHead);
+        var draftingHeadClient = factory.CreateAuthenticatedClient();
+        await draftingHeadClient.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(draftingHeadEmail, "Correct-Horse-Tpl3"));
+        await draftingHeadClient.PutAsJsonAsync(
+            $"/api/v1/reports/{window!.Window.Id}?unit={draftingMuqam.Id}",
+            new SaveReportDraftRequest(new Dictionary<string, object?> { ["notes_v1"] = "in progress" }));
+
+        var untouchedHeadEmail = UniqueEmail();
+        var untouchedHeadUserId = await factory.CreateUserAsync(untouchedHeadEmail, "Correct-Horse-Tpl4");
+        await factory.CreateRoleAssignmentAsync(untouchedHeadUserId, untouchedMuqam!.Id, RoleName.UnitHead);
+        // untouchedMuqam never saves a draft — still NotStarted, nothing for "template changed" to attach to.
+
+        var secondVersionId = (await (await secretariat.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/template-versions",
+                new UpdateTemplateSchemaRequest(SimpleSchema("notes_v2"))))
+            .Content.ReadFromJsonAsync<TemplateVersionSummary>())!.Id;
+        await secretariat.PostAsync(new Uri($"/api/v1/report-types/{reportTypeId}/template-versions/{secondVersionId}/publish", UriKind.Relative), null);
+
+        await RunOutboxDispatcherAsync();
+
+        Assert.NotNull(factory.EmailSender.LastSentTo(draftingHeadEmail));
+        Assert.Null(factory.EmailSender.LastSentTo(untouchedHeadEmail));
+    }
+
+    private static TemplateSchema SimpleSchema(string fieldKey)
+    {
+        var field = new TemplateField(
+            fieldKey, TemplateFieldType.ShortText, "Notes", null, false, null, null, null, null, null, false,
+            null, null, null, AggregationRule.None, null, null, null);
+        return new TemplateSchema([new TemplateSection("section_1", "Section 1", [field])]);
     }
 }

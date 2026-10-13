@@ -60,7 +60,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M7.4 Department officer access to their sections across all units (FR-REV-005).
 
 ## M8 — Notifications (FR-NOT)
-- [ ] M8.1 Outbox dispatcher, email templates editable by the Secretariat (FR-NOT-002, FR-NOT-003).
+- [x] M8.1 Outbox dispatcher, email templates editable by the Secretariat (FR-NOT-002, FR-NOT-003).
 - [ ] M8.2 In-app notification centre + SignalR badge; web push (FR-NOT-001).
 - [ ] M8.3 Preferences, digest, escalation, announcements (FR-NOT-004..006).
 

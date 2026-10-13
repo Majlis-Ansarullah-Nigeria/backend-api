@@ -1,9 +1,13 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Options;
+using HRS.Application.Features.Notifications;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
+using HRS.Domain.Notifications;
 using HRS.Domain.Submissions;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HRS.Application.Features.Review.Inbox;
 
@@ -13,7 +17,7 @@ namespace HRS.Application.Features.Review.Inbox;
 public sealed record AcknowledgeReportCommand(Guid UserId, Guid ReportId) : IRequest<Result>;
 
 public sealed class AcknowledgeReportCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IIdentityService identityService, IEmailSender emailSender, IClock clock)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
     : IRequestHandler<AcknowledgeReportCommand, Result>
 {
     public async ValueTask<Result> Handle(AcknowledgeReportCommand request, CancellationToken cancellationToken)
@@ -45,13 +49,17 @@ public sealed class AcknowledgeReportCommandHandler(
 
         var now = clock.UtcNow;
         instance.Acknowledge(now);
-        await db.SaveChangesAsync(cancellationToken);
 
-        await ReportNotifier.NotifyUnitHeadsAsync(
-            db, identityService, emailSender, instance.UnitId, now,
-            $"{reportType.Name} — {window.PeriodLabel} acknowledged",
-            $"The National Secretariat has acknowledged {unitName}'s {window.PeriodLabel} {reportType.Name}.",
-            cancellationToken);
+        var placeholders = new Dictionary<string, string>
+        {
+            ["unitName"] = unitName,
+            ["reportTypeName"] = reportType.Name,
+            ["periodLabel"] = window.PeriodLabel,
+            ["link"] = $"{appOptions.Value.PublicUrl.TrimEnd('/')}/reports/{instance.Id}/edit?unit={instance.UnitId}",
+        };
+        await OutboxWriter.EnqueueForUnitHeadsAsync(db, instance.UnitId, NotificationEventType.ReportAcknowledged, placeholders, now, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

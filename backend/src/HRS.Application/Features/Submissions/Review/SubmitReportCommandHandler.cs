@@ -1,19 +1,24 @@
 using System.Globalization;
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Common.Options;
+using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Submissions.ReportInstances;
 using HRS.Application.Features.Templates.TemplateVersions;
 using HRS.Domain.Common;
+using HRS.Domain.Notifications;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
 using HRS.Domain.Windows;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HRS.Application.Features.Submissions.Review;
 
 public sealed class SubmitReportCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IPdfRenderer pdfRenderer, IEmailSender emailSender, IIdentityService identityService)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IPdfRenderer pdfRenderer, IEmailSender emailSender,
+    IIdentityService identityService, IOptions<AppOptions> appOptions)
     : IRequestHandler<SubmitReportCommand, Result<SubmitReportResult>>
 {
     public async ValueTask<Result<SubmitReportResult>> Handle(SubmitReportCommand request, CancellationToken cancellationToken)
@@ -53,7 +58,7 @@ public sealed class SubmitReportCommandHandler(
 
         var unitRow = await db.Units.AsNoTracking()
             .Where(u => u.Id == request.UnitId)
-            .Join(db.UnitLevels.AsNoTracking(), u => u.LevelId, l => l.Id, (u, l) => new { u.Code, u.Name, LevelCode = l.Code })
+            .Join(db.UnitLevels.AsNoTracking(), u => u.LevelId, l => l.Id, (u, l) => new { u.Code, u.Name, u.ParentId, LevelCode = l.Code })
             .FirstOrDefaultAsync(cancellationToken);
         if (unitRow is null)
         {
@@ -127,6 +132,22 @@ public sealed class SubmitReportCommandHandler(
             ?? ReportReferenceNumber.Generate(reportType.Category, window.PeriodLabel, now, unitRow.Code);
 
         instance.Submit(isLate, referenceNumber, request.IsNil, now, request.UserId);
+
+        // FR-NOT-002's "child submitted (to observer)" — only when this report type actually has
+        // an observer scope (FR-OBS's ObserverDepth>=1 gate, same check Nudge/PrivateNotes use)
+        // and this unit has a parent to notify (Zone-level units route straight to the
+        // Secretariat with no observer, per hrs-domain's routing table).
+        if (reportType.ObserverDepth >= 1 && unitRow.ParentId is { } parentUnitId)
+        {
+            var placeholders = new Dictionary<string, string>
+            {
+                ["unitName"] = unitRow.Name,
+                ["reportTypeName"] = reportType.Name,
+                ["periodLabel"] = window.PeriodLabel,
+                ["link"] = $"{appOptions.Value.PublicUrl.TrimEnd('/')}/units/{request.UnitId}/reports/{instance.Id}",
+            };
+            await OutboxWriter.EnqueueForUnitHeadsAsync(db, parentUnitId, NotificationEventType.ChildSubmitted, placeholders, now, cancellationToken);
+        }
 
         var result = new SubmitReportResult(instance.Id, instance.ReferenceNumber!, now, isLate);
 

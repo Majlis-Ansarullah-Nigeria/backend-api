@@ -6,6 +6,7 @@ using HRS.Application.Features.Templates.ReportTypes;
 using HRS.Application.Features.Windows.Jobs;
 using HRS.Application.Features.Windows.SubmissionWindows;
 using HRS.Domain.Access;
+using HRS.Domain.Notifications;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
 using HRS.Domain.Windows;
@@ -102,7 +103,7 @@ public class WindowJobRunnerTests(ApiFactory factory)
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
 
-        return await WindowJobRunner.RunAsync(db, clock, CancellationToken.None);
+        return await WindowJobRunner.RunAsync(db, clock, "http://localhost:3000", CancellationToken.None);
     }
 
     private async Task<List<WindowJobRun>> GetJobRunsAsync(Guid windowId)
@@ -111,6 +112,14 @@ public class WindowJobRunnerTests(ApiFactory factory)
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         return await db.WindowJobRuns.AsNoTracking().Where(r => r.WindowId == windowId).ToListAsync();
+    }
+
+    private async Task<List<OutboxMessage>> GetOutboxMessagesForAsync(Guid recipientUserId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        return await db.OutboxMessages.AsNoTracking().Where(m => m.RecipientUserId == recipientUserId).ToListAsync();
     }
 
     [Fact]
@@ -296,5 +305,66 @@ public class WindowJobRunnerTests(ApiFactory factory)
 
         var runs = await GetJobRunsAsync(windowId);
         Assert.DoesNotContain(runs, r => r.UnitId == archivedId);
+    }
+
+    [Fact]
+    public async Task OpenedQueuesAWindowOpenedNotificationForTheUnitsHead()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Opened Notify Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "08");
+        var headUserId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Job2");
+        await factory.CreateRoleAssignmentAsync(headUserId, muqamId, RoleName.UnitHead);
+        await CreateWindowAsync(client, reportTypeId, Now.AddDays(-1), 3, Now.AddDays(30), Now.AddDays(10));
+
+        await RunJobAsync();
+
+        var messages = await GetOutboxMessagesForAsync(headUserId);
+        Assert.Contains(messages, m => m.EventType == NotificationEventType.WindowOpened);
+    }
+
+    [Fact]
+    public async Task OverdueQueuesAnOverdueNotificationForTheUnitsHead()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Overdue Notify Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "09");
+        var headUserId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Job3");
+        await factory.CreateRoleAssignmentAsync(headUserId, muqamId, RoleName.UnitHead);
+        await CreateWindowAsync(client, reportTypeId, Now.AddDays(-10), 3, Now.AddDays(10), Now.AddHours(-1));
+
+        await RunJobAsync();
+
+        var messages = await GetOutboxMessagesForAsync(headUserId);
+        Assert.Contains(messages, m => m.EventType == NotificationEventType.Overdue);
+    }
+
+    [Fact]
+    public async Task ClosedAndEscalatedNeverQueueANotificationTheyAreNotInFRNOT002sEventList()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Closed No Notify Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(client, "10");
+        var headUserId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Job4");
+        await factory.CreateRoleAssignmentAsync(headUserId, muqamId, RoleName.UnitHead);
+        var settings = new ReminderSettings(
+            RemindFiveDaysBefore: false, RemindTwoDaysBefore: false, RemindOnDueDay: false,
+            EscalateToParentAfterThreeDays: true, EscalateToZoneAfterSevenDays: false);
+        await CreateWindowAsync(client, reportTypeId, Now.AddDays(-30), 0, Now.AddHours(-1), Now.AddDays(-10), reminderSettings: settings);
+
+        await RunJobAsync();
+
+        // The window is already fully closed (and 3+ days past due, so Escalated("Parent") also
+        // fires) — Opened is the only one of the events detected here that's actually in
+        // FR-NOT-002's list. Scoped to this test's own report type by name, not an exact count:
+        // every test in HRS.Api.IntegrationTests shares one never-reset Postgres, and a
+        // broadcast-scope window (no explicit TargetUnitIds, same as this one) notifies every
+        // Muqam that exists at the time it's processed — including ones other tests create
+        // later — so other WindowOpened/Reminder messages for this same head are expected and
+        // not what this test is about.
+        var messages = await GetOutboxMessagesForAsync(headUserId);
+        var messagesForThisReportType = messages.Where(m => m.PayloadJson.Contains("Closed No Notify Report")).ToList();
+        Assert.All(messagesForThisReportType, m => Assert.Equal(NotificationEventType.WindowOpened, m.EventType));
+        Assert.Contains(messagesForThisReportType, m => m.EventType == NotificationEventType.WindowOpened);
     }
 }

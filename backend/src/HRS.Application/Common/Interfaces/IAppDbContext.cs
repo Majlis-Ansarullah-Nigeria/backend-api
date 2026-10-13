@@ -1,6 +1,7 @@
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Invitations;
+using HRS.Domain.Notifications;
 using HRS.Domain.Observer;
 using HRS.Domain.Organization;
 using HRS.Domain.Review;
@@ -18,7 +19,11 @@ public interface IAppDbContext
 
     DbSet<Invitation> Invitations { get; }
 
+    DbSet<NotificationTemplate> NotificationTemplates { get; }
+
     DbSet<Nudge> Nudges { get; }
+
+    DbSet<OutboxMessage> OutboxMessages { get; }
 
     DbSet<PrivateNote> PrivateNotes { get; }
 

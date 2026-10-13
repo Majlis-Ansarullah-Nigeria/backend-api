@@ -126,6 +126,7 @@ try
     app.MapObserverEndpoints();
     app.MapReviewEndpoints();
     app.MapDepartmentEndpoints();
+    app.MapNotificationsEndpoints();
 
     app.MapGet("/", () => "HRS API");
 

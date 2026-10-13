@@ -1,12 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using HRS.Api.Endpoints;
+using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Organization.Units;
 using HRS.Application.Features.Templates.ReportTypes;
 using HRS.Application.Features.Windows.SubmissionWindows;
 using HRS.Domain.Access;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HRS.Api.IntegrationTests;
 
@@ -521,5 +524,63 @@ public class WindowsEndpointsTests(ApiFactory factory)
             new ReopenWindowRequest([muqamId], closesAt.AddDays(-1), "Reason"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    /// <summary>M8.1: runs the same dispatcher the Worker's recurring job runs, against the test
+    /// database, so these tests can assert against factory.EmailSender. Loops until a run sends
+    /// nothing more: every test in HRS.Api.IntegrationTests shares one never-reset Postgres, so
+    /// by the time later test classes run there can be a real backlog of other tests' pending
+    /// messages ahead of this one's in the dispatcher's oldest-first batch.</summary>
+    private async Task RunOutboxDispatcherAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+
+        int sent;
+        var iterations = 0;
+        do
+        {
+            sent = await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, clock, CancellationToken.None);
+            iterations++;
+        }
+        while (sent > 0 && iterations < 200);
+    }
+
+    [Fact]
+    public async Task GrantingAnExtensionNotifiesTheUnitsCurrentHead()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Extension Notify Report", UnitLevelCode.Muqam);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "08");
+        var (_, headUserId, headEmail) = await CreateAuthenticatedUserWithEmailAsync();
+        await factory.CreateRoleAssignmentAsync(headUserId, muqamId, RoleName.UnitHead);
+        var created = await (await secretariat.PostAsJsonAsync(
+                $"/api/v1/report-types/{reportTypeId}/windows",
+                ValidWindow(new WindowDueDate(UnitLevelCode.Muqam, Now.AddDays(10)))))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        await secretariat.PostAsJsonAsync(
+            $"/api/v1/report-types/{reportTypeId}/windows/{created!.Window.Id}/extensions",
+            new GrantWindowExtensionRequest([muqamId], Now.AddDays(20), Now.AddDays(25), "Flooding delayed the count."));
+
+        await RunOutboxDispatcherAsync();
+
+        var sent = factory.EmailSender.LastSentTo(headEmail);
+        Assert.NotNull(sent);
+        Assert.Contains("Flooding delayed the count.", sent!.TextBody);
+    }
+
+    private async Task<(HttpClient Client, Guid UserId, string Email)> CreateAuthenticatedUserWithEmailAsync()
+    {
+        var email = UniqueEmail();
+        const string password = "Correct-Horse-Win3";
+        var userId = await factory.CreateUserAsync(email, password);
+
+        var client = factory.CreateAuthenticatedClient();
+        await client.PostAsJsonAsync("/api/v1/auth/login", new LoginRequest(email, password));
+
+        return (client, userId, email);
     }
 }

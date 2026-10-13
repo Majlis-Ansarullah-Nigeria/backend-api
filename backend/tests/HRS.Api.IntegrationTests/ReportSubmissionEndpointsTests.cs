@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using HRS.Api.Endpoints;
+using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Organization.Units;
 using HRS.Application.Features.Submissions.ReportInstances;
 using HRS.Application.Features.Submissions.Review;
@@ -487,5 +489,65 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
             && (i.Id == windowOrInstanceId || i.WindowId == windowOrInstanceId));
         instance.Open();
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>M8.1: runs the same dispatcher the Worker's recurring job runs, against the test
+    /// database, so these tests can assert against factory.EmailSender. Loops until a run sends
+    /// nothing more: every test in HRS.Api.IntegrationTests shares one never-reset Postgres, so
+    /// by the time later test classes run there can be a real backlog of other tests' pending
+    /// messages ahead of this one's in the dispatcher's oldest-first batch.</summary>
+    private async Task RunOutboxDispatcherAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+
+        int sent;
+        var iterations = 0;
+        do
+        {
+            sent = await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, clock, CancellationToken.None);
+            iterations++;
+        }
+        while (sent > 0 && iterations < 200);
+    }
+
+    [Fact]
+    public async Task SubmittingNotifiesTheParentObserversCurrentHead()
+    {
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Child Submitted Notify Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+
+        var zone = await (await secretariat.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest("RSZcs", "CS Notify Zone", OrganizationSeedIds.ZoneLevelId, OrganizationSeedIds.NationalUnitId, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var dila = await (await secretariat.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest("RSDcs", "CS Notify Dila", OrganizationSeedIds.DilaLevelId, zone!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var muqam = await (await secretariat.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest("RSMcs", "CS Notify Muqam", OrganizationSeedIds.MuqamLevelId, dila!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        var (_, dilaHeadUserId, dilaHeadEmail) = await CreateAuthenticatedUserAsync();
+        await factory.CreateRoleAssignmentAsync(dilaHeadUserId, dila.Id, RoleName.UnitHead);
+
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId, Now.AddDays(-1), 3, Now.AddDays(30), Now.AddDays(10));
+
+        var (muqamHeadClient, muqamHeadUserId, _) = await CreateAuthenticatedUserAsync();
+        await factory.CreateRoleAssignmentAsync(muqamHeadUserId, muqam!.Id, RoleName.UnitHead);
+        var saved = await (await SaveAsync(muqamHeadClient, windowId, muqam.Id, new Dictionary<string, object?> { ["notes"] = "x" }))
+            .Content.ReadFromJsonAsync<SaveReportDraftResult>();
+        await muqamHeadClient.SendAsync(SubmitRequest(saved!.Id, muqam.Id, true));
+
+        await RunOutboxDispatcherAsync();
+
+        var sent = factory.EmailSender.LastSentTo(dilaHeadEmail);
+        Assert.NotNull(sent);
+        Assert.Contains("CS Notify Muqam", sent!.Subject);
     }
 }

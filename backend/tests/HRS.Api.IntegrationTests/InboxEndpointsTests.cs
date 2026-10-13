@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using HRS.Api.Endpoints;
+using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Organization.Units;
 using HRS.Application.Features.Review.Inbox;
 using HRS.Application.Features.Review.SavedViews;
@@ -157,6 +159,29 @@ public class InboxEndpointsTests(ApiFactory factory)
 
     private static Task<HttpResponseMessage> SetFlaggedAsync(HttpClient client, Guid reportId, bool isFlagged) =>
         client.PutAsJsonAsync($"/api/v1/secretariat/inbox/{reportId}/flag", new SetInboxReportFlaggedRequest(isFlagged));
+
+    /// <summary>M8.1: Acknowledge/Return now queue an OutboxMessage instead of sending email
+    /// directly — this runs the same dispatcher the Worker's recurring job runs, against the
+    /// test database, so these tests can still assert against factory.EmailSender. Loops until
+    /// a run sends nothing more: every test in HRS.Api.IntegrationTests shares one never-reset
+    /// Postgres, so by the time later test classes run there can be a real backlog of other
+    /// tests' pending messages ahead of this one's in the dispatcher's oldest-first batch.</summary>
+    private async Task RunOutboxDispatcherAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+
+        int sent;
+        var iterations = 0;
+        do
+        {
+            sent = await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, clock, CancellationToken.None);
+            iterations++;
+        }
+        while (sent > 0 && iterations < 200);
+    }
 
     private static async Task<ReportInstanceForEditing?> GetReportForEditingAsync(HttpClient client, Guid reportId, Guid unitId) =>
         await (await client.GetAsync(new Uri($"/api/v1/reports/{reportId}?unit={unitId}", UriKind.Relative)))
@@ -360,6 +385,7 @@ public class InboxEndpointsTests(ApiFactory factory)
         var detail = await GetInboxDetailAsync(secretariat, reportId);
         Assert.Equal(ReportInstanceStatus.Acknowledged, detail!.Status);
 
+        await RunOutboxDispatcherAsync();
         var sent = factory.EmailSender.LastSentTo(headEmail);
         Assert.NotNull(sent);
         Assert.Contains("acknowledged", sent!.Subject, StringComparison.OrdinalIgnoreCase);
@@ -413,6 +439,7 @@ public class InboxEndpointsTests(ApiFactory factory)
         Assert.Equal(ReportInstanceStatus.Returned, detail!.Status);
         Assert.Equal("Please double-check the welfare figures.", detail.ReturnComment);
 
+        await RunOutboxDispatcherAsync();
         var sent = factory.EmailSender.LastSentTo(headEmail);
         Assert.NotNull(sent);
         Assert.Contains("returned", sent!.Subject, StringComparison.OrdinalIgnoreCase);
