@@ -340,7 +340,7 @@ public class WindowJobRunnerTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task ClosedAndEscalatedNeverQueueANotificationTheyAreNotInFRNOT002sEventList()
+    public async Task ClosedNeverQueuesANotificationAndEscalatedNeverNotifiesTheMuqamsOwnHead()
     {
         using var client = await CreateSecretariatClientAsync();
         var reportTypeId = await CreateReportTypeAsync(client, "Closed No Notify Report", UnitLevelCode.Muqam);
@@ -355,16 +355,106 @@ public class WindowJobRunnerTests(ApiFactory factory)
         await RunJobAsync();
 
         // The window is already fully closed (and 3+ days past due, so Escalated("Parent") also
-        // fires) — Opened is the only one of the events detected here that's actually in
-        // FR-NOT-002's list. Scoped to this test's own report type by name, not an exact count:
-        // every test in HRS.Api.IntegrationTests shares one never-reset Postgres, and a
-        // broadcast-scope window (no explicit TargetUnitIds, same as this one) notifies every
-        // Muqam that exists at the time it's processed — including ones other tests create
-        // later — so other WindowOpened/Reminder messages for this same head are expected and
-        // not what this test is about.
+        // fires, notifying the Dila head — never this Muqam's own head, which is all this test
+        // checks). Closed itself (BR-WIN-08 bookkeeping) never notifies anyone. Scoped to this
+        // test's own report type by name, not an exact count: every test in
+        // HRS.Api.IntegrationTests shares one never-reset Postgres, and a broadcast-scope window
+        // (no explicit TargetUnitIds, same as this one) notifies every Muqam that exists at the
+        // time it's processed — including ones other tests create later — so other
+        // WindowOpened/Reminder messages for this same head are expected and not what this test
+        // is about.
         var messages = await GetOutboxMessagesForAsync(headUserId);
         var messagesForThisReportType = messages.Where(m => m.PayloadJson.Contains("Closed No Notify Report")).ToList();
         Assert.All(messagesForThisReportType, m => Assert.Equal(NotificationEventType.WindowOpened, m.EventType));
         Assert.Contains(messagesForThisReportType, m => m.EventType == NotificationEventType.WindowOpened);
+    }
+
+    [Fact]
+    public async Task EscalateToParentNotifiesTheDilaHeadNotTheMuqamsOwnHead()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Escalate Parent Notify Report", UnitLevelCode.Muqam);
+        var (zoneId, dilaId, muqamId) = await CreateZoneDilaMuqamAsync(client, "11a");
+        var muqamHeadId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Job5");
+        await factory.CreateRoleAssignmentAsync(muqamHeadId, muqamId, RoleName.UnitHead);
+        var dilaHeadId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Job6");
+        await factory.CreateRoleAssignmentAsync(dilaHeadId, dilaId, RoleName.UnitHead);
+        await CreateWindowAsync(
+            client, reportTypeId, Now.AddDays(-30), 30, Now.AddDays(30), Now.AddDays(-4), [muqamId]);
+
+        await RunJobAsync();
+
+        var dilaMessages = await GetOutboxMessagesForAsync(dilaHeadId);
+        Assert.Contains(dilaMessages, m => m.EventType == NotificationEventType.Escalated);
+
+        var muqamMessages = await GetOutboxMessagesForAsync(muqamHeadId);
+        Assert.DoesNotContain(muqamMessages, m => m.EventType == NotificationEventType.Escalated);
+    }
+
+    [Fact]
+    public async Task EscalateToZoneNotifiesTheZoneHead()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Escalate Zone Notify Report", UnitLevelCode.Muqam);
+        var (zoneId, dilaId, muqamId) = await CreateZoneDilaMuqamAsync(client, "11b");
+        var zoneHeadId = await factory.CreateUserAsync(UniqueEmail(), "Correct-Horse-Job7");
+        await factory.CreateRoleAssignmentAsync(zoneHeadId, zoneId, RoleName.UnitHead);
+        var settings = new ReminderSettings(
+            RemindFiveDaysBefore: true, RemindTwoDaysBefore: true, RemindOnDueDay: true,
+            EscalateToParentAfterThreeDays: true, EscalateToZoneAfterSevenDays: true);
+        await CreateWindowAsync(
+            client, reportTypeId, Now.AddDays(-30), 30, Now.AddDays(30), Now.AddDays(-8), [muqamId], settings);
+
+        await RunJobAsync();
+
+        var zoneMessages = await GetOutboxMessagesForAsync(zoneHeadId);
+        Assert.Contains(zoneMessages, m => m.EventType == NotificationEventType.Escalated);
+    }
+
+    [Fact]
+    public async Task EscalationNeverFiresForANonMuqamLevel()
+    {
+        using var client = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(client, "Escalate Dila Scope Report", UnitLevelCode.Dila);
+        var (_, dilaId, _) = await CreateZoneDilaMuqamAsync(client, "11c");
+        var settings = new ReminderSettings(
+            RemindFiveDaysBefore: true, RemindTwoDaysBefore: true, RemindOnDueDay: true,
+            EscalateToParentAfterThreeDays: true, EscalateToZoneAfterSevenDays: true);
+        var windowId = await CreateDilaWindowAsync(client, reportTypeId, Now.AddDays(-30), 30, Now.AddDays(30), Now.AddDays(-8), settings);
+
+        await RunJobAsync();
+
+        var runs = await GetJobRunsAsync(windowId);
+        Assert.DoesNotContain(runs, r => r.UnitId == dilaId && r.EventType == WindowJobEventType.Escalated);
+    }
+
+    private static async Task<(Guid ZoneId, Guid DilaId, Guid MuqamId)> CreateZoneDilaMuqamAsync(HttpClient client, string suffix)
+    {
+        var zone = await (await client.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest($"WJZ{suffix}", $"Job Zone {suffix}", OrganizationSeedIds.ZoneLevelId, OrganizationSeedIds.NationalUnitId, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var dila = await (await client.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest($"WJD{suffix}", $"Job Dila {suffix}", OrganizationSeedIds.DilaLevelId, zone!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+        var muqam = await (await client.PostAsJsonAsync(
+                "/api/v1/units",
+                new CreateUnitRequest($"WJM{suffix}", $"Job Muqam {suffix}", OrganizationSeedIds.MuqamLevelId, dila!.Id, null, null, null, null, null)))
+            .Content.ReadFromJsonAsync<UnitSummary>();
+
+        return (zone.Id, dila.Id, muqam!.Id);
+    }
+
+    private static async Task<Guid> CreateDilaWindowAsync(
+        HttpClient client, Guid reportTypeId, DateTimeOffset opensAt, int graceDays, DateTimeOffset closesAt, DateTimeOffset dueAt,
+        ReminderSettings? reminderSettings = null)
+    {
+        var request = new CreateSubmissionWindowRequest(
+            "Dila Escalation Window", opensAt, graceDays, closesAt, [new WindowDueDate(UnitLevelCode.Dila, dueAt)], null, reminderSettings);
+        var created = await (await client.PostAsJsonAsync($"/api/v1/report-types/{reportTypeId}/windows", request))
+            .Content.ReadFromJsonAsync<CreateSubmissionWindowResult>();
+
+        return created!.Window.Id;
     }
 }

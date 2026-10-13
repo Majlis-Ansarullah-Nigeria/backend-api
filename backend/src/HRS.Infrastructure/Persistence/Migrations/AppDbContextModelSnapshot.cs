@@ -182,6 +182,56 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("invitations", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Notifications.Announcement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Audience")
+                        .HasColumnType("integer")
+                        .HasColumnName("audience");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("DeliveredCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("delivered_count");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<bool>("SendEmail")
+                        .HasColumnType("boolean")
+                        .HasColumnName("send_email");
+
+                    b.Property<bool>("ShowAsBanner")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_as_banner");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_announcements");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_announcements_created_at");
+
+                    b.ToTable("announcements", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Notifications.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -201,6 +251,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.Property<int>("EventType")
                         .HasColumnType("integer")
                         .HasColumnName("event_type");
+
+                    b.Property<bool>("IsBanner")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_banner");
 
                     b.Property<string>("Link")
                         .HasColumnType("text")
@@ -233,7 +287,43 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId", "CreatedAt")
                         .HasDatabaseName("ix_notifications_user_id_created_at");
 
+                    b.HasIndex("UserId", "IsBanner")
+                        .HasDatabaseName("ix_notifications_user_id_is_banner");
+
                     b.ToTable("notifications", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Notifications.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<bool>("EmailEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("email_enabled");
+
+                    b.Property<bool>("InAppEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("in_app_enabled");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notification_preferences");
+
+                    b.HasIndex("UserId", "Category")
+                        .IsUnique()
+                        .HasDatabaseName("ix_notification_preferences_user_id_category");
+
+                    b.ToTable("notification_preferences", (string)null);
                 });
 
             modelBuilder.Entity("HRS.Domain.Notifications.NotificationTemplate", b =>
@@ -361,6 +451,27 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_push_subscriptions_user_id");
 
                     b.ToTable("push_subscriptions", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Notifications.UserNotificationSettings", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool>("DigestEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("digest_enabled");
+
+                    b.Property<DateTimeOffset?>("LastDigestSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_digest_sent_at");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_notification_settings");
+
+                    b.ToTable("user_notification_settings", (string)null);
                 });
 
             modelBuilder.Entity("HRS.Domain.Observer.Nudge", b =>

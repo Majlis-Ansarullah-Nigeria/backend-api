@@ -14,22 +14,20 @@ public enum NotificationFilter
 }
 
 /// <summary>FR-NOT-001's notification centre list, matching the mockup's three tabs. "Deadlines"
-/// is the subset of FR-NOT-002's events that are actually about a due date — the Secretariat's
-/// own wording distinguishes these from status-change events like Acknowledged/Returned/Comment.
-/// Most-recent 50, no pagination — kept deliberately simple for v1 (SRS doesn't ask for more).</summary>
+/// is every event under NotificationCategory.DeadlineReminders (the same grouping FR-NOT-004's
+/// preferences use) plus WindowOpened, which has its own preference row but still reads as a
+/// deadline-ish event here. Most-recent 50, no pagination — kept deliberately simple for v1 (SRS
+/// doesn't ask for more).</summary>
 public sealed record GetMyNotificationsQuery(Guid UserId, NotificationFilter Filter) : IRequest<Result<IReadOnlyList<NotificationSummary>>>;
 
 public sealed class GetMyNotificationsQueryHandler(IAppDbContext db) : IRequestHandler<GetMyNotificationsQuery, Result<IReadOnlyList<NotificationSummary>>>
 {
     private const int MaxResults = 50;
 
-    private static readonly HashSet<NotificationEventType> DeadlineEventTypes =
-    [
-        NotificationEventType.WindowOpened,
-        NotificationEventType.Reminder,
-        NotificationEventType.Overdue,
-        NotificationEventType.ExtensionGranted,
-    ];
+    private static readonly HashSet<NotificationEventType> DeadlineEventTypes = Enum.GetValues<NotificationEventType>()
+        .Where(eventType => eventType == NotificationEventType.WindowOpened
+            || NotificationCategoryMap.For(eventType) == NotificationCategory.DeadlineReminders)
+        .ToHashSet();
 
     public async ValueTask<Result<IReadOnlyList<NotificationSummary>>> Handle(GetMyNotificationsQuery request, CancellationToken cancellationToken)
     {

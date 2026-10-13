@@ -182,7 +182,8 @@
     "recentReportsTitle": "Recent reports",
     "seeHistory": "See history",
     "noRecentReports": "Nothing submitted yet.",
-    "submittedOn": "Submitted {date}"
+    "submittedOn": "Submitted {date}",
+    "dismissAnnouncement": "Dismiss announcement"
   },
   "MyReports": {
     "loading": "Loading…",
@@ -390,16 +391,30 @@
   },
   "Announcements": {
     "title": "Announcements and email wording",
-    "subtitle": "The wording used in every notification email (FR-NOT-003). Announcements to heads arrive in M8.3.",
+    "subtitle": "Broadcast a message to heads, and edit the wording of automatic emails.",
+    "tabsLabel": "Announcements sections",
+    "tabAnnouncements": "Announcements",
+    "tabWording": "Email wording",
     "loading": "Loading…",
     "loadErrorTitle": "We couldn't load the notification templates",
-    "emptyTitle": "No templates yet",
-    "emptyDescription": "Notification templates will appear here once seeded.",
+    "emptyTitle": "Nothing here yet",
+    "emptyDescription": "Nothing to show yet.",
     "subjectLabel": "Subject",
     "bodyLabel": "Body",
     "placeholdersLabel": "Available placeholders",
     "saveButton": "Save",
-    "savedConfirmation": "Saved."
+    "savedConfirmation": "Saved.",
+    "newAnnouncementHeading": "New announcement",
+    "titleLabel": "Title",
+    "messageLabel": "Message",
+    "sendToLabel": "Send to",
+    "showAsLabel": "Show as",
+    "showAsBannerOption": "Banner on home",
+    "showAsEmailOption": "Email",
+    "sendButton": "Send announcement",
+    "sentHeading": "Sent",
+    "sentErrorTitle": "We couldn't load sent announcements",
+    "deliveredCount": "{count} delivered"
   },
   "ComplianceGrid": {
     "loading": "Loading…",
@@ -776,6 +791,12 @@
     "sessionsLoading": "Loading your devices…",
     "sessionsErrorTitle": "We couldn't load your devices",
     "sessionsErrorDescription": "Check your connection and try again.",
-    "unknownDevice": "Unknown device"
+    "unknownDevice": "Unknown device",
+    "notificationsHeading": "Notifications",
+    "notificationsLoading": "Loading your notification settings…",
+    "notificationsErrorTitle": "We couldn't load your notification settings",
+    "inAppColumnLabel": "In-app",
+    "emailColumnLabel": "Email",
+    "digestLabel": "Daily digest instead of single emails"
   }
 }

@@ -47,6 +47,16 @@ public static class OutboxDispatcher
         var templatesByEventType = await db.NotificationTemplates.AsNoTracking()
             .ToDictionaryAsync(t => t.EventType, cancellationToken);
 
+        var recipientIds = pending.Select(m => m.RecipientUserId).Distinct().ToList();
+        var preferencesByUser = await db.NotificationPreferences.AsNoTracking()
+            .Where(p => recipientIds.Contains(p.UserId))
+            .ToListAsync(cancellationToken);
+        var preferenceLookup = preferencesByUser.ToDictionary(p => (p.UserId, p.Category));
+        var digestEnabledByUser = await db.UserNotificationSettings.AsNoTracking()
+            .Where(s => recipientIds.Contains(s.UserId) && s.DigestEnabled)
+            .Select(s => s.UserId)
+            .ToHashSetAsync(cancellationToken);
+
         // Running unread counts per recipient touched in this batch, seeded lazily from the DB
         // (which doesn't yet see this batch's own not-yet-saved Notification rows — SaveChanges
         // only happens once, at the end) and incremented locally as rows are added below.
@@ -85,47 +95,76 @@ public static class OutboxDispatcher
             }
 
             var link = placeholders.GetValueOrDefault("link");
+            var isBanner = placeholders.GetValueOrDefault("isBanner") == "true";
+
+            // FR-NOT-004: no preference row for this (user, category) means "both channels on"
+            // (the Profile mockup's default); events with no category (ChildSubmitted,
+            // TemplateChanged — no row drawn for either) always fire both.
+            var category = NotificationCategoryMap.For(message.EventType);
+            var preference = category is { } c ? preferenceLookup.GetValueOrDefault((message.RecipientUserId, c)) : null;
+            var inAppEnabled = preference?.InAppEnabled ?? true;
+            var emailEnabled = preference?.EmailEnabled ?? true;
 
             // In-app notification centre row: created once per outbox message regardless of the
             // email leg's outcome below, and idempotent across re-dispatch (a message already
             // marked sent never reaches this loop again, but a retried *failed* message would).
-            var alreadyNotified = await db.Notifications
-                .AnyAsync(n => n.OutboxMessageId == message.Id, cancellationToken);
-            if (!alreadyNotified)
+            // Gates push too — both are the same "immediate, on this device" surface, distinct
+            // from email's possible digest deferral below.
+            if (inAppEnabled)
             {
-                db.Notifications.Add(Notification.Create(
-                    Guid.CreateVersion7(), message.RecipientUserId, message.EventType, subject, body, link, message.Id, now));
-
-                if (!unreadCountsByUser.TryGetValue(message.RecipientUserId, out var unreadCount))
+                var alreadyNotified = await db.Notifications
+                    .AnyAsync(n => n.OutboxMessageId == message.Id, cancellationToken);
+                if (!alreadyNotified)
                 {
-                    unreadCount = await db.Notifications
-                        .CountAsync(n => n.UserId == message.RecipientUserId && n.ReadAt == null, cancellationToken);
+                    db.Notifications.Add(Notification.Create(
+                        Guid.CreateVersion7(), message.RecipientUserId, message.EventType, subject, body, link, message.Id, isBanner, now));
+
+                    if (!unreadCountsByUser.TryGetValue(message.RecipientUserId, out var unreadCount))
+                    {
+                        unreadCount = await db.Notifications
+                            .CountAsync(n => n.UserId == message.RecipientUserId && n.ReadAt == null, cancellationToken);
+                    }
+
+                    unreadCount++;
+                    unreadCountsByUser[message.RecipientUserId] = unreadCount;
+                    await broadcaster.NotifyUnreadCountChangedAsync(message.RecipientUserId, unreadCount, cancellationToken);
+
+                    var subscriptions = await db.PushSubscriptions
+                        .Where(s => s.UserId == message.RecipientUserId)
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var subscription in subscriptions)
+                    {
+                        try
+                        {
+                            await pushSender.SendAsync(subscription, new PushPayload(subject, body, link), cancellationToken);
+                        }
+                        catch (PushSubscriptionGoneException)
+                        {
+                            db.PushSubscriptions.Remove(subscription);
+                        }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
+                        {
+                            // Best-effort: a push failure never affects this outbox message's own
+                            // email retry state (Attempts/ProcessedAt below).
+                        }
+                    }
                 }
+            }
 
-                unreadCount++;
-                unreadCountsByUser[message.RecipientUserId] = unreadCount;
-                await broadcaster.NotifyUnreadCountChangedAsync(message.RecipientUserId, unreadCount, cancellationToken);
+            // FR-NOT-006: the Secretariat can send an announcement without its email leg at all
+            // ("Show as" unchecking Email) — distinct from the recipient's own preference below.
+            var announcementWantsEmail = message.EventType != NotificationEventType.Announcement
+                || placeholders.GetValueOrDefault("sendEmail") != "false";
 
-                var subscriptions = await db.PushSubscriptions
-                    .Where(s => s.UserId == message.RecipientUserId)
-                    .ToListAsync(cancellationToken);
-
-                foreach (var subscription in subscriptions)
-                {
-                    try
-                    {
-                        await pushSender.SendAsync(subscription, new PushPayload(subject, body, link), cancellationToken);
-                    }
-                    catch (PushSubscriptionGoneException)
-                    {
-                        db.PushSubscriptions.Remove(subscription);
-                    }
-                    catch (Exception ex) when (ex is not OperationCanceledException)
-                    {
-                        // Best-effort: a push failure never affects this outbox message's own
-                        // email retry state (Attempts/ProcessedAt below).
-                    }
-                }
+            // FR-NOT-004's digest: "instead of single emails" — a digest-opted-in user gets
+            // nothing here (DigestRecurringJob batches their Notification rows separately);
+            // skipping is a deliberate, successful outcome for this message's email leg, not a
+            // failure to retry. Same for a category the user has turned email off for.
+            if (!emailEnabled || !announcementWantsEmail || digestEnabledByUser.Contains(message.RecipientUserId))
+            {
+                message.MarkSent(now);
+                continue;
             }
 
             try

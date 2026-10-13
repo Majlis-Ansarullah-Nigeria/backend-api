@@ -35,6 +35,7 @@ try
 
     builder.Services.AddScoped<WindowJobsRecurringJob>();
     builder.Services.AddScoped<OutboxDispatcherRecurringJob>();
+    builder.Services.AddScoped<DigestRecurringJob>();
 
     var host = builder.Build();
 
@@ -54,6 +55,13 @@ try
             "outbox-dispatcher",
             job => job.RunAsync(CancellationToken.None),
             "* * * * *");
+
+        // FR-NOT-004: once daily, fixed UTC hour (no org-local-timezone conversion exists yet
+        // anywhere in this codebase — App:TimeZone is declared but unused; out of scope here).
+        recurringJobs.AddOrUpdate<DigestRecurringJob>(
+            "notification-digest",
+            job => job.RunAsync(CancellationToken.None),
+            "0 7 * * *");
     }
 
     host.Run();

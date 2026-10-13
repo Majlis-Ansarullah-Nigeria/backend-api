@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Bell, Calendar, CheckCircle, CornerUpLeft, FileText, MessageSquare, Pencil } from "lucide-react";
+import { AlertTriangle, Bell, Calendar, CheckCircle, CornerUpLeft, FileText, Megaphone, MessageSquare, Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,6 +34,7 @@ const ICONS: Record<NotificationIconName, typeof Bell> = {
   "message-square": MessageSquare,
   "file-text": FileText,
   pencil: Pencil,
+  megaphone: Megaphone,
 };
 
 type FilterKey = "all" | "unread" | "deadlines";

@@ -15,11 +15,15 @@ namespace HRS.Application.Common.Interfaces;
 
 public interface IAppDbContext
 {
+    DbSet<Announcement> Announcements { get; }
+
     DbSet<IdempotencyRecord> IdempotencyRecords { get; }
 
     DbSet<Invitation> Invitations { get; }
 
     DbSet<Notification> Notifications { get; }
+
+    DbSet<NotificationPreference> NotificationPreferences { get; }
 
     DbSet<NotificationTemplate> NotificationTemplates { get; }
 
@@ -50,6 +54,8 @@ public interface IAppDbContext
     DbSet<UnitLevel> UnitLevels { get; }
 
     DbSet<Unit> Units { get; }
+
+    DbSet<UserNotificationSettings> UserNotificationSettings { get; }
 
     DbSet<WindowJobRun> WindowJobRuns { get; }
 

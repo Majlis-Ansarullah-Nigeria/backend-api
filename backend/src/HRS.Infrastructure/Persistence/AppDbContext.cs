@@ -21,11 +21,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 {
     public DbSet<UserSession> UserSessions => Set<UserSession>();
 
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
 
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
 
@@ -56,6 +60,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UnitLevel> UnitLevels => Set<UnitLevel>();
 
     public DbSet<Unit> Units => Set<Unit>();
+
+    public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
 
     public DbSet<WindowJobRun> WindowJobRuns => Set<WindowJobRun>();
 
@@ -317,6 +323,31 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             notification.HasIndex(n => n.OutboxMessageId).IsUnique();
             // The notification-centre list/unread-count queries: "this user's rows, newest first".
             notification.HasIndex(n => new { n.UserId, n.CreatedAt });
+            // The Home banner query: "my latest unread banner-flagged row".
+            notification.HasIndex(n => new { n.UserId, n.IsBanner });
+        });
+
+        builder.Entity<NotificationPreference>(preference =>
+        {
+            preference.ToTable("notification_preferences");
+            preference.HasKey(p => p.Id);
+            preference.HasIndex(p => new { p.UserId, p.Category }).IsUnique();
+        });
+
+        builder.Entity<UserNotificationSettings>(settings =>
+        {
+            settings.ToTable("user_notification_settings");
+            settings.HasKey(s => s.UserId);
+        });
+
+        builder.Entity<Announcement>(announcement =>
+        {
+            announcement.ToTable("announcements");
+            announcement.HasKey(a => a.Id);
+            announcement.Property(a => a.Title).IsRequired();
+            announcement.Property(a => a.Message).IsRequired();
+            // The "Sent" history list: newest first.
+            announcement.HasIndex(a => a.CreatedAt);
         });
 
         builder.Entity<PushSubscription>(subscription =>

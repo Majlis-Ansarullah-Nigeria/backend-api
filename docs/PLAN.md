@@ -62,7 +62,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 ## M8 — Notifications (FR-NOT)
 - [x] M8.1 Outbox dispatcher, email templates editable by the Secretariat (FR-NOT-002, FR-NOT-003).
 - [x] M8.2 In-app notification centre + SignalR badge; web push (FR-NOT-001).
-- [ ] M8.3 Preferences, digest, escalation, announcements (FR-NOT-004..006).
+- [x] M8.3 Preferences, digest, escalation, announcements (FR-NOT-004..006).
 
 ## M9 — History and exports (FR-HIS)
 - [ ] M9.1 History with filters and full-text search, scoped (FR-HIS-001, FR-HIS-002).

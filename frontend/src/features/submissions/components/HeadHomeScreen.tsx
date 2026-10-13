@@ -10,6 +10,7 @@ import type { ApiError } from "@/lib/api/client";
 import type { MeProfile, MyReportSummary } from "@/lib/api/generated/hRSApiV1.schemas";
 import { useGetMe } from "@/lib/api/generated/identity/identity";
 import { useGetMyReports } from "@/lib/api/generated/submissions/submissions";
+import { AnnouncementBanner } from "@/features/notifications/components/AnnouncementBanner";
 import { countdownText } from "@/features/submissions/utils/countdown";
 import { isActionableStatus, isSentStatus, REPORT_LINE_STATUS, reportStatusChipVariant } from "@/features/submissions/utils/report-status";
 
@@ -66,6 +67,8 @@ export function HeadHomeScreen() {
           </Button>
         </Link>
       </div>
+
+      <AnnouncementBanner />
 
       {banner ? (
         <div className="flex flex-col gap-3 rounded-lg bg-forest-900 p-6 text-white sm:flex-row sm:items-center sm:justify-between">

@@ -10,9 +10,12 @@ export const NOTIFICATION_EVENT_TYPE = {
   CommentAdded: 6,
   ChildSubmitted: 7,
   TemplateChanged: 8,
+  Escalated: 9,
+  Announcement: 10,
 } as const;
 
-/** Display order matching FR-NOT-002's own event list, not the enum's declaration order. */
+/** Display order matching FR-NOT-002's own event list, not the enum's declaration order, plus
+ * the two later additions (FR-NOT-005's Escalated, FR-NOT-006's Announcement) appended at the end. */
 export const NOTIFICATION_EVENT_TYPE_ORDER: number[] = [
   NOTIFICATION_EVENT_TYPE.WindowOpened,
   NOTIFICATION_EVENT_TYPE.Reminder,
@@ -23,6 +26,8 @@ export const NOTIFICATION_EVENT_TYPE_ORDER: number[] = [
   NOTIFICATION_EVENT_TYPE.CommentAdded,
   NOTIFICATION_EVENT_TYPE.ChildSubmitted,
   NOTIFICATION_EVENT_TYPE.TemplateChanged,
+  NOTIFICATION_EVENT_TYPE.Escalated,
+  NOTIFICATION_EVENT_TYPE.Announcement,
 ];
 
 const EVENT_TYPE_LABELS: Record<number, string> = {
@@ -35,6 +40,8 @@ const EVENT_TYPE_LABELS: Record<number, string> = {
   [NOTIFICATION_EVENT_TYPE.CommentAdded]: "Comment added",
   [NOTIFICATION_EVENT_TYPE.ChildSubmitted]: "Child submitted (to observer)",
   [NOTIFICATION_EVENT_TYPE.TemplateChanged]: "Template changed",
+  [NOTIFICATION_EVENT_TYPE.Escalated]: "Escalation",
+  [NOTIFICATION_EVENT_TYPE.Announcement]: "Announcement",
 };
 
 export function notificationEventTypeLabel(eventType: number): string {
@@ -57,7 +64,8 @@ export type NotificationIconName =
   | "corner-up-left"
   | "message-square"
   | "file-text"
-  | "pencil";
+  | "pencil"
+  | "megaphone";
 
 export interface NotificationEventStyle {
   icon: NotificationIconName;
@@ -77,6 +85,8 @@ const EVENT_TYPE_STYLES: Record<number, NotificationEventStyle> = {
   [NOTIFICATION_EVENT_TYPE.CommentAdded]: { icon: "message-square", background: "var(--status-submitted-bg)", foreground: "var(--status-submitted-fg)" },
   [NOTIFICATION_EVENT_TYPE.ChildSubmitted]: { icon: "file-text", background: "var(--status-in-review-bg)", foreground: "var(--status-in-review-fg)" },
   [NOTIFICATION_EVENT_TYPE.TemplateChanged]: { icon: "pencil", background: "var(--status-not-started-bg)", foreground: "var(--status-not-started-fg)" },
+  [NOTIFICATION_EVENT_TYPE.Escalated]: { icon: "alert-triangle", background: "var(--status-overdue-bg)", foreground: "var(--status-overdue-fg)" },
+  [NOTIFICATION_EVENT_TYPE.Announcement]: { icon: "megaphone", background: "var(--status-upcoming-bg)", foreground: "var(--status-upcoming-fg)" },
 };
 
 const DEFAULT_STYLE: NotificationEventStyle = { icon: "file-text", background: "var(--status-not-started-bg)", foreground: "var(--status-not-started-fg)" };

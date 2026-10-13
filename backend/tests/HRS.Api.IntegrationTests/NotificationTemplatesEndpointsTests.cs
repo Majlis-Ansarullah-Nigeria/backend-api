@@ -40,16 +40,20 @@ public class NotificationTemplatesEndpointsTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task ListingReturnsAllNineSeededDefaultsOnceEach()
+    public async Task ListingReturnsAllElevenSeededDefaultsOnceEach()
     {
         using var secretariat = await CreateSecretariatClientAsync();
 
         var templates = await (await secretariat.GetAsync(new Uri("/api/v1/secretariat/notification-templates", UriKind.Relative)))
             .Content.ReadFromJsonAsync<List<NotificationTemplateSummary>>();
 
-        Assert.Equal(9, templates!.Count);
-        Assert.Equal(9, templates.Select(t => t.EventType).Distinct().Count());
+        // 9 from FR-NOT-002/M8.1 plus M8.3's two later additions: Escalated (FR-NOT-005) and
+        // Announcement (FR-NOT-006).
+        Assert.Equal(11, templates!.Count);
+        Assert.Equal(11, templates.Select(t => t.EventType).Distinct().Count());
         Assert.Contains(templates, t => t.EventType == NotificationEventType.CommentAdded);
+        Assert.Contains(templates, t => t.EventType == NotificationEventType.Escalated);
+        Assert.Contains(templates, t => t.EventType == NotificationEventType.Announcement);
     }
 
     [Fact]

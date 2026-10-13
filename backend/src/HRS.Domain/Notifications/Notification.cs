@@ -15,7 +15,7 @@ public sealed class Notification
 
     private Notification(
         Guid id, Guid userId, NotificationEventType eventType, string subject, string body, string? link,
-        Guid outboxMessageId, DateTimeOffset now)
+        Guid outboxMessageId, bool isBanner, DateTimeOffset now)
     {
         Id = id;
         UserId = userId;
@@ -24,6 +24,7 @@ public sealed class Notification
         Body = body;
         Link = link;
         OutboxMessageId = outboxMessageId;
+        IsBanner = isBanner;
         CreatedAt = now;
     }
 
@@ -41,14 +42,20 @@ public sealed class Notification
 
     public Guid OutboxMessageId { get; private set; }
 
+    /// <summary>FR-NOT-006: this row's originating Announcement asked to also show as a banner
+    /// on Head Home. Only ever true for EventType == Announcement; carried per-message rather
+    /// than looked up from the Announcement row so the Home banner query stays a single index
+    /// lookup on this table.</summary>
+    public bool IsBanner { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset? ReadAt { get; private set; }
 
     public static Notification Create(
         Guid id, Guid userId, NotificationEventType eventType, string subject, string body, string? link,
-        Guid outboxMessageId, DateTimeOffset now) =>
-        new(id, userId, eventType, subject, body, link, outboxMessageId, now);
+        Guid outboxMessageId, bool isBanner, DateTimeOffset now) =>
+        new(id, userId, eventType, subject, body, link, outboxMessageId, isBanner, now);
 
     public void MarkRead(DateTimeOffset now) => ReadAt ??= now;
 }

@@ -37,7 +37,7 @@ public class NotificationCentreEndpointsTests(ApiFactory factory)
         var outbox = OutboxMessage.Create(Guid.CreateVersion7(), eventType, userId, "{}", createdAt);
         db.OutboxMessages.Add(outbox);
 
-        var notification = Notification.Create(Guid.CreateVersion7(), userId, eventType, subject, "Body text.", "http://x", outbox.Id, createdAt);
+        var notification = Notification.Create(Guid.CreateVersion7(), userId, eventType, subject, "Body text.", "http://x", outbox.Id, isBanner: false, createdAt);
         db.Notifications.Add(notification);
 
         await db.SaveChangesAsync();

@@ -26,6 +26,26 @@ export interface AddPrivateNoteRequest {
 
 export type AggregationRule = number;
 
+export type AnnouncementAudience = number;
+
+export interface AnnouncementAudienceCount {
+  audience: AnnouncementAudience;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  recipientCount: number | string;
+}
+
+export interface AnnouncementSummary {
+  id: string;
+  title: string;
+  message: string;
+  audience: AnnouncementAudience;
+  showAsBanner: boolean;
+  sendEmail: boolean;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  deliveredCount: number | string;
+  createdAt: string;
+}
+
 export interface AssignInboxReportRequest {
   /** @nullable */
   assignedToUserId: string | null;
@@ -532,9 +552,21 @@ export interface MyReportSummary {
   status: ReportLineStatus;
 }
 
+export type NotificationCategory = number;
+
 export type NotificationEventType = number;
 
 export type NotificationFilter = number;
+
+export interface NotificationPreferenceView {
+  category: NotificationCategory;
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
+}
+
+export interface NotificationSettingsView {
+  digestEnabled: boolean;
+}
 
 export interface NotificationSummary {
   id: string;
@@ -825,6 +857,14 @@ export interface SaveReportDraftResult {
   rowVersion: string;
 }
 
+export interface SendAnnouncementRequest {
+  title: string;
+  message: string;
+  audience: AnnouncementAudience;
+  showAsBanner: boolean;
+  sendEmail: boolean;
+}
+
 export interface SendNudgeRequest {
   windowId: string;
 }
@@ -956,6 +996,15 @@ export interface UnitTreeNode {
   /** @nullable */
   headName: string | null;
   hasVacantHead: boolean;
+}
+
+export interface UpdateNotificationPreferenceRequest {
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
+}
+
+export interface UpdateNotificationSettingsRequest {
+  digestEnabled: boolean;
 }
 
 export interface UpdateNotificationTemplateRequest {
