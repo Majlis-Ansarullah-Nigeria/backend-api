@@ -34,7 +34,18 @@ public sealed class OpenReportCommandHandler(IAppDbContext db, IAccessPolicy acc
         if (instance.Status == ReportInstanceStatus.Submitted)
         {
             instance.Open();
-            await db.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Auto-fired on every view, often from more than one near-simultaneous request
+                // (two tabs, a double-render) — whoever else raced this to InReview first already
+                // achieved the only thing this command cares about, so there's nothing to retry
+                // or report back as a conflict.
+            }
         }
 
         return Result.Success();

@@ -369,6 +369,25 @@ public class InboxEndpointsTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task TwoSimultaneousOpensNeverSurfaceAConcurrencyConflict()
+    {
+        // Auto-fired on every detail-view load, so two tabs (or a double-render) opening the
+        // same report at once is expected, not exceptional — both requests race the same row's
+        // concurrency token, and neither should ever see a 409 for a side effect this harmless.
+        using var secretariat = await CreateSecretariatClientAsync();
+        var reportTypeId = await CreateReportTypeAsync(secretariat, "Inbox Concurrent Open Report");
+        await PublishTemplateAsync(secretariat, reportTypeId);
+        var windowId = await CreateWindowAsync(secretariat, reportTypeId);
+        var muqamId = await CreateMuqamUnitAsync(secretariat, "13");
+        var reportId = await SubmitMuqamReportAsync(windowId, muqamId, new Dictionary<string, object?> { ["welfare_case"] = "x" });
+
+        var responses = await Task.WhenAll(OpenAsync(secretariat, reportId), OpenAsync(secretariat, reportId));
+
+        Assert.All(responses, r => Assert.Equal(HttpStatusCode.NoContent, r.StatusCode));
+        Assert.Equal(ReportInstanceStatus.InReview, (await GetInboxDetailAsync(secretariat, reportId))!.Status);
+    }
+
+    [Fact]
     public async Task AcknowledgeAutoOpensAndNotifiesTheCurrentHead()
     {
         using var secretariat = await CreateSecretariatClientAsync();
