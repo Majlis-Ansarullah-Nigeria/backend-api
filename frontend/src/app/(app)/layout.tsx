@@ -8,7 +8,7 @@ const PLACEHOLDER_UNIT = { id: "agodi-muqam", name: "Agodi Muqam", role: "Muqam 
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <AppShell user={PLACEHOLDER_USER} unit={PLACEHOLDER_UNIT} notificationCount={3}>
+    <AppShell user={PLACEHOLDER_USER} unit={PLACEHOLDER_UNIT}>
       {children}
     </AppShell>
   );

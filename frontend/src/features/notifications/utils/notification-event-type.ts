@@ -40,3 +40,47 @@ const EVENT_TYPE_LABELS: Record<number, string> = {
 export function notificationEventTypeLabel(eventType: number): string {
   return EVENT_TYPE_LABELS[eventType] ?? "Unknown event";
 }
+
+/** Matches backend Features/Notifications/Center/GetMyNotificationsQuery.cs's NotificationFilter
+ * enum order exactly. */
+export const NOTIFICATION_FILTER = {
+  All: 0,
+  Unread: 1,
+  Deadlines: 2,
+} as const;
+
+export type NotificationIconName =
+  | "calendar"
+  | "clock"
+  | "alert-triangle"
+  | "check-circle"
+  | "corner-up-left"
+  | "message-square"
+  | "file-text"
+  | "pencil";
+
+export interface NotificationEventStyle {
+  icon: NotificationIconName;
+  background: string;
+  foreground: string;
+}
+
+/** Row icon + color per event type — the mockup's own palette (docs/design/README.md's design
+ * tokens), reused rather than invented: each type borrows the closest matching status chip pair. */
+const EVENT_TYPE_STYLES: Record<number, NotificationEventStyle> = {
+  [NOTIFICATION_EVENT_TYPE.WindowOpened]: { icon: "calendar", background: "var(--status-upcoming-bg)", foreground: "var(--status-upcoming-fg)" },
+  [NOTIFICATION_EVENT_TYPE.Reminder]: { icon: "clock", background: "var(--status-late-bg)", foreground: "var(--status-late-fg)" },
+  [NOTIFICATION_EVENT_TYPE.Overdue]: { icon: "alert-triangle", background: "var(--status-overdue-bg)", foreground: "var(--status-overdue-fg)" },
+  [NOTIFICATION_EVENT_TYPE.ExtensionGranted]: { icon: "calendar", background: "var(--status-upcoming-bg)", foreground: "var(--status-upcoming-fg)" },
+  [NOTIFICATION_EVENT_TYPE.ReportAcknowledged]: { icon: "check-circle", background: "var(--status-acknowledged-bg)", foreground: "var(--status-acknowledged-fg)" },
+  [NOTIFICATION_EVENT_TYPE.ReturnedForRevision]: { icon: "corner-up-left", background: "var(--status-returned-bg)", foreground: "var(--status-returned-fg)" },
+  [NOTIFICATION_EVENT_TYPE.CommentAdded]: { icon: "message-square", background: "var(--status-submitted-bg)", foreground: "var(--status-submitted-fg)" },
+  [NOTIFICATION_EVENT_TYPE.ChildSubmitted]: { icon: "file-text", background: "var(--status-in-review-bg)", foreground: "var(--status-in-review-fg)" },
+  [NOTIFICATION_EVENT_TYPE.TemplateChanged]: { icon: "pencil", background: "var(--status-not-started-bg)", foreground: "var(--status-not-started-fg)" },
+};
+
+const DEFAULT_STYLE: NotificationEventStyle = { icon: "file-text", background: "var(--status-not-started-bg)", foreground: "var(--status-not-started-fg)" };
+
+export function notificationEventTypeStyle(eventType: number): NotificationEventStyle {
+  return EVENT_TYPE_STYLES[eventType] ?? DEFAULT_STYLE;
+}

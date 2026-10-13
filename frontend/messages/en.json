@@ -372,6 +372,22 @@
     "zoneLabel": "Zone",
     "submittedMeta": "Submitted {date}"
   },
+  "Notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "tabsLabel": "Filter notifications",
+    "tabAll": "All",
+    "tabUnread": "Unread · {count}",
+    "tabDeadlines": "Deadlines",
+    "pushBannerText": "Get notified instantly on this device.",
+    "pushBannerAction": "Turn on",
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load your notifications",
+    "emptyTitle": "Nothing here yet",
+    "emptyDescription": "You're all caught up.",
+    "groupToday": "Today",
+    "groupEarlier": "Earlier"
+  },
   "Announcements": {
     "title": "Announcements and email wording",
     "subtitle": "The wording used in every notification email (FR-NOT-003). Announcements to heads arrive in M8.3.",

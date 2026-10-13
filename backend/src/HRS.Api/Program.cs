@@ -5,6 +5,7 @@ using HRS.Api.Common;
 using HRS.Api.Endpoints;
 using HRS.Application;
 using HRS.Infrastructure;
+using HRS.Infrastructure.Notifications;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
@@ -127,6 +128,10 @@ try
     app.MapReviewEndpoints();
     app.MapDepartmentEndpoints();
     app.MapNotificationsEndpoints();
+
+    // architecture.md: Traefik routes "/hubs/*" to this process only — the Worker publishes
+    // through it via the Redis backplane (IHubContext<NotificationsHub>) but never hosts it.
+    app.MapHub<NotificationsHub>("/hubs/notifications").RequireAuthorization();
 
     app.MapGet("/", () => "HRS API");
 

@@ -7,11 +7,17 @@ namespace HRS.Worker;
 /// hands off to the actual (and independently testable) <see cref="OutboxDispatcher"/>, the same
 /// shape as <see cref="WindowJobsRecurringJob"/>.</summary>
 public sealed partial class OutboxDispatcherRecurringJob(
-    IAppDbContext db, IIdentityService identityService, IEmailSender emailSender, IClock clock, ILogger<OutboxDispatcherRecurringJob> logger)
+    IAppDbContext db,
+    IIdentityService identityService,
+    IEmailSender emailSender,
+    IPushNotificationSender pushSender,
+    INotificationBroadcaster broadcaster,
+    IClock clock,
+    ILogger<OutboxDispatcherRecurringJob> logger)
 {
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        var sent = await OutboxDispatcher.RunAsync(db, identityService, emailSender, clock, cancellationToken);
+        var sent = await OutboxDispatcher.RunAsync(db, identityService, emailSender, pushSender, broadcaster, clock, cancellationToken);
 
         if (sent > 0)
         {

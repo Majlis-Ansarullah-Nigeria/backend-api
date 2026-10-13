@@ -29,6 +29,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public CapturingEmailSender EmailSender { get; } = new();
 
+    public CapturingPushSender PushSender { get; } = new();
+
+    public CapturingNotificationBroadcaster Broadcaster { get; } = new();
+
     public FakeFileStorage FileStorage { get; } = new();
 
     public FakeVirusScanner VirusScanner { get; } = new();
@@ -79,6 +83,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // storage or ClamAV daemon in tests (see FakeFileStorage/FakeVirusScanner's own doc comments).
         builder.ConfigureTestServices(services => services
             .AddSingleton<IEmailSender>(EmailSender)
+            .AddSingleton<IPushNotificationSender>(PushSender)
+            .AddSingleton<INotificationBroadcaster>(Broadcaster)
             .AddSingleton<IFileStorage>(FileStorage)
             .AddSingleton<IVirusScanner>(VirusScanner));
     }

@@ -23,7 +23,13 @@ public static class OutboxDispatcher
     private const int MaxAttempts = 5;
 
     public static async Task<int> RunAsync(
-        IAppDbContext db, IIdentityService identityService, IEmailSender emailSender, IClock clock, CancellationToken cancellationToken)
+        IAppDbContext db,
+        IIdentityService identityService,
+        IEmailSender emailSender,
+        IPushNotificationSender pushSender,
+        INotificationBroadcaster broadcaster,
+        IClock clock,
+        CancellationToken cancellationToken)
     {
         var now = clock.UtcNow;
 
@@ -40,6 +46,11 @@ public static class OutboxDispatcher
 
         var templatesByEventType = await db.NotificationTemplates.AsNoTracking()
             .ToDictionaryAsync(t => t.EventType, cancellationToken);
+
+        // Running unread counts per recipient touched in this batch, seeded lazily from the DB
+        // (which doesn't yet see this batch's own not-yet-saved Notification rows — SaveChanges
+        // only happens once, at the end) and incremented locally as rows are added below.
+        var unreadCountsByUser = new Dictionary<Guid, int>();
 
         var sent = 0;
         foreach (var message in pending)
@@ -61,9 +72,64 @@ public static class OutboxDispatcher
                 ?? new Dictionary<string, string>();
             placeholders["headName"] = recipient.Name;
 
+            string subject;
+            string body;
             try
             {
-                var (subject, body) = NotificationTemplateRenderer.Render(template, placeholders);
+                (subject, body) = NotificationTemplateRenderer.Render(template, placeholders);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                message.RecordFailure(ex.Message);
+                continue;
+            }
+
+            var link = placeholders.GetValueOrDefault("link");
+
+            // In-app notification centre row: created once per outbox message regardless of the
+            // email leg's outcome below, and idempotent across re-dispatch (a message already
+            // marked sent never reaches this loop again, but a retried *failed* message would).
+            var alreadyNotified = await db.Notifications
+                .AnyAsync(n => n.OutboxMessageId == message.Id, cancellationToken);
+            if (!alreadyNotified)
+            {
+                db.Notifications.Add(Notification.Create(
+                    Guid.CreateVersion7(), message.RecipientUserId, message.EventType, subject, body, link, message.Id, now));
+
+                if (!unreadCountsByUser.TryGetValue(message.RecipientUserId, out var unreadCount))
+                {
+                    unreadCount = await db.Notifications
+                        .CountAsync(n => n.UserId == message.RecipientUserId && n.ReadAt == null, cancellationToken);
+                }
+
+                unreadCount++;
+                unreadCountsByUser[message.RecipientUserId] = unreadCount;
+                await broadcaster.NotifyUnreadCountChangedAsync(message.RecipientUserId, unreadCount, cancellationToken);
+
+                var subscriptions = await db.PushSubscriptions
+                    .Where(s => s.UserId == message.RecipientUserId)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var subscription in subscriptions)
+                {
+                    try
+                    {
+                        await pushSender.SendAsync(subscription, new PushPayload(subject, body, link), cancellationToken);
+                    }
+                    catch (PushSubscriptionGoneException)
+                    {
+                        db.PushSubscriptions.Remove(subscription);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        // Best-effort: a push failure never affects this outbox message's own
+                        // email retry state (Attempts/ProcessedAt below).
+                    }
+                }
+            }
+
+            try
+            {
                 await emailSender.QueueAsync(new EmailMessage(recipient.Email, subject, body), cancellationToken);
                 message.MarkSent(now);
                 sent++;

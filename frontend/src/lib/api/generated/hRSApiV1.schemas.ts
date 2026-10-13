@@ -534,6 +534,20 @@ export interface MyReportSummary {
 
 export type NotificationEventType = number;
 
+export type NotificationFilter = number;
+
+export interface NotificationSummary {
+  id: string;
+  eventType: NotificationEventType;
+  subject: string;
+  body: string;
+  /** @nullable */
+  link: string | null;
+  createdAt: string;
+  /** @nullable */
+  readAt: string | null;
+}
+
 export interface NotificationTemplateSummary {
   id: string;
   eventType: NotificationEventType;
@@ -791,6 +805,12 @@ export interface SavedViewSummary {
   id: string;
   name: string;
   filter: InboxFilter;
+}
+
+export interface SavePushSubscriptionRequest {
+  endpoint: string;
+  p256Dh: string;
+  auth: string;
 }
 
 export type SaveReportDraftRequestAnswers = { [key: string]: unknown };
@@ -1135,5 +1155,13 @@ reportTypeId?: string;
 windowId?: string;
 unitLevel?: UnitLevelCode;
 zoneUnitId?: string;
+};
+
+export type GetMyNotificationsParams = {
+filter: NotificationFilter;
+};
+
+export type DeletePushSubscriptionParams = {
+endpoint: string;
 };
 

@@ -2,7 +2,7 @@
 
 import { Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { Button } from "@/components/ui/button";
@@ -22,43 +22,16 @@ export function AnnouncementsScreen() {
   const updateTemplate = useUpdateNotificationTemplate();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const sorted = (templates.data ?? [])
     .slice()
     .sort((a, b) => NOTIFICATION_EVENT_TYPE_ORDER.indexOf(a.eventType) - NOTIFICATION_EVENT_TYPE_ORDER.indexOf(b.eventType));
-  const selected = sorted.find((t) => t.id === selectedId) ?? null;
-
-  useEffect(() => {
-    if (!selectedId && sorted.length > 0) {
-      setSelectedId(sorted[0]!.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sorted.length]);
-
-  useEffect(() => {
-    if (selected) {
-      setSubject(selected.subject);
-      setBody(selected.body);
-      setSavedAt(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id]);
+  // Derived during render, not in an effect: "no selection yet" always means "the first one",
+  // so there's nothing to synchronize after the fact.
+  const selected = sorted.find((t) => t.id === selectedId) ?? sorted[0] ?? null;
 
   const selectTemplate = (id: string) => {
     setSelectedId(id);
-  };
-
-  const save = () => {
-    if (!selected) {
-      return;
-    }
-    updateTemplate.mutate(
-      { id: selected.id, data: { subject, body } },
-      { onSuccess: () => setSavedAt(Date.now()) },
-    );
   };
 
   if (templates.isPending) {
@@ -107,39 +80,67 @@ export function AnnouncementsScreen() {
 
         <div>
           {selected ? (
-            <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4 sm:p-6">
-              <h2 className="font-bold text-ink">{notificationEventTypeLabel(selected.eventType)}</h2>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="template-subject">{t("subjectLabel")}</Label>
-                <Input id="template-subject" value={subject} onChange={(event) => setSubject(event.target.value)} />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="template-body">{t("bodyLabel")}</Label>
-                <Textarea id="template-body" value={body} onChange={(event) => setBody(event.target.value)} rows={8} />
-              </div>
-
-              <div className="rounded-md bg-ground p-3 text-xs text-ink-muted">
-                <p className="font-semibold text-ink">{t("placeholdersLabel")}</p>
-                <p className="mt-1 font-mono">{PLACEHOLDERS.join("  ")}</p>
-              </div>
-
-              {updateTemplate.error ? <p className="text-sm text-danger">{(updateTemplate.error as ApiError).message}</p> : null}
-
-              <div className="flex items-center gap-3">
-                <Button
-                  type="button"
-                  onClick={save}
-                  disabled={updateTemplate.isPending || !subject.trim() || !body.trim()}
-                >
-                  {t("saveButton")}
-                </Button>
-                {savedAt ? <span className="text-sm text-ink-muted">{t("savedConfirmation")}</span> : null}
-              </div>
-            </div>
+            <TemplateEditor
+              key={selected.id}
+              template={selected}
+              updateTemplate={updateTemplate}
+              t={t}
+            />
           ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TemplateEditor({
+  template,
+  updateTemplate,
+  t,
+}: {
+  template: NotificationTemplateSummary;
+  updateTemplate: ReturnType<typeof useUpdateNotificationTemplate>;
+  t: ReturnType<typeof useTranslations<"Announcements">>;
+}) {
+  // Keyed by template.id in the parent, so this state is only ever initialized once per
+  // template — switching selection remounts rather than needing an effect to resynchronize.
+  const [subject, setSubject] = useState(template.subject);
+  const [body, setBody] = useState(template.body);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  const save = () => {
+    updateTemplate.mutate(
+      { id: template.id, data: { subject, body } },
+      { onSuccess: () => setSavedAt(Date.now()) },
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4 sm:p-6">
+      <h2 className="font-bold text-ink">{notificationEventTypeLabel(template.eventType)}</h2>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="template-subject">{t("subjectLabel")}</Label>
+        <Input id="template-subject" value={subject} onChange={(event) => setSubject(event.target.value)} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="template-body">{t("bodyLabel")}</Label>
+        <Textarea id="template-body" value={body} onChange={(event) => setBody(event.target.value)} rows={8} />
+      </div>
+
+      <div className="rounded-md bg-ground p-3 text-xs text-ink-muted">
+        <p className="font-semibold text-ink">{t("placeholdersLabel")}</p>
+        <p className="mt-1 font-mono">{PLACEHOLDERS.join("  ")}</p>
+      </div>
+
+      {updateTemplate.error ? <p className="text-sm text-danger">{(updateTemplate.error as ApiError).message}</p> : null}
+
+      <div className="flex items-center gap-3">
+        <Button type="button" onClick={save} disabled={updateTemplate.isPending || !subject.trim() || !body.trim()}>
+          {t("saveButton")}
+        </Button>
+        {savedAt ? <span className="text-sm text-ink-muted">{t("savedConfirmation")}</span> : null}
       </div>
     </div>
   );

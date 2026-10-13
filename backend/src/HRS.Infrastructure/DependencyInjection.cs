@@ -2,17 +2,21 @@ using System.Globalization;
 using Amazon.S3;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Notifications.Push;
 using HRS.Infrastructure.Access;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
 using HRS.Infrastructure.Email;
 using HRS.Infrastructure.Files;
 using HRS.Infrastructure.Identity;
+using HRS.Infrastructure.Notifications;
 using HRS.Infrastructure.Organization;
 using HRS.Infrastructure.Pdf;
 using HRS.Infrastructure.Persistence;
 using HRS.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.StackExchangeRedis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,6 +63,39 @@ public static class DependencyInjection
         services.AddSingleton<BackgroundEmailChannel>();
         services.AddSingleton<IEmailSender>(sp => sp.GetRequiredService<BackgroundEmailChannel>());
         services.AddHostedService<BackgroundEmailDispatcher>();
+
+        // FR-NOT-001: the live badge. Api and Worker each register this identically — Api maps
+        // the hub endpoint clients connect to, Worker only ever publishes through the backplane
+        // (IHubContext<NotificationsHub>), never accepts a connection itself.
+        services.AddSignalR().AddStackExchangeRedis();
+        services.AddOptions<RedisOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                var connectionString = configuration["ConnectionStrings:Redis"]
+                    ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis.");
+                options.Configuration = ConfigurationOptions.Parse(connectionString);
+            });
+        services.AddSingleton<IUserIdProvider, JwtSubUserIdProvider>();
+        services.AddScoped<INotificationBroadcaster, SignalRNotificationBroadcaster>();
+
+        services.AddOptions<PushOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                options.VapidSubject = configuration["Push:VapidSubject"]
+                    ?? throw new InvalidOperationException("Missing Push:VapidSubject.");
+                options.VapidPublicKey = configuration["Push:VapidPublicKey"]
+                    ?? throw new InvalidOperationException("Missing Push:VapidPublicKey.");
+                options.VapidPrivateKey = configuration["Push:VapidPrivateKey"]
+                    ?? throw new InvalidOperationException("Missing Push:VapidPrivateKey.");
+            });
+        services.AddScoped<IPushNotificationSender, WebPushNotificationSender>();
+
+        // The one half of PushOptions the Application layer (GetVapidPublicKeyQuery) is allowed
+        // to see — bound separately so Application never references Infrastructure's PushOptions.
+        services.AddOptions<PushPublicKeyOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+                options.VapidPublicKey = configuration["Push:VapidPublicKey"]
+                    ?? throw new InvalidOperationException("Missing Push:VapidPublicKey."));
 
         services.AddHealthChecks()
             .AddNpgSql(sp => GetConnectionString(sp, "Default"), name: "postgres")

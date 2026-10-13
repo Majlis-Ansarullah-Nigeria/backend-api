@@ -19,6 +19,8 @@ public interface IAppDbContext
 
     DbSet<Invitation> Invitations { get; }
 
+    DbSet<Notification> Notifications { get; }
+
     DbSet<NotificationTemplate> NotificationTemplates { get; }
 
     DbSet<Nudge> Nudges { get; }
@@ -26,6 +28,8 @@ public interface IAppDbContext
     DbSet<OutboxMessage> OutboxMessages { get; }
 
     DbSet<PrivateNote> PrivateNotes { get; }
+
+    DbSet<PushSubscription> PushSubscriptions { get; }
 
     DbSet<ReportAttachment> ReportAttachments { get; }
 

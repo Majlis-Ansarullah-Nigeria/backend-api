@@ -25,6 +25,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
 
     public DbSet<Nudge> Nudges => Set<Nudge>();
@@ -32,6 +34,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     public DbSet<PrivateNote> PrivateNotes => Set<PrivateNote>();
+
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     public DbSet<ReportAttachment> ReportAttachments => Set<ReportAttachment>();
 
@@ -300,6 +304,30 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             template.Property(t => t.Subject).IsRequired();
             template.Property(t => t.Body).IsRequired();
             template.HasIndex(t => t.EventType).IsUnique();
+        });
+
+        builder.Entity<Notification>(notification =>
+        {
+            notification.ToTable("notifications");
+            notification.HasKey(n => n.Id);
+            notification.Property(n => n.Subject).IsRequired();
+            notification.Property(n => n.Body).IsRequired();
+            // Dedup guard: the dispatcher checks-then-inserts per OutboxMessageId, and this index
+            // is the hard backstop if two dispatcher runs ever race.
+            notification.HasIndex(n => n.OutboxMessageId).IsUnique();
+            // The notification-centre list/unread-count queries: "this user's rows, newest first".
+            notification.HasIndex(n => new { n.UserId, n.CreatedAt });
+        });
+
+        builder.Entity<PushSubscription>(subscription =>
+        {
+            subscription.ToTable("push_subscriptions");
+            subscription.HasKey(s => s.Id);
+            subscription.Property(s => s.Endpoint).IsRequired();
+            subscription.Property(s => s.P256Dh).IsRequired();
+            subscription.Property(s => s.Auth).IsRequired();
+            subscription.HasIndex(s => s.Endpoint).IsUnique();
+            subscription.HasIndex(s => s.UserId);
         });
 
         builder.Entity<Nudge>(nudge =>

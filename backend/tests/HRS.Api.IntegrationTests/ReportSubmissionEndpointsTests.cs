@@ -507,7 +507,7 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
         var iterations = 0;
         do
         {
-            sent = await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, clock, CancellationToken.None);
+            sent = await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, factory.PushSender, factory.Broadcaster, clock, CancellationToken.None);
             iterations++;
         }
         while (sent > 0 && iterations < 200);

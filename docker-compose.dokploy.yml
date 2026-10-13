@@ -41,6 +41,9 @@ services:
       Storage__Region: ${S3_REGION:-auto}
       ClamAV__Host: clamav
       ClamAV__Port: "3310"
+      Push__VapidSubject: ${PUSH_VAPID_SUBJECT}
+      Push__VapidPublicKey: ${PUSH_VAPID_PUBLIC_KEY}
+      Push__VapidPrivateKey: ${PUSH_VAPID_PRIVATE_KEY}
       Sentry__Dsn: ${SENTRY_DSN:-}
     volumes: [dpkeys:/keys]
     networks: [dokploy-network, internal]

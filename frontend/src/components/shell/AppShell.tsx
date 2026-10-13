@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useNotificationBadge } from "@/features/notifications/hooks/useNotificationBadge";
 import { BottomTabs } from "./BottomTabs";
 import { PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS } from "./nav-items";
 import { Sidebar } from "./Sidebar";
@@ -14,12 +15,12 @@ export interface AppShellProps {
   user: { name: string; initials: string };
   unit: UnitOption;
   orgName?: string;
-  notificationCount?: number;
 }
 
-export function AppShell({ children, user, unit, orgName, notificationCount }: AppShellProps) {
+export function AppShell({ children, user, unit, orgName }: AppShellProps) {
   const pathname = usePathname();
   const t = useTranslations("Shell.nav");
+  const notificationCount = useNotificationBadge();
 
   const isSecretariat = pathname?.startsWith("/secretariat") ?? false;
   const navItems = isSecretariat ? SECRETARIAT_NAV_ITEMS : PRIMARY_NAV_ITEMS;

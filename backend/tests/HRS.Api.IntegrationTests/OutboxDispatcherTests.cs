@@ -48,7 +48,7 @@ public class OutboxDispatcherTests(ApiFactory factory)
         var identityService = scope.ServiceProvider.GetRequiredService<IIdentityService>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
 
-        await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, clock, CancellationToken.None);
+        await OutboxDispatcher.RunAsync(db, identityService, factory.EmailSender, factory.PushSender, factory.Broadcaster, clock, CancellationToken.None);
     }
 
     private async Task<OutboxMessage> GetOnlyMessageForAsync(Guid recipientUserId)
