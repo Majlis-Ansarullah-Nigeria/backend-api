@@ -530,4 +530,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             schedule.Navigation(s => s.DueOffsets).HasField("_dueOffsets").UsePropertyAccessMode(PropertyAccessMode.Field);
         });
     }
+
+    public async Task<List<Guid>> SearchReportInstanceAnswersAsync(string term, CancellationToken cancellationToken)
+    {
+        var pattern = $"%{term}%";
+        return await Database
+            .SqlQuery<Guid>($"SELECT id FROM report_instances WHERE answers_json::text ILIKE {pattern}")
+            .ToListAsync(cancellationToken);
+    }
 }

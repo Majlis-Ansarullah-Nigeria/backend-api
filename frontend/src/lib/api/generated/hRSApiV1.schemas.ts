@@ -443,6 +443,47 @@ export interface GrantWindowExtensionRequest {
   reason: string;
 }
 
+export interface HistoryReportTypeOption {
+  id: string;
+  name: string;
+}
+
+export interface HistoryPeriodOption {
+  windowId: string;
+  periodLabel: string;
+  opensAt: string;
+}
+
+export interface HistoryFilterOptions {
+  reportTypes: HistoryReportTypeOption[];
+  periods: HistoryPeriodOption[];
+}
+
+export interface HistoryRow {
+  instanceId: string;
+  windowId: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  unitId: string;
+  unitName: string;
+  periodLabel: string;
+  /** @nullable */
+  submittedAt: string | null;
+  status: ReportLineStatus;
+  submittedByLabel: string;
+  isObserved: boolean;
+}
+
+export interface HistoryPage {
+  rows: HistoryRow[];
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  totalCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  page: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  pageSize: number | string;
+}
+
 export type IFormFile = Blob;
 
 export interface InboxItem {
@@ -1212,5 +1253,21 @@ filter: NotificationFilter;
 
 export type DeletePushSubscriptionParams = {
 endpoint: string;
+};
+
+export type GetHistoryParams = {
+reportTypeId?: string;
+fromWindowId?: string;
+toWindowId?: string;
+status?: ReportLineStatus;
+search?: string;
+/**
+ * @pattern ^-?(?:0|[1-9]\d*)$
+ */
+page?: number | string;
+/**
+ * @pattern ^-?(?:0|[1-9]\d*)$
+ */
+pageSize?: number | string;
 };
 

@@ -128,6 +128,7 @@ try
     app.MapReviewEndpoints();
     app.MapDepartmentEndpoints();
     app.MapNotificationsEndpoints();
+    app.MapHistoryEndpoints();
 
     // architecture.md: Traefik routes "/hubs/*" to this process only — the Worker publishes
     // through it via the Redis backplane (IHubContext<NotificationsHub>) but never hosts it.

@@ -65,7 +65,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M8.3 Preferences, digest, escalation, announcements (FR-NOT-004..006).
 
 ## M9 — History and exports (FR-HIS)
-- [ ] M9.1 History with filters and full-text search, scoped (FR-HIS-001, FR-HIS-002).
+- [x] M9.1 History with filters and full-text search, scoped (FR-HIS-001, FR-HIS-002).
 - [ ] M9.2 Branded PDF + Excel per report (FR-HIS-003); bulk ZIP/Excel exports in background (FR-HIS-004).
 - [ ] M9.3 Period comparison and version history diff (FR-HIS-005, FR-HIS-006).
 

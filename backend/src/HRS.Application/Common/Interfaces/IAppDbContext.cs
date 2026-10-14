@@ -67,4 +67,10 @@ public interface IAppDbContext
     /// concurrency token's OriginalValue to a client-supplied If-Match value before saving
     /// (ReportInstance.RowVersion), which EF's own DbSet API has no way to express.</summary>
     EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
+
+    /// <summary>FR-HIS-002's full-text search across report answers. Raw SQL because Postgres has
+    /// no ILIKE operator directly on jsonb (confirmed against the real database: "operator does
+    /// not exist: jsonb ~~* unknown") — needs an explicit ::text cast EF's LINQ translation for a
+    /// jsonb-mapped string property doesn't generate on its own.</summary>
+    Task<List<Guid>> SearchReportInstanceAnswersAsync(string term, CancellationToken cancellationToken);
 }

@@ -1,0 +1,155 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
+import type { ReactElement } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import messages from "../../../../messages/en.json";
+import { HistoryScreen } from "./HistoryScreen";
+
+const useGetHistory = vi.fn();
+const useGetHistoryFilters = vi.fn();
+
+vi.mock("@/lib/api/generated/history/history", () => ({
+  useGetHistory: (...args: unknown[]) => useGetHistory(...args),
+  useGetHistoryFilters: (...args: unknown[]) => useGetHistoryFilters(...args),
+}));
+
+function renderWithProviders(ui: ReactElement) {
+  const queryClient = new QueryClient();
+  return render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </NextIntlClientProvider>,
+  );
+}
+
+const ROWS = [
+  {
+    instanceId: "r1",
+    windowId: "w1",
+    reportTypeId: "t1",
+    reportTypeName: "General Monthly Report",
+    unitId: "u1",
+    unitName: "Agodi Muqam",
+    periodLabel: "Oct 2026",
+    submittedAt: "2026-10-01T00:00:00Z",
+    status: 4,
+    submittedByLabel: "You",
+    isObserved: false,
+  },
+  {
+    instanceId: "r2",
+    windowId: "w1",
+    reportTypeId: "t1",
+    reportTypeName: "General Monthly Report",
+    unitId: "u2",
+    unitName: "Ketu Muqam",
+    periodLabel: "Oct 2026",
+    submittedAt: "2026-10-02T00:00:00Z",
+    status: 8,
+    submittedByLabel: "Amina Bello",
+    isObserved: true,
+  },
+];
+
+beforeEach(() => {
+  useGetHistory.mockReset();
+  useGetHistoryFilters.mockReset();
+  useGetHistoryFilters.mockReturnValue({
+    data: { reportTypes: [{ id: "t1", name: "General Monthly Report" }], periods: [{ windowId: "w1", periodLabel: "Oct 2026", opensAt: "2026-10-01T00:00:00Z" }] },
+  });
+});
+
+describe("HistoryScreen", () => {
+  it("shows a loading message while history loads", () => {
+    useGetHistory.mockReturnValue({ isPending: true, isError: false, data: undefined });
+
+    renderWithProviders(<HistoryScreen />);
+
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
+  it("shows an error state with retry on failure", async () => {
+    const refetch = vi.fn();
+    useGetHistory.mockReturnValue({ isPending: false, isError: true, data: undefined, refetch });
+
+    renderWithProviders(<HistoryScreen />);
+    await userEvent.click(screen.getByRole("button", { name: /try again/i }));
+
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it("shows an empty state when there are no past reports", () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: [], totalCount: 0, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+
+    expect(screen.getByText(/nothing here yet/i)).toBeInTheDocument();
+  });
+
+  it("renders each row's report, unit, status and submitter", () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+
+    const dataRows = screen.getAllByRole("row").slice(1);
+    const firstRow = within(dataRows[0]!);
+    const secondRow = within(dataRows[1]!);
+    expect(firstRow.getByText("Agodi Muqam")).toBeInTheDocument();
+    expect(firstRow.getByText("You")).toBeInTheDocument();
+    expect(firstRow.getByText("Submitted")).toBeInTheDocument();
+    expect(secondRow.getByText("Ketu Muqam")).toBeInTheDocument();
+    expect(secondRow.getByText("Amina Bello")).toBeInTheDocument();
+    expect(secondRow.getByText("Acknowledged")).toBeInTheDocument();
+  });
+
+  it("links an own-unit row to the editable report and an observed row to the read-only child view", () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+
+    const viewLinks = screen.getAllByRole("link", { name: /^view$/i });
+    expect(viewLinks[0]).toHaveAttribute("href", "/reports/r1/edit?unit=u1");
+    expect(viewLinks[1]).toHaveAttribute("href", "/units/u2/reports/r2");
+  });
+
+  it("shows the showing-count and disables Previous on the first page", () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 25, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+
+    expect(screen.getByText("Showing 2 of 25")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^next$/i })).toBeEnabled();
+  });
+
+  it("changing the status filter requests history with the new status", async () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: [], totalCount: 0, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+    await userEvent.selectOptions(screen.getByLabelText("Status"), "8");
+
+    expect(useGetHistory).toHaveBeenLastCalledWith(expect.objectContaining({ status: 8, page: 1 }));
+  });
+
+  it("debounces the search box before requesting history", () => {
+    vi.useFakeTimers();
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: [], totalCount: 0, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "borehole" } });
+
+    expect(useGetHistory).not.toHaveBeenLastCalledWith(expect.objectContaining({ search: "borehole" }));
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(useGetHistory).toHaveBeenLastCalledWith(expect.objectContaining({ search: "borehole" }));
+  });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
