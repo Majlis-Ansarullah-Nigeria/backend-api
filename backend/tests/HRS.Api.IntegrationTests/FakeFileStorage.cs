@@ -36,4 +36,13 @@ public sealed class FakeFileStorage : IFileStorage
         _objects.TryRemove(key, out _);
         return Task.CompletedTask;
     }
+
+    public Task UploadAsync(string key, byte[] content, string contentType, CancellationToken cancellationToken)
+    {
+        _objects[key] = content;
+        return Task.CompletedTask;
+    }
+
+    public PresignedDownload CreatePresignedDownload(string key, TimeSpan expiresIn) =>
+        new($"https://fake-storage.test/{key}", DateTimeOffset.UtcNow.Add(expiresIn));
 }

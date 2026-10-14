@@ -1,5 +1,7 @@
 using System.Globalization;
 using Amazon.S3;
+using Hangfire;
+using Hangfire.PostgreSql;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
 using HRS.Application.Features.Notifications.Push;
@@ -7,8 +9,10 @@ using HRS.Infrastructure.Access;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
 using HRS.Infrastructure.Email;
+using HRS.Infrastructure.Excel;
 using HRS.Infrastructure.Files;
 using HRS.Infrastructure.Identity;
+using HRS.Infrastructure.Jobs;
 using HRS.Infrastructure.Notifications;
 using HRS.Infrastructure.Organization;
 using HRS.Infrastructure.Pdf;
@@ -186,6 +190,21 @@ public static class DependencyInjection
 
         QuestPDF.Settings.License = LicenseType.Community;
         services.AddScoped<IPdfRenderer, QuestPdfReportReceiptRenderer>();
+        services.AddScoped<IExcelRenderer, ClosedXmlExcelRenderer>();
+
+        // FR-HIS-004: the API only ever enqueues (client-side); the Worker's own Program.cs adds
+        // AddHangfireServer() on top of this same registration to actually process jobs
+        // (architecture.md: "Worker: Hangfire server... exports..."). The (provider, config)
+        // overload defers reading the connection string until the container can resolve
+        // IConfiguration — AddInfrastructure itself has no IConfiguration parameter to read it
+        // eagerly the way the Worker's old Program.cs code did.
+        services.AddHangfire((provider, config) => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(GetConnectionString(provider, "Default"))));
+        services.AddScoped<BulkExportJob>();
+        services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
 
         return services;
     }

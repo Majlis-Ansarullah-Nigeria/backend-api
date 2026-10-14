@@ -60,6 +60,10 @@ export interface AttachmentSummary {
   sizeBytes: number | string;
 }
 
+export type BulkExportFormat = number;
+
+export type BulkExportStatus = number;
+
 export interface BulkImportCommitResult {
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
   createdCount: number | string;
@@ -208,6 +212,11 @@ export interface ConfirmTotpEnrollmentResponse {
   recoveryCodes: string[];
 }
 
+export interface CreateBulkExportRequest {
+  instanceIds: string[];
+  format: BulkExportFormat;
+}
+
 export interface CreateInvitationRequest {
   email: string;
   name: string;
@@ -217,6 +226,21 @@ export interface CreateInvitationResult {
   id: string;
   email: string;
   expiresAt: string;
+}
+
+export interface CreateOrganizationExportRequest {
+  /** @nullable */
+  reportTypeId: string | null;
+  /** @nullable */
+  fromWindowId: string | null;
+  /** @nullable */
+  toWindowId: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)$
+     */
+  status: number | string | null;
+  format: BulkExportFormat;
 }
 
 export type ReportTypeCategory = number;
@@ -430,6 +454,25 @@ export interface DepartmentReportRow {
   /** @nullable */
   submittedAt: string | null;
   fields: DepartmentFieldValue[];
+}
+
+export interface ExportDownloadUrlResponse {
+  url: string;
+}
+
+export interface ExportSummary {
+  id: string;
+  requestedByUserId: string;
+  requestedByName: string;
+  format: BulkExportFormat;
+  status: BulkExportStatus;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  reportCount: number | string;
+  /** @nullable */
+  errorMessage: string | null;
+  createdAt: string;
+  /** @nullable */
+  completedAt: string | null;
 }
 
 export interface ForgotPasswordRequest {

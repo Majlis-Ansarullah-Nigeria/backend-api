@@ -1,5 +1,6 @@
 using HRS.Domain.Access;
 using HRS.Domain.Common;
+using HRS.Domain.History;
 using HRS.Domain.Invitations;
 using HRS.Domain.Notifications;
 using HRS.Domain.Observer;
@@ -16,6 +17,8 @@ namespace HRS.Application.Common.Interfaces;
 public interface IAppDbContext
 {
     DbSet<Announcement> Announcements { get; }
+
+    DbSet<BulkExport> BulkExports { get; }
 
     DbSet<IdempotencyRecord> IdempotencyRecords { get; }
 

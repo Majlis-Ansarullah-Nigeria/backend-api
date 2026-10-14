@@ -1,18 +1,28 @@
 "use client";
 
-import { History as HistoryIcon, Search } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, History as HistoryIcon, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { StatusChip } from "@/components/shared/StatusChip";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import type { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/client";
 import type { HistoryFilterOptions, HistoryPage, HistoryRow } from "@/lib/api/generated/hRSApiV1.schemas";
-import { useGetHistory, useGetHistoryFilters } from "@/lib/api/generated/history/history";
+import {
+  createBulkExport,
+  getHistoryReportExcel,
+  getHistoryReportPdf,
+  useGetHistory,
+  useGetHistoryFilters,
+} from "@/lib/api/generated/history/history";
+import { downloadBlob } from "@/features/organization/utils/bulk-import";
 import { HISTORY_STATUS_ORDER, historyStatusOptionLabel } from "@/features/history/utils/history-status";
+import { BULK_EXPORT_FORMAT } from "@/features/exports/utils/export-status";
 import { reportStatusChipVariant } from "@/features/submissions/utils/report-status";
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" });
@@ -26,12 +36,16 @@ interface Filters {
 
 export function HistoryScreen() {
   const t = useTranslations("History");
+  const router = useRouter();
 
   const [filters, setFilters] = useState<Filters>({});
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 20;
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkExporting, setBulkExporting] = useState(false);
+  const [bulkExportError, setBulkExportError] = useState<string | null>(null);
 
   // A short debounce so full-text search doesn't fire a request per keystroke.
   useEffect(() => {
@@ -56,6 +70,31 @@ export function HistoryScreen() {
   const updateFilter = (patch: Partial<Filters>) => {
     setFilters((current) => ({ ...current, ...patch }));
     setPage(1);
+  };
+
+  const toggleSelected = (instanceId: string, checked: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(instanceId);
+      } else {
+        next.delete(instanceId);
+      }
+      return next;
+    });
+  };
+
+  const runBulkExport = async (format: number) => {
+    setBulkExporting(true);
+    setBulkExportError(null);
+    try {
+      const summary = await createBulkExport({ instanceIds: [...selectedIds], format });
+      router.push(`/exports/${summary.id}`);
+    } catch (error) {
+      setBulkExportError(error instanceof ApiError ? error.message : t("bulkExportFailed"));
+    } finally {
+      setBulkExporting(false);
+    }
   };
 
   const totalCount = history.data ? Number(history.data.totalCount) : 0;
@@ -154,6 +193,37 @@ export function HistoryScreen() {
         </div>
       </div>
 
+      {bulkExportError && <p className="text-sm text-danger">{bulkExportError}</p>}
+
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-forest-900 px-4 py-3 text-white">
+          <span className="text-sm font-semibold">{t("selectedCount", { count: selectedIds.size })}</span>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button type="button" variant="accent" disabled={bulkExporting} onClick={() => runBulkExport(BULK_EXPORT_FORMAT.ZipOfPdfs)}>
+              <Download className="size-4" aria-hidden="true" />
+              {t("downloadZipAction")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={bulkExporting}
+              onClick={() => runBulkExport(BULK_EXPORT_FORMAT.ExcelWorkbook)}
+              className="border-white/30 bg-transparent text-white hover:bg-white/10"
+            >
+              <FileSpreadsheet className="size-4" aria-hidden="true" />
+              {t("exportExcelAction")}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setSelectedIds(new Set())}
+              className="text-sm font-medium text-white underline-offset-2 hover:underline"
+            >
+              {t("clearSelection")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {history.isPending ? (
         <p className="text-sm text-ink-muted">{t("loading")}</p>
       ) : history.isError ? (
@@ -166,6 +236,9 @@ export function HistoryScreen() {
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs font-bold uppercase tracking-wide text-ink-muted">
+                  <th className="w-10 px-4 py-3">
+                    <span className="sr-only">{t("columnSelect")}</span>
+                  </th>
                   <th className="px-4 py-3">{t("columnReport")}</th>
                   <th className="px-4 py-3">{t("columnUnit")}</th>
                   <th className="px-4 py-3">{t("columnSubmitted")}</th>
@@ -176,7 +249,12 @@ export function HistoryScreen() {
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <HistoryTableRow key={row.instanceId} row={row} />
+                  <HistoryTableRow
+                    key={row.instanceId}
+                    row={row}
+                    selected={selectedIds.has(row.instanceId)}
+                    onToggleSelected={(checked) => toggleSelected(row.instanceId, checked)}
+                  />
                 ))}
               </tbody>
             </table>
@@ -201,12 +279,41 @@ export function HistoryScreen() {
   );
 }
 
-function HistoryTableRow({ row }: { row: HistoryRow }) {
+function HistoryTableRow({
+  row,
+  selected,
+  onToggleSelected,
+}: {
+  row: HistoryRow;
+  selected: boolean;
+  onToggleSelected: (checked: boolean) => void;
+}) {
   const t = useTranslations("History");
   const href = row.isObserved ? `/units/${row.unitId}/reports/${row.instanceId}` : `/reports/${row.instanceId}/edit?unit=${row.unitId}`;
+  const [downloading, setDownloading] = useState<"pdf" | "excel" | null>(null);
+
+  const download = async (format: "pdf" | "excel") => {
+    setDownloading(format);
+    try {
+      const blob =
+        format === "pdf"
+          ? ((await getHistoryReportPdf(row.instanceId)) as unknown as Blob)
+          : ((await getHistoryReportExcel(row.instanceId)) as unknown as Blob);
+      downloadBlob(blob, format === "pdf" ? "report.pdf" : "report.xlsx");
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   return (
     <tr className="border-b border-line last:border-0">
+      <td className="px-4 py-3.5">
+        <Checkbox
+          checked={selected}
+          onCheckedChange={(checked) => onToggleSelected(checked === true)}
+          aria-label={t("selectRowLabel", { report: row.reportTypeName, period: row.periodLabel })}
+        />
+      </td>
       <td className="px-4 py-3.5">
         <p className="font-semibold text-ink">{row.reportTypeName}</p>
         <p className="text-xs text-ink-muted">{row.periodLabel}</p>
@@ -217,10 +324,32 @@ function HistoryTableRow({ row }: { row: HistoryRow }) {
         <StatusChip status={reportStatusChipVariant(row.status)} />
       </td>
       <td className="px-4 py-3.5 text-ink">{row.submittedByLabel}</td>
-      <td className="px-4 py-3.5 text-right">
-        <Link href={href} className="text-sm font-medium text-green-700 underline-offset-2 hover:underline">
-          {t("viewAction")}
-        </Link>
+      <td className="px-4 py-3.5">
+        <div className="flex items-center justify-end gap-3">
+          <Link href={href} className="text-sm font-medium text-green-700 underline-offset-2 hover:underline">
+            {t("viewAction")}
+          </Link>
+          <button
+            type="button"
+            disabled={downloading !== null}
+            onClick={() => download("pdf")}
+            aria-label={t("downloadPdfAction")}
+            title={t("downloadPdfAction")}
+            className="text-ink-muted hover:text-ink disabled:opacity-50"
+          >
+            <FileText className="size-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            disabled={downloading !== null}
+            onClick={() => download("excel")}
+            aria-label={t("downloadExcelAction")}
+            title={t("downloadExcelAction")}
+            className="text-ink-muted hover:text-ink disabled:opacity-50"
+          >
+            <FileSpreadsheet className="size-4" aria-hidden="true" />
+          </button>
+        </div>
       </td>
     </tr>
   );

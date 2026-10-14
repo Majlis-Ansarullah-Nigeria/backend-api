@@ -104,6 +104,66 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("idempotency_records", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.History.BulkExport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text")
+                        .HasColumnName("error_message");
+
+                    b.Property<int>("Format")
+                        .HasColumnType("integer")
+                        .HasColumnName("format");
+
+                    b.Property<int>("ReportCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("report_count");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("ScopeJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scope_json");
+
+                    b.Property<int>("ScopeKind")
+                        .HasColumnType("integer")
+                        .HasColumnName("scope_kind");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StorageKey")
+                        .HasColumnType("text")
+                        .HasColumnName("storage_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bulk_exports");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_bulk_exports_created_at");
+
+                    b.HasIndex("RequestedByUserId")
+                        .HasDatabaseName("ix_bulk_exports_requested_by_user_id");
+
+                    b.ToTable("bulk_exports", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Invitations.Invitation", b =>
                 {
                     b.Property<Guid>("Id")

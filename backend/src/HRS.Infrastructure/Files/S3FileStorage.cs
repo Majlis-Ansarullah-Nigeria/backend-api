@@ -47,4 +47,31 @@ public sealed class S3FileStorage(IAmazonS3 client, IOptions<StorageOptions> opt
             // Already gone — deleting is idempotent.
         }
     }
+
+    public async Task UploadAsync(string key, byte[] content, string contentType, CancellationToken cancellationToken)
+    {
+        using var stream = new MemoryStream(content);
+        await client.PutObjectAsync(new PutObjectRequest
+        {
+            BucketName = _options.Bucket,
+            Key = key,
+            InputStream = stream,
+            ContentType = contentType,
+            AutoCloseStream = false,
+        }, cancellationToken);
+    }
+
+    public PresignedDownload CreatePresignedDownload(string key, TimeSpan expiresIn)
+    {
+        var expiresAt = DateTime.UtcNow.Add(expiresIn);
+        var url = client.GetPreSignedURL(new GetPreSignedUrlRequest
+        {
+            BucketName = _options.Bucket,
+            Key = key,
+            Verb = HttpVerb.GET,
+            Expires = expiresAt,
+        });
+
+        return new PresignedDownload(url, new DateTimeOffset(expiresAt, TimeSpan.Zero));
+    }
 }

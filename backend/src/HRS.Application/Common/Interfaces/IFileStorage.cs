@@ -18,9 +18,21 @@ public interface IFileStorage
 
     /// <summary>Best-effort — deleting a key that doesn't exist is not an error.</summary>
     Task DeleteAsync(string key, CancellationToken cancellationToken);
+
+    /// <summary>FR-HIS-004's background bulk export — the Worker already holds the finished
+    /// ZIP/workbook bytes in memory (it built them), so unlike attachments it writes directly
+    /// rather than handing the browser a presigned PUT.</summary>
+    Task UploadAsync(string key, byte[] content, string contentType, CancellationToken cancellationToken);
+
+    /// <summary>A time-limited URL the browser can GET the file's bytes from directly — symmetric
+    /// with CreatePresignedUpload, so a large export downloads straight from storage rather than
+    /// streaming through the API process.</summary>
+    PresignedDownload CreatePresignedDownload(string key, TimeSpan expiresIn);
 }
 
 public sealed record PresignedUpload(string Url, DateTimeOffset ExpiresAt);
+
+public sealed record PresignedDownload(string Url, DateTimeOffset ExpiresAt);
 
 public sealed record StoredFile(Stream Content, long SizeBytes) : IAsyncDisposable
 {

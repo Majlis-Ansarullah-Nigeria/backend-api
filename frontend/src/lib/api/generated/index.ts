@@ -1,5 +1,6 @@
 export * from './admin/admin';
 export * from './department/department';
+export * from './exports/exports';
 export * from './history/history';
 export * from './hrs-api/hrs-api';
 export * from './identity/identity';

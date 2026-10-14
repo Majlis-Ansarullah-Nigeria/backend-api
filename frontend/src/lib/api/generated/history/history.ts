@@ -5,24 +5,31 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
+  CreateBulkExportRequest,
+  ExportSummary,
   GetHistoryParams,
   HistoryFilterOptions,
-  HistoryPage
+  HistoryPage,
+  ProblemDetails
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -242,3 +249,272 @@ export function useGetHistoryFilters<TData = Awaited<ReturnType<typeof getHistor
 
 
 
+export const getGetHistoryReportPdfUrl = (instanceId: string,) => {
+
+
+
+
+  return `/api/v1/history/${instanceId}/pdf`
+}
+
+export const getHistoryReportPdf = async (instanceId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getGetHistoryReportPdfUrl(instanceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHistoryReportPdfQueryKey = (instanceId: string,) => {
+    return [
+    `/api/v1/history/${instanceId}/pdf`
+    ] as const;
+    }
+
+
+export const getGetHistoryReportPdfQueryOptions = <TData = Awaited<ReturnType<typeof getHistoryReportPdf>>, TError = ProblemDetails>(instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHistoryReportPdfQueryKey(instanceId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHistoryReportPdf>>> = ({ signal }) => getHistoryReportPdf(instanceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: instanceId !== null && instanceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportPdf>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetHistoryReportPdfQueryResult = NonNullable<Awaited<ReturnType<typeof getHistoryReportPdf>>>
+export type GetHistoryReportPdfQueryError = ProblemDetails
+
+
+export function useGetHistoryReportPdf<TData = Awaited<ReturnType<typeof getHistoryReportPdf>>, TError = ProblemDetails>(
+ instanceId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportPdf>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHistoryReportPdf>>,
+          TError,
+          Awaited<ReturnType<typeof getHistoryReportPdf>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHistoryReportPdf<TData = Awaited<ReturnType<typeof getHistoryReportPdf>>, TError = ProblemDetails>(
+ instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportPdf>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHistoryReportPdf>>,
+          TError,
+          Awaited<ReturnType<typeof getHistoryReportPdf>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHistoryReportPdf<TData = Awaited<ReturnType<typeof getHistoryReportPdf>>, TError = ProblemDetails>(
+ instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetHistoryReportPdf<TData = Awaited<ReturnType<typeof getHistoryReportPdf>>, TError = ProblemDetails>(
+ instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportPdf>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetHistoryReportPdfQueryOptions(instanceId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetHistoryReportExcelUrl = (instanceId: string,) => {
+
+
+
+
+  return `/api/v1/history/${instanceId}/excel`
+}
+
+export const getHistoryReportExcel = async (instanceId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getGetHistoryReportExcelUrl(instanceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHistoryReportExcelQueryKey = (instanceId: string,) => {
+    return [
+    `/api/v1/history/${instanceId}/excel`
+    ] as const;
+    }
+
+
+export const getGetHistoryReportExcelQueryOptions = <TData = Awaited<ReturnType<typeof getHistoryReportExcel>>, TError = ProblemDetails>(instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportExcel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHistoryReportExcelQueryKey(instanceId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHistoryReportExcel>>> = ({ signal }) => getHistoryReportExcel(instanceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: instanceId !== null && instanceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportExcel>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetHistoryReportExcelQueryResult = NonNullable<Awaited<ReturnType<typeof getHistoryReportExcel>>>
+export type GetHistoryReportExcelQueryError = ProblemDetails
+
+
+export function useGetHistoryReportExcel<TData = Awaited<ReturnType<typeof getHistoryReportExcel>>, TError = ProblemDetails>(
+ instanceId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportExcel>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHistoryReportExcel>>,
+          TError,
+          Awaited<ReturnType<typeof getHistoryReportExcel>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHistoryReportExcel<TData = Awaited<ReturnType<typeof getHistoryReportExcel>>, TError = ProblemDetails>(
+ instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportExcel>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHistoryReportExcel>>,
+          TError,
+          Awaited<ReturnType<typeof getHistoryReportExcel>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHistoryReportExcel<TData = Awaited<ReturnType<typeof getHistoryReportExcel>>, TError = ProblemDetails>(
+ instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportExcel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetHistoryReportExcel<TData = Awaited<ReturnType<typeof getHistoryReportExcel>>, TError = ProblemDetails>(
+ instanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHistoryReportExcel>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetHistoryReportExcelQueryOptions(instanceId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getCreateBulkExportUrl = () => {
+
+
+
+
+  return `/api/v1/history/bulk-export`
+}
+
+export const createBulkExport = async (createBulkExportRequest: CreateBulkExportRequest, options?: Parameters<typeof customFetch>[1]): Promise<ExportSummary> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ExportSummary>(getCreateBulkExportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createBulkExportRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateBulkExportMutationKey = () => ['createBulkExport'] as const;
+
+export const getCreateBulkExportMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBulkExport>>, TError,CreateBulkExportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBulkExport>>, TError,CreateBulkExportMutationVariables, TContext> => {
+
+const mutationKey = getCreateBulkExportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBulkExport>>, CreateBulkExportMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createBulkExport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBulkExportMutationResult = NonNullable<Awaited<ReturnType<typeof createBulkExport>>>
+    export type CreateBulkExportMutationBody = CreateBulkExportRequest
+    export type CreateBulkExportMutationError = ProblemDetails
+    export type CreateBulkExportMutationVariables = {data: CreateBulkExportRequest}
+
+    export const useCreateBulkExport = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBulkExport>>, TError,CreateBulkExportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createBulkExport>>,
+        TError,
+        CreateBulkExportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateBulkExportMutationOptions(options), queryClient);
+    }

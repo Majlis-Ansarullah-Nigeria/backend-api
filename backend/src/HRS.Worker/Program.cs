@@ -1,6 +1,5 @@
 using System.Globalization;
 using Hangfire;
-using Hangfire.PostgreSql;
 using HRS.Application;
 using HRS.Infrastructure;
 using HRS.Worker;
@@ -23,14 +22,9 @@ try
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure();
 
-    var connectionString = builder.Configuration["ConnectionStrings:Default"]
-        ?? throw new InvalidOperationException("Missing ConnectionStrings:Default.");
-
-    builder.Services.AddHangfire(config => config
-        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-        .UseSimpleAssemblyNameTypeSerializer()
-        .UseRecommendedSerializerSettings()
-        .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+    // AddInfrastructure() already registers the Hangfire client (storage, serializer) — shared
+    // with the API, which only ever enqueues. AddHangfireServer() here is what actually makes
+    // this process poll and process jobs (recurring and the one-off exports FR-HIS-004 enqueues).
     builder.Services.AddHangfireServer();
 
     builder.Services.AddScoped<WindowJobsRecurringJob>();

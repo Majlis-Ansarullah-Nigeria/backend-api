@@ -9,10 +9,25 @@ import { HistoryScreen } from "./HistoryScreen";
 
 const useGetHistory = vi.fn();
 const useGetHistoryFilters = vi.fn();
+const createBulkExport = vi.fn();
+const getHistoryReportPdf = vi.fn();
+const getHistoryReportExcel = vi.fn();
+const push = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}));
 
 vi.mock("@/lib/api/generated/history/history", () => ({
   useGetHistory: (...args: unknown[]) => useGetHistory(...args),
   useGetHistoryFilters: (...args: unknown[]) => useGetHistoryFilters(...args),
+  createBulkExport: (...args: unknown[]) => createBulkExport(...args),
+  getHistoryReportPdf: (...args: unknown[]) => getHistoryReportPdf(...args),
+  getHistoryReportExcel: (...args: unknown[]) => getHistoryReportExcel(...args),
+}));
+
+vi.mock("@/features/organization/utils/bulk-import", () => ({
+  downloadBlob: vi.fn(),
 }));
 
 function renderWithProviders(ui: ReactElement) {
@@ -56,6 +71,10 @@ const ROWS = [
 beforeEach(() => {
   useGetHistory.mockReset();
   useGetHistoryFilters.mockReset();
+  createBulkExport.mockReset();
+  getHistoryReportPdf.mockReset();
+  getHistoryReportExcel.mockReset();
+  push.mockReset();
   useGetHistoryFilters.mockReturnValue({
     data: { reportTypes: [{ id: "t1", name: "General Monthly Report" }], periods: [{ windowId: "w1", periodLabel: "Oct 2026", opensAt: "2026-10-01T00:00:00Z" }] },
   });
@@ -131,6 +150,69 @@ describe("HistoryScreen", () => {
     await userEvent.selectOptions(screen.getByLabelText("Status"), "8");
 
     expect(useGetHistory).toHaveBeenLastCalledWith(expect.objectContaining({ status: 8, page: 1 }));
+  });
+
+  it("shows the bulk toolbar once rows are selected and starts a ZIP export", async () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+    createBulkExport.mockResolvedValue({ id: "export-1" });
+
+    renderWithProviders(<HistoryScreen />);
+    expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
+
+    const checkboxes = screen.getAllByRole("checkbox");
+    await userEvent.click(checkboxes[0]!);
+
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /download pdfs \(zip\)/i }));
+
+    expect(createBulkExport).toHaveBeenCalledWith({ instanceIds: ["r1"], format: 0 });
+    expect(push).toHaveBeenCalledWith("/exports/export-1");
+  });
+
+  it("starts an Excel export for the selected rows", async () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+    createBulkExport.mockResolvedValue({ id: "export-2" });
+
+    renderWithProviders(<HistoryScreen />);
+    const checkboxes = screen.getAllByRole("checkbox");
+    await userEvent.click(checkboxes[0]!);
+    await userEvent.click(checkboxes[1]!);
+    await userEvent.click(screen.getByRole("button", { name: /export to excel/i }));
+
+    expect(createBulkExport).toHaveBeenCalledWith({ instanceIds: ["r1", "r2"], format: 1 });
+    expect(push).toHaveBeenCalledWith("/exports/export-2");
+  });
+
+  it("clears the selection and hides the toolbar", async () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+    await userEvent.click(screen.getAllByRole("checkbox")[0]!);
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /clear/i }));
+
+    expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
+  });
+
+  it("downloads a single report's PDF directly from its row", async () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+    getHistoryReportPdf.mockResolvedValue(new Blob(["pdf"]));
+
+    renderWithProviders(<HistoryScreen />);
+    await userEvent.click(screen.getAllByRole("button", { name: /download pdf/i })[0]!);
+
+    expect(getHistoryReportPdf).toHaveBeenCalledWith("r1");
+  });
+
+  it("downloads a single report's Excel directly from its row", async () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+    getHistoryReportExcel.mockResolvedValue(new Blob(["xlsx"]));
+
+    renderWithProviders(<HistoryScreen />);
+    await userEvent.click(screen.getAllByRole("button", { name: /download excel/i })[0]!);
+
+    expect(getHistoryReportExcel).toHaveBeenCalledWith("r1");
   });
 
   it("debounces the search box before requesting history", () => {

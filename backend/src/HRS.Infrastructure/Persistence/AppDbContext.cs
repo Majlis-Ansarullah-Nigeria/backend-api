@@ -1,6 +1,7 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
+using HRS.Domain.History;
 using HRS.Domain.Invitations;
 using HRS.Domain.Notifications;
 using HRS.Domain.Observer;
@@ -22,6 +23,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UserSession> UserSessions => Set<UserSession>();
 
     public DbSet<Announcement> Announcements => Set<Announcement>();
+
+    public DbSet<BulkExport> BulkExports => Set<BulkExport>();
 
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
@@ -348,6 +351,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             announcement.Property(a => a.Message).IsRequired();
             // The "Sent" history list: newest first.
             announcement.HasIndex(a => a.CreatedAt);
+        });
+
+        builder.Entity<BulkExport>(export =>
+        {
+            export.ToTable("bulk_exports");
+            export.HasKey(e => e.Id);
+            export.Property(e => e.ScopeJson).HasColumnType("jsonb").IsRequired();
+            // "Recent exports" (mine, or everyone's for the Secretariat): newest first.
+            export.HasIndex(e => e.CreatedAt);
+            export.HasIndex(e => e.RequestedByUserId);
         });
 
         builder.Entity<PushSubscription>(subscription =>

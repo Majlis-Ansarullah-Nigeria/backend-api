@@ -18,11 +18,14 @@
     <PackageReference Include="ClosedXML" />
     <PackageReference Include="CsvHelper" />
     <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="MailKit" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="QRCoder" />
     <PackageReference Include="QuestPDF" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="WebPush" />

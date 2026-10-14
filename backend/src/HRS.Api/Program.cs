@@ -81,12 +81,13 @@ try
             return ValueTask.CompletedTask;
         };
 
-        // 600/5min per IP: still a meaningful anti-abuse ceiling (well below credential-stuffing
+        // 750/5min per IP: still a meaningful anti-abuse ceiling (well below credential-stuffing
         // rates) but with headroom for the growing integration-test suite, which shares one
         // in-memory limiter across every test in the "Api" collection (ApiFactory.cs). Raised from
-        // 300 when M5.4's attachment tests (each logging in its own secretariat + unit-head client)
-        // pushed the full suite past the old ceiling — bump this again if that recurs.
-        var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 600;
+        // 300 when M5.4's attachment tests pushed the full suite past the old ceiling, then from
+        // 600 when M9.2's export tests (each logging in its own secretariat + unit-head client)
+        // did the same — bump this again if that recurs.
+        var authPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Auth:PermitLimit") ?? 750;
 
         options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -129,6 +130,7 @@ try
     app.MapDepartmentEndpoints();
     app.MapNotificationsEndpoints();
     app.MapHistoryEndpoints();
+    app.MapExportsEndpoints();
 
     // architecture.md: Traefik routes "/hubs/*" to this process only — the Worker publishes
     // through it via the Redis backplane (IHubContext<NotificationsHub>) but never hosts it.

@@ -37,6 +37,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public FakeVirusScanner VirusScanner { get; } = new();
 
+    public FakeBackgroundJobScheduler JobScheduler { get; } = new();
+
     // xunit requires exactly one public constructor on a collection fixture, so the
     // rate-limit override (used only by the standalone AuthRateLimitTests) is internal.
     public ApiFactory()
@@ -86,7 +88,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             .AddSingleton<IPushNotificationSender>(PushSender)
             .AddSingleton<INotificationBroadcaster>(Broadcaster)
             .AddSingleton<IFileStorage>(FileStorage)
-            .AddSingleton<IVirusScanner>(VirusScanner));
+            .AddSingleton<IVirusScanner>(VirusScanner)
+            .AddSingleton<IBackgroundJobScheduler>(JobScheduler));
     }
 
     public async Task InitializeAsync()
