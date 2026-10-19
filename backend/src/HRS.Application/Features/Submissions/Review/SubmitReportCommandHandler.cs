@@ -132,6 +132,7 @@ public sealed class SubmitReportCommandHandler(
             ?? ReportReferenceNumber.Generate(reportType.Category, window.PeriodLabel, now, unitRow.Code);
 
         instance.Submit(isLate, referenceNumber, request.IsNil, now, request.UserId);
+        db.ReportRevisions.Add(instance.RecordSubmission(request.UserId, now));
 
         // FR-NOT-002's "child submitted (to observer)" — only when this report type actually has
         // an observer scope (FR-OBS's ObserverDepth>=1 gate, same check Nudge/PrivateNotes use)

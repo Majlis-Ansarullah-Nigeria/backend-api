@@ -81,6 +81,18 @@ beforeEach(() => {
 });
 
 describe("HistoryScreen", () => {
+  it("links to Compare periods and to each row's version history", () => {
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+
+    expect(screen.getByRole("link", { name: /compare periods/i })).toHaveAttribute("href", "/history/compare");
+    expect(screen.getAllByRole("link", { name: /version history of general monthly report/i })[0]).toHaveAttribute(
+      "href",
+      "/history/r1/versions",
+    );
+  });
+
   it("shows a loading message while history loads", () => {
     useGetHistory.mockReturnValue({ isPending: true, isError: false, data: undefined });
 

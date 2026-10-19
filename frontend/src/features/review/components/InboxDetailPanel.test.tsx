@@ -15,6 +15,11 @@ const useSetInboxReportFlagged = vi.fn();
 const useAssignInboxReport = vi.fn();
 const useGetWorkload = vi.fn();
 
+// The version history panel has its own tests (ReportVersionsPanel.test.tsx).
+vi.mock("@/features/history/components/ReportVersionsPanel", () => ({
+  ReportVersionsPanel: () => <div>Version history panel</div>,
+}));
+
 vi.mock("@/lib/api/generated/review/review", () => ({
   useGetInboxReportDetail: (...args: unknown[]) => useGetInboxReportDetail(...args),
   useOpenInboxReport: (...args: unknown[]) => useOpenInboxReport(...args),

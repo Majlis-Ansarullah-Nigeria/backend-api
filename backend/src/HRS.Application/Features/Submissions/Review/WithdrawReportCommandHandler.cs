@@ -47,6 +47,7 @@ public sealed class WithdrawReportCommandHandler(IAppDbContext db, IAccessPolicy
         }
 
         instance.Withdraw();
+        db.ReportRevisions.Add(instance.RecordWithdrawal(request.UserId, now));
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

@@ -21,6 +21,11 @@ const useGetWorkload = vi.fn();
 const getGetInboxQueryKey = (params?: unknown) => ["getInbox", params];
 const getGetInboxReportDetailQueryKey = (id: string) => ["getInboxReportDetail", id];
 
+// The version history panel has its own tests (ReportVersionsPanel.test.tsx).
+vi.mock("@/features/history/components/ReportVersionsPanel", () => ({
+  ReportVersionsPanel: () => <div>Version history panel</div>,
+}));
+
 vi.mock("@/lib/api/generated/review/review", () => ({
   useGetInbox: (...args: unknown[]) => useGetInbox(...args),
   useGetInboxReportDetail: (...args: unknown[]) => useGetInboxReportDetail(...args),

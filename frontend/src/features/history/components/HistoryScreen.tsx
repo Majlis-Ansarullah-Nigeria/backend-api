@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileSpreadsheet, FileText, History as HistoryIcon, Search } from "lucide-react";
+import { BarChart3, Download, FileSpreadsheet, FileText, History as HistoryIcon, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -104,9 +104,18 @@ export function HistoryScreen() {
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
-        <p className="mt-1 text-sm text-ink-muted">{t("subtitle")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("subtitle")}</p>
+        </div>
+        <Link
+          href="/history/compare"
+          className="inline-flex h-11 items-center gap-2 rounded-sm border border-line-strong bg-surface px-4 text-sm font-semibold text-ink hover:bg-ground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+        >
+          <BarChart3 className="size-4" aria-hidden="true" />
+          {t("comparePeriodsAction")}
+        </Link>
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
@@ -328,6 +337,13 @@ function HistoryTableRow({
         <div className="flex items-center justify-end gap-3">
           <Link href={href} className="text-sm font-medium text-green-700 underline-offset-2 hover:underline">
             {t("viewAction")}
+          </Link>
+          <Link
+            href={`/history/${row.instanceId}/versions`}
+            aria-label={t("versionsActionLabel", { report: row.reportTypeName, period: row.periodLabel })}
+            className="text-sm font-medium text-green-700 underline-offset-2 hover:underline"
+          >
+            {t("versionsAction")}
           </Link>
           <button
             type="button"

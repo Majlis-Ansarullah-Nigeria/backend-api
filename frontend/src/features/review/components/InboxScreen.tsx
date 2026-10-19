@@ -392,7 +392,13 @@ export function InboxScreen() {
 
         <div>
           {selectedId ? (
-            <InboxDetailPanel reportId={selectedId} />
+            <InboxDetailPanel
+              reportId={selectedId}
+              compareWith={(() => {
+                const item = inbox.data?.find((candidate) => candidate.reportId === selectedId);
+                return item ? { unitId: item.unitId, reportTypeId: item.reportTypeId, windowId: item.windowId } : undefined;
+              })()}
+            />
           ) : (
             <div className="rounded-lg border border-line bg-surface p-6 text-sm text-ink-muted">{t("selectPrompt")}</div>
           )}

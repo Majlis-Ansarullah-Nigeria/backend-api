@@ -48,6 +48,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<ReportComment> ReportComments => Set<ReportComment>();
 
+    public DbSet<ReportRevision> ReportRevisions => Set<ReportRevision>();
+
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
@@ -294,6 +296,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasOne<ReportComment>()
                 .WithMany()
                 .HasForeignKey(c => c.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ReportRevision>(revision =>
+        {
+            revision.ToTable("report_revisions");
+            revision.HasKey(r => r.Id);
+            revision.Property(r => r.AnswersJson).HasColumnType("jsonb").IsRequired();
+            // Gapless per report (ReportInstance.RevisionCount) — the unique index backs that up
+            // against a concurrent double-submit slipping through.
+            revision.HasIndex(r => new { r.ReportInstanceId, r.RevisionNo }).IsUnique();
+            revision
+                .HasOne<ReportInstance>()
+                .WithMany()
+                .HasForeignKey(r => r.ReportInstanceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

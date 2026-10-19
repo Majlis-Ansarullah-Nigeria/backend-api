@@ -95,6 +95,10 @@ public sealed class ReportInstance
     /// tying report rows to Identity's deletion/deactivation.</summary>
     public Guid? AssignedToUserId { get; private set; }
 
+    /// <summary>How many ReportRevision entries this report has (FR-HIS-006) — the source of the
+    /// next RevisionNo, and of whether a submit is a first submission or a resubmission.</summary>
+    public int RevisionCount { get; private set; }
+
     public static ReportInstance Create(Guid id, Guid windowId, Guid unitId, Guid templateVersionId, DateTimeOffset now) =>
         new(id, windowId, unitId, templateVersionId, now);
 
@@ -229,6 +233,36 @@ public sealed class ReportInstance
     /// its due date.</summary>
     public bool IsOverdue(DateTimeOffset now, DateTimeOffset dueAt) =>
         (Status is ReportInstanceStatus.NotStarted or ReportInstanceStatus.Draft) && now > dueAt;
+
+    /// <summary>FR-HIS-006: snapshots the answers just submitted. Call right after
+    /// <see cref="Submit"/>; the caller adds the returned revision to the same unit of work.</summary>
+    public ReportRevision RecordSubmission(Guid? actorUserId, DateTimeOffset now)
+    {
+        if (Status != ReportInstanceStatus.Submitted)
+        {
+            throw new InvalidOperationException($"Can't record a submission for a report in {Status} status.");
+        }
+
+        var action = RevisionCount == 0 ? ReportRevisionAction.Submitted : ReportRevisionAction.Resubmitted;
+        return NextRevision(action, actorUserId, now);
+    }
+
+    /// <summary>FR-HIS-006: records a withdrawal. Call right after <see cref="Withdraw"/>.</summary>
+    public ReportRevision RecordWithdrawal(Guid? actorUserId, DateTimeOffset now)
+    {
+        if (Status != ReportInstanceStatus.Draft || SubmittedAt is null)
+        {
+            throw new InvalidOperationException($"Can't record a withdrawal for a report in {Status} status.");
+        }
+
+        return NextRevision(ReportRevisionAction.Withdrawn, actorUserId, now);
+    }
+
+    private ReportRevision NextRevision(ReportRevisionAction action, Guid? actorUserId, DateTimeOffset now)
+    {
+        RevisionCount++;
+        return ReportRevision.Create(Id, RevisionCount, action, AnswersJson, actorUserId, now);
+    }
 
     public void SetFlagged(bool isFlagged) => IsFlagged = isFlagged;
 

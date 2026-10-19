@@ -1,7 +1,8 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Flag, Lock, Undo2 } from "lucide-react";
+import { BarChart3, Check, Flag, Lock, Undo2 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { ErrorState } from "@/components/shared/ErrorState";
@@ -23,13 +24,21 @@ import {
   useSetInboxReportFlagged,
 } from "@/lib/api/generated/review/review";
 import { REPORT_INSTANCE_STATUS, reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
+import { ReportVersionsPanel } from "@/features/history/components/ReportVersionsPanel";
 import { CommentsPanel } from "./CommentsPanel";
 
 // A report can still be acknowledged/returned from Submitted (the handlers auto-open it first)
 // or InReview; once Returned or Acknowledged, only Flag remains available.
 const ACTIONABLE_STATUSES = new Set<number>([REPORT_INSTANCE_STATUS.Submitted, REPORT_INSTANCE_STATUS.InReview]);
 
-export function InboxDetailPanel({ reportId }: { reportId: string }) {
+export function InboxDetailPanel({
+  reportId,
+  compareWith,
+}: {
+  reportId: string;
+  /** The report's unit and type, for the "Compare periods" link (FR-HIS-005). */
+  compareWith?: { unitId: string; reportTypeId: string; windowId: string };
+}) {
   const t = useTranslations("Inbox");
   const queryClient = useQueryClient();
   const [isReturning, setIsReturning] = useState(false);
@@ -226,6 +235,18 @@ export function InboxDetailPanel({ reportId }: { reportId: string }) {
           </dl>
         </div>
       ))}
+
+      <ReportVersionsPanel reportId={reportId} />
+
+      {compareWith ? (
+        <Link
+          href={`/history/compare?unitId=${compareWith.unitId}&reportTypeId=${compareWith.reportTypeId}&periodB=${compareWith.windowId}`}
+          className="inline-flex items-center gap-2 self-start text-sm font-semibold text-green-700 underline-offset-2 hover:underline"
+        >
+          <BarChart3 className="size-4" aria-hidden="true" />
+          {t("comparePeriodsLink")}
+        </Link>
+      ) : null}
 
       <CommentsPanel
         reportId={reportId}

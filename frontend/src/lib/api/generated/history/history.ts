@@ -24,12 +24,16 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ComparisonUnitOption,
   CreateBulkExportRequest,
   ExportSummary,
   GetHistoryParams,
+  GetPeriodComparisonParams,
   HistoryFilterOptions,
   HistoryPage,
-  ProblemDetails
+  PeriodComparison,
+  ProblemDetails,
+  ReportRevisionHistory
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -53,6 +57,100 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetReportRevisionsUrl = (reportId: string,) => {
+
+
+
+
+  return `/api/v1/reports/${reportId}/revisions`
+}
+
+export const getReportRevisions = async (reportId: string, options?: Parameters<typeof customFetch>[1]): Promise<ReportRevisionHistory> => {
+
+  return customFetch<ReportRevisionHistory>(getGetReportRevisionsUrl(reportId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReportRevisionsQueryKey = (reportId: string,) => {
+    return [
+    `/api/v1/reports/${reportId}/revisions`
+    ] as const;
+    }
+
+
+export const getGetReportRevisionsQueryOptions = <TData = Awaited<ReturnType<typeof getReportRevisions>>, TError = ProblemDetails>(reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportRevisions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportRevisionsQueryKey(reportId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportRevisions>>> = ({ signal }) => getReportRevisions(reportId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: reportId !== null && reportId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportRevisions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReportRevisionsQueryResult = NonNullable<Awaited<ReturnType<typeof getReportRevisions>>>
+export type GetReportRevisionsQueryError = ProblemDetails
+
+
+export function useGetReportRevisions<TData = Awaited<ReturnType<typeof getReportRevisions>>, TError = ProblemDetails>(
+ reportId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportRevisions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportRevisions>>,
+          TError,
+          Awaited<ReturnType<typeof getReportRevisions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportRevisions<TData = Awaited<ReturnType<typeof getReportRevisions>>, TError = ProblemDetails>(
+ reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportRevisions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportRevisions>>,
+          TError,
+          Awaited<ReturnType<typeof getReportRevisions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportRevisions<TData = Awaited<ReturnType<typeof getReportRevisions>>, TError = ProblemDetails>(
+ reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportRevisions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetReportRevisions<TData = Awaited<ReturnType<typeof getReportRevisions>>, TError = ProblemDetails>(
+ reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportRevisions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReportRevisionsQueryOptions(reportId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
 
 export const getGetHistoryUrl = (params?: GetHistoryParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -426,6 +524,201 @@ export function useGetHistoryReportExcel<TData = Awaited<ReturnType<typeof getHi
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetHistoryReportExcelQueryOptions(instanceId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetPeriodComparisonUrl = (params: GetPeriodComparisonParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/history/compare?${stringifiedParams}` : `/api/v1/history/compare`
+}
+
+export const getPeriodComparison = async (params: GetPeriodComparisonParams, options?: Parameters<typeof customFetch>[1]): Promise<PeriodComparison> => {
+
+  return customFetch<PeriodComparison>(getGetPeriodComparisonUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPeriodComparisonQueryKey = (params?: GetPeriodComparisonParams,) => {
+    return [
+    `/api/v1/history/compare`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPeriodComparisonQueryOptions = <TData = Awaited<ReturnType<typeof getPeriodComparison>>, TError = ProblemDetails>(params: GetPeriodComparisonParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodComparison>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPeriodComparisonQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPeriodComparison>>> = ({ signal }) => getPeriodComparison(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPeriodComparison>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPeriodComparisonQueryResult = NonNullable<Awaited<ReturnType<typeof getPeriodComparison>>>
+export type GetPeriodComparisonQueryError = ProblemDetails
+
+
+export function useGetPeriodComparison<TData = Awaited<ReturnType<typeof getPeriodComparison>>, TError = ProblemDetails>(
+ params: GetPeriodComparisonParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodComparison>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPeriodComparison>>,
+          TError,
+          Awaited<ReturnType<typeof getPeriodComparison>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPeriodComparison<TData = Awaited<ReturnType<typeof getPeriodComparison>>, TError = ProblemDetails>(
+ params: GetPeriodComparisonParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodComparison>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPeriodComparison>>,
+          TError,
+          Awaited<ReturnType<typeof getPeriodComparison>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPeriodComparison<TData = Awaited<ReturnType<typeof getPeriodComparison>>, TError = ProblemDetails>(
+ params: GetPeriodComparisonParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodComparison>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPeriodComparison<TData = Awaited<ReturnType<typeof getPeriodComparison>>, TError = ProblemDetails>(
+ params: GetPeriodComparisonParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodComparison>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPeriodComparisonQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetComparisonOptionsUrl = () => {
+
+
+
+
+  return `/api/v1/history/compare/options`
+}
+
+export const getComparisonOptions = async ( options?: Parameters<typeof customFetch>[1]): Promise<ComparisonUnitOption[]> => {
+
+  return customFetch<ComparisonUnitOption[]>(getGetComparisonOptionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetComparisonOptionsQueryKey = () => {
+    return [
+    `/api/v1/history/compare/options`
+    ] as const;
+    }
+
+
+export const getGetComparisonOptionsQueryOptions = <TData = Awaited<ReturnType<typeof getComparisonOptions>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getComparisonOptions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetComparisonOptionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getComparisonOptions>>> = ({ signal }) => getComparisonOptions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getComparisonOptions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetComparisonOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof getComparisonOptions>>>
+export type GetComparisonOptionsQueryError = unknown
+
+
+export function useGetComparisonOptions<TData = Awaited<ReturnType<typeof getComparisonOptions>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getComparisonOptions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getComparisonOptions>>,
+          TError,
+          Awaited<ReturnType<typeof getComparisonOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetComparisonOptions<TData = Awaited<ReturnType<typeof getComparisonOptions>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getComparisonOptions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getComparisonOptions>>,
+          TError,
+          Awaited<ReturnType<typeof getComparisonOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetComparisonOptions<TData = Awaited<ReturnType<typeof getComparisonOptions>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getComparisonOptions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetComparisonOptions<TData = Awaited<ReturnType<typeof getComparisonOptions>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getComparisonOptions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetComparisonOptionsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

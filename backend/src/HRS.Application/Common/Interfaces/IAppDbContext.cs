@@ -42,6 +42,8 @@ public interface IAppDbContext
 
     DbSet<ReportComment> ReportComments { get; }
 
+    DbSet<ReportRevision> ReportRevisions { get; }
+
     DbSet<ReportInstance> ReportInstances { get; }
 
     DbSet<ReportType> ReportTypes { get; }

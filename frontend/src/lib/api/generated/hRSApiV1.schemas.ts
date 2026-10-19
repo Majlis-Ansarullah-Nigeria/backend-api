@@ -153,6 +153,52 @@ export interface CommentThread {
   replies: CommentView[];
 }
 
+export type TemplateFieldType = number;
+
+export interface ComparisonFigure {
+  fieldKey: string;
+  label: string;
+  type: TemplateFieldType;
+  /** @nullable */
+  unitLabel: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  periodA: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  periodB: number | string | null;
+}
+
+export interface ComparisonPeriod {
+  windowId: string;
+  periodLabel: string;
+  opensAt: string;
+  isDraft: boolean;
+}
+
+export type ComparisonSeriesPointValues = {[key: string]: number | string | null};
+
+export interface ComparisonSeriesPoint {
+  windowId: string;
+  periodLabel: string;
+  values: ComparisonSeriesPointValues;
+}
+
+export interface HistoryReportTypeOption {
+  id: string;
+  name: string;
+}
+
+export interface ComparisonUnitOption {
+  unitId: string;
+  unitName: string;
+  reportTypes: HistoryReportTypeOption[];
+}
+
 export type ReportLineStatus = number;
 
 export interface ComplianceGridCell {
@@ -486,11 +532,6 @@ export interface GrantWindowExtensionRequest {
   reason: string;
 }
 
-export interface HistoryReportTypeOption {
-  id: string;
-  name: string;
-}
-
 export interface HistoryPeriodOption {
   windowId: string;
   periodLabel: string;
@@ -681,6 +722,21 @@ export interface OtpVerifyRequest {
   code: string;
 }
 
+export interface PeriodComparison {
+  unitId: string;
+  unitName: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  periods: ComparisonPeriod[];
+  /** @nullable */
+  periodAWindowId: string | null;
+  /** @nullable */
+  periodBWindowId: string | null;
+  figures: ComparisonFigure[];
+  changedTextSections: string[];
+  series: ComparisonSeriesPoint[];
+}
+
 export interface PresignAttachmentRequest {
   fieldKey: string;
   fileName: string;
@@ -785,9 +841,15 @@ export interface ReopenWindowRequest {
   reason: string;
 }
 
-export type ReportInstanceForEditingAnswers = { [key: string]: unknown };
+export interface ReportFieldChange {
+  sectionTitle: string;
+  fieldKey: string;
+  label: string;
+  before: string;
+  after: string;
+}
 
-export type TemplateFieldType = number;
+export type ReportInstanceForEditingAnswers = { [key: string]: unknown };
 
 export interface TemplateShowIf {
   fieldKey: string;
@@ -883,6 +945,26 @@ export interface ReportInstanceForEditing {
   submittedAt: string | null;
   isNil: boolean;
   allowNilReport: boolean;
+}
+
+export type ReportRevisionAction = number;
+
+export interface ReportRevisionEntry {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  revisionNo: number | string;
+  action: ReportRevisionAction;
+  createdAt: string;
+  /** @nullable */
+  actorName: string | null;
+  changes: ReportFieldChange[];
+}
+
+export interface ReportRevisionHistory {
+  reportId: string;
+  reportTypeName: string;
+  periodLabel: string;
+  unitName: string;
+  revisions: ReportRevisionEntry[];
 }
 
 export interface ReportTypeSummary {
@@ -1312,5 +1394,12 @@ page?: number | string;
  * @pattern ^-?(?:0|[1-9]\d*)$
  */
 pageSize?: number | string;
+};
+
+export type GetPeriodComparisonParams = {
+unitId: string;
+reportTypeId: string;
+periodA?: string;
+periodB?: string;
 };
 

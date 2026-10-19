@@ -955,6 +955,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("returned_at");
 
+                    b.Property<int>("RevisionCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision_count");
+
                     b.Property<DateTimeOffset?>("RevisionDeadline")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revision_deadline");
@@ -1007,6 +1011,48 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_report_instances_window_id_unit_id");
 
                     b.ToTable("report_instances", (string)null);
+                });
+
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("integer")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("AnswersJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("answers_json");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("ReportInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_instance_id");
+
+                    b.Property<int>("RevisionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision_no");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_revisions");
+
+                    b.HasIndex("ReportInstanceId", "RevisionNo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_report_revisions_report_instance_id_revision_no");
+
+                    b.ToTable("report_revisions", (string)null);
                 });
 
             modelBuilder.Entity("HRS.Domain.Templates.ReportType", b =>
@@ -1617,6 +1663,16 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_report_instances_submission_windows_window_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Submissions.ReportRevision", b =>
+                {
+                    b.HasOne("HRS.Domain.Submissions.ReportInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ReportInstanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_revisions_report_instances_report_instance_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Templates.TemplateVersion", b =>
