@@ -18,6 +18,9 @@
   --color-line: var(--color-line);
   --color-line-strong: var(--color-line-strong);
   --color-danger: var(--color-danger);
+  --color-chart-on-time: var(--color-chart-on-time);
+  --color-chart-late: var(--color-chart-late);
+  --color-chart-open: var(--color-chart-open);
 
   --color-status-not-started-bg: var(--status-not-started-bg);
   --color-status-not-started-fg: var(--status-not-started-fg);

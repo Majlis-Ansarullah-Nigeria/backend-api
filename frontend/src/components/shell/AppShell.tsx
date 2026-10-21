@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useNotificationBadge } from "@/features/notifications/hooks/useNotificationBadge";
 import { BottomTabs } from "./BottomTabs";
-import { PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS } from "./nav-items";
+import { isNavItemActive, PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS } from "./nav-items";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import type { UnitOption } from "./UnitSwitcher";
@@ -25,9 +25,7 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
   const isSecretariat = pathname?.startsWith("/secretariat") ?? false;
   const navItems = isSecretariat ? SECRETARIAT_NAV_ITEMS : PRIMARY_NAV_ITEMS;
 
-  const activeItem = navItems.find(
-    (item) => pathname === item.href || pathname?.startsWith(`${item.href}/`),
-  );
+  const activeItem = navItems.find((item) => isNavItemActive(item, pathname));
 
   return (
     <div className="flex min-h-dvh">

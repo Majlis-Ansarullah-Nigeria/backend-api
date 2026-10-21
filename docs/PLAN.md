@@ -70,7 +70,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M9.3 Period comparison and version history diff (FR-HIS-005, FR-HIS-006).
 
 ## M10 — Dashboards (FR-DSH)
-- [ ] M10.1 Compliance dashboard with one-click reminders (FR-DSH-001).
+- [x] M10.1 Compliance dashboard with one-click reminders (FR-DSH-001).
 - [ ] M10.2 Indicator dashboards, drill-down, scoped views (FR-DSH-002, FR-DSH-003, FR-DSH-005).
 - [ ] M10.3 Map view (FR-DSH-004); compiled national report export (FR-REV-006).
 

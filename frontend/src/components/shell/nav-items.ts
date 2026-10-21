@@ -1,4 +1,4 @@
-import { Bell, Building2, Calendar, Download, FileText, History, Home, Inbox, LayoutTemplate, Mail, Network, User, Users, type LucideIcon } from "lucide-react";
+import { BarChart3, Bell, Building2, Calendar, Download, FileText, History, Home, Inbox, LayoutGrid, LayoutTemplate, Mail, Network, User, Users, type LucideIcon } from "lucide-react";
 
 export type NavItemKey =
   | "home"
@@ -13,12 +13,24 @@ export type NavItemKey =
   | "windows"
   | "inbox"
   | "announcements"
-  | "exports";
+  | "exports"
+  | "overview"
+  | "dashboards";
 
 export interface NavItem {
   href: string;
   key: NavItemKey;
   icon: LucideIcon;
+  /** Active only on this exact path — for a section root like /secretariat whose sibling routes
+   * all sit underneath it. */
+  exact?: boolean;
+}
+
+export function isNavItemActive(item: NavItem, pathname: string | null): boolean {
+  if (pathname === item.href) {
+    return true;
+  }
+  return !item.exact && (pathname?.startsWith(`${item.href}/`) ?? false);
 }
 
 /**
@@ -38,16 +50,18 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
  * Secretariat navigation. The full tree from the mockup (Overview, Inbox, Report types,
  * Windows, Organization, Users, Dashboards, Exports, Announcements, Audit log, Settings)
  * lands incrementally as each of those routes is built — Report types (M3.1), Windows (M4.5),
- * Organization (M2.2), Users (M2.4), Inbox (M7.1), Announcements/email wording (M8.1/M8.3) and
- * Exports (M9.2) exist so far. No mobile board exists for these screens, so AppShell hides the
+ * Organization (M2.2), Users (M2.4), Inbox (M7.1), Announcements/email wording (M8.1/M8.3),
+ * Exports (M9.2), Overview and Dashboards (M10.1) exist so far. No mobile board exists for these screens, so AppShell hides the
  * bottom tabs here.
  */
 export const SECRETARIAT_NAV_ITEMS: NavItem[] = [
+  { href: "/secretariat", key: "overview", icon: LayoutGrid, exact: true },
   { href: "/secretariat/inbox", key: "inbox", icon: Inbox },
   { href: "/secretariat/report-types", key: "reportTypes", icon: LayoutTemplate },
   { href: "/secretariat/windows", key: "windows", icon: Calendar },
   { href: "/secretariat/organization", key: "organization", icon: Network },
   { href: "/secretariat/users", key: "users", icon: Users },
+  { href: "/secretariat/dashboards/compliance", key: "dashboards", icon: BarChart3 },
   { href: "/secretariat/exports", key: "exports", icon: Download },
   { href: "/secretariat/announcements", key: "announcements", icon: Mail },
 ];

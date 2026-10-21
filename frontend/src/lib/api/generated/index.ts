@@ -1,4 +1,5 @@
 export * from './admin/admin';
+export * from './dashboards/dashboards';
 export * from './department/department';
 export * from './exports/exports';
 export * from './history/history';

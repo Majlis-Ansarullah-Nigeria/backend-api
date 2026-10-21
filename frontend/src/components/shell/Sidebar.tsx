@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { PRIMARY_NAV_ITEMS, type NavItem } from "./nav-items";
+import { isNavItemActive, PRIMARY_NAV_ITEMS, type NavItem } from "./nav-items";
 import type { UnitOption } from "./UnitSwitcher";
 import { UnitSwitcher } from "./UnitSwitcher";
 
@@ -39,7 +39,7 @@ export function Sidebar({ orgName, user, unit, navItems = PRIMARY_NAV_ITEMS }: S
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3" aria-label="Primary">
         {navItems.map((item) => {
-          const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+          const active = isNavItemActive(item, pathname);
           const Icon = item.icon;
 
           return (

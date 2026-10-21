@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { PRIMARY_NAV_ITEMS } from "./nav-items";
+import { isNavItemActive, PRIMARY_NAV_ITEMS } from "./nav-items";
 
 export function BottomTabs() {
   const pathname = usePathname();
@@ -16,7 +16,7 @@ export function BottomTabs() {
       className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-white/10 bg-forest-900 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
     >
       {PRIMARY_NAV_ITEMS.map((item) => {
-        const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+        const active = isNavItemActive(item, pathname);
         const Icon = item.icon;
 
         return (

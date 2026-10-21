@@ -199,6 +199,68 @@ export interface ComparisonUnitOption {
   reportTypes: HistoryReportTypeOption[];
 }
 
+export interface DashboardReportTypeOption {
+  id: string;
+  name: string;
+}
+
+export type UnitLevelCode = number;
+
+export interface DashboardLevelOption {
+  code: UnitLevelCode;
+  name: string;
+  pluralName: string;
+}
+
+export interface CompliancePeriodSummary {
+  windowId: string;
+  periodLabel: string;
+  /** @nullable */
+  dueAt: string | null;
+  isClosed: boolean;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  onTime: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  late: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  missed: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  drafting: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  notStarted: number | string;
+}
+
+export interface ComplianceGroupRow {
+  /** @nullable */
+  groupUnitId: string | null;
+  name: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  submitted: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  drafting: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  notStarted: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  remindable: number | string;
+}
+
+export interface ComplianceDashboard {
+  reportTypes: DashboardReportTypeOption[];
+  /** @nullable */
+  reportTypeId: string | null;
+  /** @nullable */
+  reportTypeName: string | null;
+  levels: DashboardLevelOption[];
+  level: null | UnitLevelCode;
+  periods: CompliancePeriodSummary[];
+  groups: ComplianceGroupRow[];
+  canRemind: boolean;
+}
+
 export type ReportLineStatus = number;
 
 export interface ComplianceGridCell {
@@ -292,8 +354,6 @@ export interface CreateOrganizationExportRequest {
 export type ReportTypeCategory = number;
 
 export type ReportTypeFrequency = number;
-
-export type UnitLevelCode = number;
 
 export interface CreateReportTypeRequest {
   name: string;
@@ -722,6 +782,63 @@ export interface OtpVerifyRequest {
   code: string;
 }
 
+export interface OverviewGroupProgress {
+  /** @nullable */
+  groupUnitId: string | null;
+  name: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  submitted: number | string;
+}
+
+export interface OverviewLevelGroups {
+  level: UnitLevelCode;
+  levelName: string;
+  groups: OverviewGroupProgress[];
+}
+
+export interface OverviewLevelProgress {
+  level: UnitLevelCode;
+  levelName: string;
+  levelPluralName: string;
+  /** @nullable */
+  dueAt: string | null;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  submitted: number | string;
+}
+
+export interface OverviewNextDue {
+  level: UnitLevelCode;
+  levelPluralName: string;
+  dueAt: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  notSubmitted: number | string;
+}
+
+export interface OverviewWindow {
+  windowId: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  periodLabel: string;
+  opensAt: string;
+  isClosed: boolean;
+}
+
+export type OverviewWindowEventKind = number;
+
+export interface OverviewWindowEvent {
+  windowId: string;
+  kind: OverviewWindowEventKind;
+  at: string;
+  reportTypeName: string;
+  periodLabel: string;
+  levelNames: string[];
+  isScheduled: boolean;
+}
+
 export interface PeriodComparison {
   unitId: string;
   unitName: string;
@@ -1023,6 +1140,29 @@ export interface SaveReportDraftResult {
   rowVersion: string;
 }
 
+export interface SecretariatOverview {
+  userName: string;
+  currentWindow: null | OverviewWindow;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  received: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  unreadInInbox: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  assignedToMe: number | string;
+  nextDue: null | OverviewNextDue;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  vacantHeads: number | string;
+  byZone: OverviewLevelGroups[];
+  byLevel: OverviewLevelProgress[];
+  upcomingWindows: OverviewWindowEvent[];
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  flaggedReports: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  returnedPastRevisionDeadline: number | string;
+}
+
 export interface SendAnnouncementRequest {
   title: string;
   message: string;
@@ -1031,8 +1171,22 @@ export interface SendAnnouncementRequest {
   sendEmail: boolean;
 }
 
+export interface SendComplianceRemindersRequest {
+  windowId: string;
+  level: UnitLevelCode;
+  /** @nullable */
+  groupUnitId: string | null;
+}
+
 export interface SendNudgeRequest {
   windowId: string;
+}
+
+export interface SendRemindersResult {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  unitsReminded: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  unitsWithoutHead: number | string;
 }
 
 export interface SessionSummary {
@@ -1401,5 +1555,10 @@ unitId: string;
 reportTypeId: string;
 periodA?: string;
 periodB?: string;
+};
+
+export type GetComplianceDashboardParams = {
+reportTypeId?: string;
+level?: UnitLevelCode;
 };
 

@@ -16,6 +16,13 @@
   --color-line-strong:#CFDCD3;
   --color-danger:     #B42318;
 
+  /* compliance charts (FR-DSH-001): on time / late / a still-open period. Validated as a pair
+     with the dataviz palette checker — CVD separation is in the 6–8 band, so charts always add
+     a second cue (fixed stack order, legend, segment gaps, tooltip) */
+  --color-chart-on-time: #12A15F;
+  --color-chart-late:    #E8A045;
+  --color-chart-open:    #9ED8BB;
+
   /* status chips: background / text (always with an icon and a word) */
   --status-not-started-bg: #EEF2F0; --status-not-started-fg: #46524C;
   --status-draft-bg:       #EEF2F0; --status-draft-fg:       #33403A;
