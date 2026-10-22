@@ -1,4 +1,5 @@
 using HRS.Domain.Access;
+using HRS.Domain.Analytics;
 using HRS.Domain.Common;
 using HRS.Domain.History;
 using HRS.Domain.Invitations;
@@ -43,6 +44,10 @@ public interface IAppDbContext
     DbSet<ReportComment> ReportComments { get; }
 
     DbSet<ReportRevision> ReportRevisions { get; }
+
+    DbSet<ReportMetric> ReportMetrics { get; }
+
+    DbSet<ReportFieldTarget> ReportFieldTargets { get; }
 
     DbSet<ReportInstance> ReportInstances { get; }
 

@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
+using HRS.Domain.Analytics;
 using HRS.Domain.Common;
 using HRS.Domain.History;
 using HRS.Domain.Invitations;
@@ -49,6 +50,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ReportComment> ReportComments => Set<ReportComment>();
 
     public DbSet<ReportRevision> ReportRevisions => Set<ReportRevision>();
+
+    public DbSet<ReportMetric> ReportMetrics => Set<ReportMetric>();
+
+    public DbSet<ReportFieldTarget> ReportFieldTargets => Set<ReportFieldTarget>();
 
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
@@ -312,6 +317,38 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(r => r.ReportInstanceId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ReportMetric>(metric =>
+        {
+            metric.ToTable("report_metrics");
+            metric.HasKey(m => m.Id);
+            metric.Property(m => m.FieldKey).IsRequired();
+            metric.Property(m => m.UnitPath).IsRequired();
+            metric.Property(m => m.Value).HasPrecision(20, 4);
+            metric.HasIndex(m => new { m.ReportInstanceId, m.FieldKey }).IsUnique();
+            // Indicator queries: one field across a set of windows, filtered to a subtree by path prefix.
+            metric.HasIndex(m => new { m.FieldKey, m.WindowId });
+            metric.HasIndex(m => m.UnitPath).HasOperators("text_pattern_ops");
+            metric
+                .HasOne<ReportInstance>()
+                .WithMany()
+                .HasForeignKey(m => m.ReportInstanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ReportFieldTarget>(target =>
+        {
+            target.ToTable("report_field_targets");
+            target.HasKey(t => t.Id);
+            target.Property(t => t.FieldKey).IsRequired();
+            target.Property(t => t.Value).HasPrecision(20, 4);
+            target.HasIndex(t => new { t.ReportTypeId, t.FieldKey, t.Level }).IsUnique();
+            target
+                .HasOne<ReportType>()
+                .WithMany()
+                .HasForeignKey(t => t.ReportTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<OutboxMessage>(message =>

@@ -25,9 +25,11 @@ import type {
 
 import type {
   CreateReportTypeRequest,
+  FieldTargetDto,
   GetReportTypesParams,
   ProblemDetails,
   ReportTypeSummary,
+  SetFieldTargetsRequest,
   TemplateVersionDetail,
   TemplateVersionSummary,
   UpdateReportTypeRequest,
@@ -547,6 +549,184 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRestoreReportTypeMutationOptions(options), queryClient);
+    }
+    export const getGetFieldTargetsUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/report-types/${id}/field-targets`
+}
+
+export const getFieldTargets = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<FieldTargetDto[]> => {
+
+  return customFetch<FieldTargetDto[]>(getGetFieldTargetsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFieldTargetsQueryKey = (id: string,) => {
+    return [
+    `/api/v1/report-types/${id}/field-targets`
+    ] as const;
+    }
+
+
+export const getGetFieldTargetsQueryOptions = <TData = Awaited<ReturnType<typeof getFieldTargets>>, TError = ProblemDetails>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFieldTargets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFieldTargetsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFieldTargets>>> = ({ signal }) => getFieldTargets(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFieldTargets>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFieldTargetsQueryResult = NonNullable<Awaited<ReturnType<typeof getFieldTargets>>>
+export type GetFieldTargetsQueryError = ProblemDetails
+
+
+export function useGetFieldTargets<TData = Awaited<ReturnType<typeof getFieldTargets>>, TError = ProblemDetails>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFieldTargets>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFieldTargets>>,
+          TError,
+          Awaited<ReturnType<typeof getFieldTargets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFieldTargets<TData = Awaited<ReturnType<typeof getFieldTargets>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFieldTargets>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFieldTargets>>,
+          TError,
+          Awaited<ReturnType<typeof getFieldTargets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFieldTargets<TData = Awaited<ReturnType<typeof getFieldTargets>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFieldTargets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetFieldTargets<TData = Awaited<ReturnType<typeof getFieldTargets>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFieldTargets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFieldTargetsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSetFieldTargetsUrl = (id: string,
+    fieldKey: string,) => {
+
+
+
+
+  return `/api/v1/report-types/${id}/field-targets/${fieldKey}`
+}
+
+export const setFieldTargets = async (id: string,
+    fieldKey: string,
+    setFieldTargetsRequest: SetFieldTargetsRequest, options?: Parameters<typeof customFetch>[1]): Promise<FieldTargetDto[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FieldTargetDto[]>(getSetFieldTargetsUrl(id,fieldKey),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setFieldTargetsRequest)
+  }
+);}
+
+
+
+
+
+export const getSetFieldTargetsMutationKey = () => ['setFieldTargets'] as const;
+
+export const getSetFieldTargetsMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setFieldTargets>>, TError,SetFieldTargetsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setFieldTargets>>, TError,SetFieldTargetsMutationVariables, TContext> => {
+
+const mutationKey = getSetFieldTargetsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setFieldTargets>>, SetFieldTargetsMutationVariables> = (props) => {
+          const {id,fieldKey,data} = props ?? {};
+
+          return  setFieldTargets(id,fieldKey,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetFieldTargetsMutationResult = NonNullable<Awaited<ReturnType<typeof setFieldTargets>>>
+    export type SetFieldTargetsMutationBody = SetFieldTargetsRequest
+    export type SetFieldTargetsMutationError = ProblemDetails
+    export type SetFieldTargetsMutationVariables = {id: string;fieldKey: string;data: SetFieldTargetsRequest}
+
+    export const useSetFieldTargets = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setFieldTargets>>, TError,SetFieldTargetsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setFieldTargets>>,
+        TError,
+        SetFieldTargetsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetFieldTargetsMutationOptions(options), queryClient);
     }
     export const getGetTemplateVersionsUrl = (reportTypeId: string,) => {
 

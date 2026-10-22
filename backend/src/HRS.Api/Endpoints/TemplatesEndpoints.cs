@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Templates.FieldTargets;
 using HRS.Application.Features.Templates.ReportTypes;
 using HRS.Application.Features.Templates.TemplateVersions;
 using HRS.Domain.Organization;
@@ -126,6 +127,38 @@ public static class TemplatesEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        reportTypes.MapGet("/{id:guid}/field-targets", async (
+                Guid id,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetFieldTargetsQuery(user.GetUserId(), id), cancellationToken);
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetFieldTargets")
+            .Produces<IReadOnlyList<FieldTargetDto>>()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        reportTypes.MapPut("/{id:guid}/field-targets/{fieldKey}", async (
+                Guid id,
+                string fieldKey,
+                [FromBody] SetFieldTargetsRequest request,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var command = new SetFieldTargetsCommand(user.GetUserId(), id, fieldKey, request.Targets);
+                var result = await sender.Send(command, cancellationToken);
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("SetFieldTargets")
+            .Produces<IReadOnlyList<FieldTargetDto>>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         var templateVersions = app.MapGroup("/api/v1/report-types/{reportTypeId:guid}/template-versions")
             .WithTags("Templates")
             .RequireAuthorization();
@@ -219,3 +252,5 @@ public sealed record UpdateReportTypeRequest(
     bool AllowNilReport);
 
 public sealed record UpdateTemplateSchemaRequest(TemplateSchema Schema);
+
+public sealed record SetFieldTargetsRequest(IReadOnlyList<FieldTargetLevelValue> Targets);

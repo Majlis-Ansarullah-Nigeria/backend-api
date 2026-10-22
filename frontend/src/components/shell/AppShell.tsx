@@ -4,8 +4,10 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useNotificationBadge } from "@/features/notifications/hooks/useNotificationBadge";
+import type { DashboardAccess } from "@/lib/api/generated/hRSApiV1.schemas";
+import { useGetDashboardAccess } from "@/lib/api/generated/dashboards/dashboards";
 import { BottomTabs } from "./BottomTabs";
-import { isNavItemActive, PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS } from "./nav-items";
+import { DASHBOARD_NAV_ITEM, isNavItemActive, PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS } from "./nav-items";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import type { UnitOption } from "./UnitSwitcher";
@@ -23,7 +25,14 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
   const notificationCount = useNotificationBadge();
 
   const isSecretariat = pathname?.startsWith("/secretariat") ?? false;
-  const navItems = isSecretariat ? SECRETARIAT_NAV_ITEMS : PRIMARY_NAV_ITEMS;
+  // FR-DSH-005: Zone/Dila heads and Leadership get a Dashboard link. Navigation only — the
+  // dashboard API checks scope on every request.
+  const dashboardAccess = useGetDashboardAccess<DashboardAccess>({ query: { enabled: !isSecretariat, staleTime: 5 * 60 * 1000 } });
+  const navItems = isSecretariat
+    ? SECRETARIAT_NAV_ITEMS
+    : dashboardAccess.data?.hasIndicators
+      ? [...PRIMARY_NAV_ITEMS.slice(0, 4), DASHBOARD_NAV_ITEM, ...PRIMARY_NAV_ITEMS.slice(4)]
+      : PRIMARY_NAV_ITEMS;
 
   const activeItem = navItems.find((item) => isNavItemActive(item, pathname));
 

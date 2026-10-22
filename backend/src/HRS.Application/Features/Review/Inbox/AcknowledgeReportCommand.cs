@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Analytics;
 using HRS.Application.Features.Notifications;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
@@ -49,6 +50,7 @@ public sealed class AcknowledgeReportCommandHandler(
 
         var now = clock.UtcNow;
         instance.Acknowledge(now);
+        await ReportMetricWriter.ReplaceAsync(db, instance, window, cancellationToken);
 
         var placeholders = new Dictionary<string, string>
         {

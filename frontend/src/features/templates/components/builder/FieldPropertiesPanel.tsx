@@ -13,12 +13,16 @@ import type { TemplateField, TemplateFieldOption, TemplateSchema, UnitLevelSumma
 import { aggregationLabel, NUMERIC_AGGREGATABLE_TYPES } from "@/features/templates/utils/field-type-meta";
 import { AGGREGATION_RULE } from "@/lib/form-engine/field-types";
 import { cn } from "@/lib/utils";
+import { FieldTargetsTab } from "./FieldTargetsTab";
 
-type PropertiesTab = "field" | "logic" | "visibility";
+type PropertiesTab = "field" | "logic" | "visibility" | "targets";
 
 const CHOICE_TYPES: readonly number[] = [TEMPLATE_FIELD_TYPE.SingleChoice, TEMPLATE_FIELD_TYPE.MultipleChoice, TEMPLATE_FIELD_TYPE.Dropdown];
+// Figures dashboards chart (FR-DSH-002) — the only fields that can have targets (FR-TPL-011).
+const FIGURE_TYPES: readonly number[] = [TEMPLATE_FIELD_TYPE.Number, TEMPLATE_FIELD_TYPE.Currency, TEMPLATE_FIELD_TYPE.Percentage];
 
 export function FieldPropertiesPanel({
+  reportTypeId,
   field,
   schema,
   levels,
@@ -31,6 +35,7 @@ export function FieldPropertiesPanel({
   onRemoveColumn,
   onUpdateColumn,
 }: {
+  reportTypeId?: string;
   field: TemplateField;
   schema: TemplateSchema;
   levels: UnitLevelSummary[];
@@ -45,6 +50,7 @@ export function FieldPropertiesPanel({
 }) {
   const t = useTranslations("TemplateBuilder");
   const [tab, setTab] = useState<PropertiesTab>("field");
+  const hasTargets = reportTypeId != null && FIGURE_TYPES.includes(Number(field.type));
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
@@ -52,6 +58,7 @@ export function FieldPropertiesPanel({
         <PanelTab active={tab === "field"} onClick={() => setTab("field")} label={t("fieldTab")} />
         <PanelTab active={tab === "logic"} onClick={() => setTab("logic")} label={t("logicTab")} />
         <PanelTab active={tab === "visibility"} onClick={() => setTab("visibility")} label={t("visibilityTab")} />
+        {hasTargets ? <PanelTab active={tab === "targets"} onClick={() => setTab("targets")} label={t("targetsTab")} /> : null}
       </div>
 
       {tab === "field" ? (
@@ -68,6 +75,8 @@ export function FieldPropertiesPanel({
         />
       ) : tab === "logic" ? (
         <LogicTab field={field} schema={schema} onUpdate={onUpdate} />
+      ) : tab === "targets" && hasTargets && reportTypeId ? (
+        <FieldTargetsTab reportTypeId={reportTypeId} fieldKey={field.key} levels={levels} />
       ) : (
         <VisibilityTab field={field} levels={levels} onUpdate={onUpdate} />
       )}

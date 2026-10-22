@@ -1,5 +1,5 @@
-import { HeadHomeScreen } from "@/features/submissions/components/HeadHomeScreen";
+import { HomeScreen } from "@/features/dashboards/components/HomeScreen";
 
 export default function HomePage() {
-  return <HeadHomeScreen />;
+  return <HomeScreen />;
 }

@@ -69,6 +69,62 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("role_assignments", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Analytics.ReportMetric", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FieldKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("field_key");
+
+                    b.Property<DateTimeOffset>("PeriodStart")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("period_start");
+
+                    b.Property<Guid>("ReportInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_instance_id");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.Property<string>("UnitPath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("unit_path");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(20, 4)
+                        .HasColumnType("numeric(20,4)")
+                        .HasColumnName("value");
+
+                    b.Property<Guid>("WindowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("window_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_metrics");
+
+                    b.HasIndex("UnitPath")
+                        .HasDatabaseName("ix_report_metrics_unit_path");
+
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("UnitPath"), new[] { "text_pattern_ops" });
+
+                    b.HasIndex("FieldKey", "WindowId")
+                        .HasDatabaseName("ix_report_metrics_field_key_window_id");
+
+                    b.HasIndex("ReportInstanceId", "FieldKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_report_metrics_report_instance_id_field_key");
+
+                    b.ToTable("report_metrics", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Common.IdempotencyRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1055,6 +1111,41 @@ namespace HRS.Infrastructure.Persistence.Migrations
                     b.ToTable("report_revisions", (string)null);
                 });
 
+            modelBuilder.Entity("HRS.Domain.Templates.ReportFieldTarget", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FieldKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("field_key");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer")
+                        .HasColumnName("level");
+
+                    b.Property<Guid>("ReportTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_type_id");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(20, 4)
+                        .HasColumnType("numeric(20,4)")
+                        .HasColumnName("value");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_field_targets");
+
+                    b.HasIndex("ReportTypeId", "FieldKey", "Level")
+                        .IsUnique()
+                        .HasDatabaseName("ix_report_field_targets_report_type_id_field_key_level");
+
+                    b.ToTable("report_field_targets", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Templates.ReportType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1553,6 +1644,16 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_role_assignments_users_user_id");
                 });
 
+            modelBuilder.Entity("HRS.Domain.Analytics.ReportMetric", b =>
+                {
+                    b.HasOne("HRS.Domain.Submissions.ReportInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ReportInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_metrics_report_instances_report_instance_id");
+                });
+
             modelBuilder.Entity("HRS.Domain.Invitations.Invitation", b =>
                 {
                     b.HasOne("HRS.Domain.Organization.Unit", null)
@@ -1673,6 +1774,16 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_report_revisions_report_instances_report_instance_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Templates.ReportFieldTarget", b =>
+                {
+                    b.HasOne("HRS.Domain.Templates.ReportType", null)
+                        .WithMany()
+                        .HasForeignKey("ReportTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_field_targets_report_types_report_type_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Templates.TemplateVersion", b =>

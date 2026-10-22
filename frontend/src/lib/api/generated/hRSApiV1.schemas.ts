@@ -537,6 +537,11 @@ export interface CreateWindowScheduleResult {
   windowsGenerated: number | string;
 }
 
+export interface DashboardAccess {
+  hasIndicators: boolean;
+  hasCompliance: boolean;
+}
+
 export interface DepartmentFieldValue {
   fieldKey: string;
   label: string;
@@ -579,6 +584,22 @@ export interface ExportSummary {
   createdAt: string;
   /** @nullable */
   completedAt: string | null;
+}
+
+export interface FieldTargetDto {
+  fieldKey: string;
+  level: UnitLevelCode;
+  /** @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?$ */
+  value: number | string;
+}
+
+export interface FieldTargetLevelValue {
+  level: UnitLevelCode;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?$
+     */
+  value: number | string | null;
 }
 
 export interface ForgotPasswordRequest {
@@ -671,10 +692,142 @@ export interface InboxReportDetail {
   receipt: ReportReceiptData;
 }
 
+export interface IndicatorChildRow {
+  unitId: string;
+  name: string;
+  level: UnitLevelCode;
+  hasChildren: boolean;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  first: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  latest: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  target: number | string | null;
+}
+
+export interface IndicatorField {
+  fieldKey: string;
+  label: string;
+  type: TemplateFieldType;
+  /** @nullable */
+  unitLabel: string | null;
+  aggregation: AggregationRule;
+}
+
+export interface IndicatorNode {
+  unitId: string;
+  name: string;
+  level: UnitLevelCode;
+  levelName: string;
+}
+
+export interface IndicatorPeriod {
+  windowId: string;
+  periodLabel: string;
+  opensAt: string;
+}
+
+export interface IndicatorSeries {
+  fieldKey: string;
+  /** @items.pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$ */
+  values: (number | string | null)[];
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  target: number | string | null;
+}
+
+export interface IndicatorDashboard {
+  reportTypes: DashboardReportTypeOption[];
+  /** @nullable */
+  reportTypeId: string | null;
+  /** @nullable */
+  reportTypeName: string | null;
+  fields: IndicatorField[];
+  /** @nullable */
+  fieldKey: string | null;
+  node: null | IndicatorNode;
+  breadcrumb: IndicatorNode[];
+  /** @nullable */
+  childLevelPluralName: string | null;
+  periods: IndicatorPeriod[];
+  series: IndicatorSeries[];
+  children: IndicatorChildRow[];
+}
+
 export interface InvitationPreview {
   name: string;
   email: string;
   expiresAt: string;
+}
+
+export interface LeadershipFigure {
+  fieldKey: string;
+  label: string;
+  type: TemplateFieldType;
+  /** @nullable */
+  unitLabel: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  value: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  compare: number | string | null;
+}
+
+export type LeadershipPeriod = number;
+
+export interface OverviewGroupProgress {
+  /** @nullable */
+  groupUnitId: string | null;
+  name: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  submitted: number | string;
+}
+
+export interface LeadershipOverview {
+  /** @nullable */
+  reportTypeName: string | null;
+  /** @nullable */
+  currentPeriodLabel: string | null;
+  /** @nullable */
+  previousPeriodLabel: string | null;
+  period: LeadershipPeriod;
+  /** @nullable */
+  periodLabel: string | null;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  received: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @nullable */
+  closesAt: string | null;
+  figures: LeadershipFigure[];
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  onTimePercent: number | string | null;
+  /** @nullable */
+  onTimePeriodLabel: string | null;
+  /** @nullable */
+  zoneLevelName: string | null;
+  zones: OverviewGroupProgress[];
 }
 
 export interface LoginRequest {
@@ -780,16 +933,6 @@ export interface OtpRequest {
 export interface OtpVerifyRequest {
   identifier: string;
   code: string;
-}
-
-export interface OverviewGroupProgress {
-  /** @nullable */
-  groupUnitId: string | null;
-  name: string;
-  /** @pattern ^-?(?:0|[1-9]\d*)$ */
-  expected: number | string;
-  /** @pattern ^-?(?:0|[1-9]\d*)$ */
-  submitted: number | string;
 }
 
 export interface OverviewLevelGroups {
@@ -1204,6 +1347,10 @@ export interface SetActiveAssignmentRequest {
   roleAssignmentId: string;
 }
 
+export interface SetFieldTargetsRequest {
+  targets: FieldTargetLevelValue[];
+}
+
 export interface SetInboxReportFlaggedRequest {
   isFlagged: boolean;
 }
@@ -1428,6 +1575,10 @@ export interface WorkloadView {
   unassignedCount: number | string;
 }
 
+export type GetLeadershipOverviewParams = {
+period?: LeadershipPeriod;
+};
+
 export type GetOrganizationTreeParams = {
 includeArchived?: boolean;
 };
@@ -1560,5 +1711,15 @@ periodB?: string;
 export type GetComplianceDashboardParams = {
 reportTypeId?: string;
 level?: UnitLevelCode;
+};
+
+export type GetIndicatorDashboardParams = {
+reportTypeId?: string;
+fieldKey?: string;
+unitId?: string;
+/**
+ * @pattern ^-?(?:0|[1-9]\d*)$
+ */
+periods?: number | string;
 };
 

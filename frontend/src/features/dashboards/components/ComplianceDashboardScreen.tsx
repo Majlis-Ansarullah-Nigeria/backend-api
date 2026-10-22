@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api/client";
 import type { ComplianceDashboard, ComplianceGroupRow, SendRemindersResult } from "@/lib/api/generated/hRSApiV1.schemas";
 import { useGetComplianceDashboard, useSendComplianceReminders } from "@/lib/api/generated/dashboards/dashboards";
+import { DashboardSwitcher } from "@/features/dashboards/components/DashboardSwitcher";
 import { OnTimeLateChart } from "@/features/dashboards/components/OnTimeLateChart";
 import { complianceKpis, isOnTrack, percentOf, type PeriodCounts, UNIT_LEVEL } from "@/features/dashboards/utils/compliance";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,7 @@ export function ComplianceDashboardScreen({ initial }: { initial: ComplianceSele
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
+      <DashboardSwitcher current="compliance" />
       <nav aria-label={t("breadcrumbLabel")} className="flex items-center gap-2 text-sm">
         <span className="text-ink-muted">{t("breadcrumbDashboards")}</span>
         <ChevronRight className="size-4 text-ink-muted" aria-hidden="true" />

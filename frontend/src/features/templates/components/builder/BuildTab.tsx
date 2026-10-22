@@ -124,6 +124,7 @@ export function BuildTab({
 
       {selectedSection && selectedField ? (
         <FieldPropertiesPanel
+          reportTypeId={reportTypeId}
           field={selectedField}
           schema={schema}
           levels={levels}

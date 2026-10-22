@@ -25,7 +25,12 @@ import type {
 
 import type {
   ComplianceDashboard,
+  DashboardAccess,
   GetComplianceDashboardParams,
+  GetIndicatorDashboardParams,
+  GetLeadershipOverviewParams,
+  IndicatorDashboard,
+  LeadershipOverview,
   ProblemDetails,
   SecretariatOverview,
   SendComplianceRemindersRequest,
@@ -53,6 +58,107 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetLeadershipOverviewUrl = (params?: GetLeadershipOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/leadership/overview?${stringifiedParams}` : `/api/v1/leadership/overview`
+}
+
+export const getLeadershipOverview = async (params?: GetLeadershipOverviewParams, options?: Parameters<typeof customFetch>[1]): Promise<LeadershipOverview> => {
+
+  return customFetch<LeadershipOverview>(getGetLeadershipOverviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLeadershipOverviewQueryKey = (params?: GetLeadershipOverviewParams,) => {
+    return [
+    `/api/v1/leadership/overview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetLeadershipOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getLeadershipOverview>>, TError = ProblemDetails>(params?: GetLeadershipOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLeadershipOverview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLeadershipOverviewQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLeadershipOverview>>> = ({ signal }) => getLeadershipOverview(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLeadershipOverview>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetLeadershipOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getLeadershipOverview>>>
+export type GetLeadershipOverviewQueryError = ProblemDetails
+
+
+export function useGetLeadershipOverview<TData = Awaited<ReturnType<typeof getLeadershipOverview>>, TError = ProblemDetails>(
+ params: undefined |  GetLeadershipOverviewParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLeadershipOverview>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLeadershipOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getLeadershipOverview>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLeadershipOverview<TData = Awaited<ReturnType<typeof getLeadershipOverview>>, TError = ProblemDetails>(
+ params?: GetLeadershipOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLeadershipOverview>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLeadershipOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getLeadershipOverview>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLeadershipOverview<TData = Awaited<ReturnType<typeof getLeadershipOverview>>, TError = ProblemDetails>(
+ params?: GetLeadershipOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLeadershipOverview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetLeadershipOverview<TData = Awaited<ReturnType<typeof getLeadershipOverview>>, TError = ProblemDetails>(
+ params?: GetLeadershipOverviewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLeadershipOverview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetLeadershipOverviewQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
 
 export const getGetSecretariatOverviewUrl = () => {
 
@@ -330,3 +436,198 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSendComplianceRemindersMutationOptions(options), queryClient);
     }
+    export const getGetIndicatorDashboardUrl = (params?: GetIndicatorDashboardParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/dashboards/indicators?${stringifiedParams}` : `/api/v1/dashboards/indicators`
+}
+
+export const getIndicatorDashboard = async (params?: GetIndicatorDashboardParams, options?: Parameters<typeof customFetch>[1]): Promise<IndicatorDashboard> => {
+
+  return customFetch<IndicatorDashboard>(getGetIndicatorDashboardUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIndicatorDashboardQueryKey = (params?: GetIndicatorDashboardParams,) => {
+    return [
+    `/api/v1/dashboards/indicators`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetIndicatorDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getIndicatorDashboard>>, TError = ProblemDetails>(params?: GetIndicatorDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIndicatorDashboard>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIndicatorDashboardQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIndicatorDashboard>>> = ({ signal }) => getIndicatorDashboard(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIndicatorDashboard>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetIndicatorDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getIndicatorDashboard>>>
+export type GetIndicatorDashboardQueryError = ProblemDetails
+
+
+export function useGetIndicatorDashboard<TData = Awaited<ReturnType<typeof getIndicatorDashboard>>, TError = ProblemDetails>(
+ params: undefined |  GetIndicatorDashboardParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIndicatorDashboard>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getIndicatorDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof getIndicatorDashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetIndicatorDashboard<TData = Awaited<ReturnType<typeof getIndicatorDashboard>>, TError = ProblemDetails>(
+ params?: GetIndicatorDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIndicatorDashboard>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getIndicatorDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof getIndicatorDashboard>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetIndicatorDashboard<TData = Awaited<ReturnType<typeof getIndicatorDashboard>>, TError = ProblemDetails>(
+ params?: GetIndicatorDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIndicatorDashboard>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetIndicatorDashboard<TData = Awaited<ReturnType<typeof getIndicatorDashboard>>, TError = ProblemDetails>(
+ params?: GetIndicatorDashboardParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getIndicatorDashboard>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetIndicatorDashboardQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetDashboardAccessUrl = () => {
+
+
+
+
+  return `/api/v1/dashboards/access`
+}
+
+export const getDashboardAccess = async ( options?: Parameters<typeof customFetch>[1]): Promise<DashboardAccess> => {
+
+  return customFetch<DashboardAccess>(getGetDashboardAccessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDashboardAccessQueryKey = () => {
+    return [
+    `/api/v1/dashboards/access`
+    ] as const;
+    }
+
+
+export const getGetDashboardAccessQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardAccess>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardAccess>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardAccessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardAccess>>> = ({ signal }) => getDashboardAccess({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardAccess>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDashboardAccessQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardAccess>>>
+export type GetDashboardAccessQueryError = unknown
+
+
+export function useGetDashboardAccess<TData = Awaited<ReturnType<typeof getDashboardAccess>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardAccess>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardAccess>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardAccess>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardAccess<TData = Awaited<ReturnType<typeof getDashboardAccess>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardAccess>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardAccess>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardAccess>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardAccess<TData = Awaited<ReturnType<typeof getDashboardAccess>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardAccess>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetDashboardAccess<TData = Awaited<ReturnType<typeof getDashboardAccess>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardAccess>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDashboardAccessQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+

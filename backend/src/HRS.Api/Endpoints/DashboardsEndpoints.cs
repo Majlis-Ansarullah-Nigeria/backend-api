@@ -44,6 +44,50 @@ public static class DashboardsEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
+        dashboards.MapGet("/indicators", async (
+                [FromQuery] Guid? reportTypeId,
+                [FromQuery] string? fieldKey,
+                [FromQuery] Guid? unitId,
+                [FromQuery] int? periods,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var query = new GetIndicatorDashboardQuery(user.GetUserId(), reportTypeId, fieldKey, unitId, periods);
+                var result = await sender.Send(query, cancellationToken);
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetIndicatorDashboard")
+            .Produces<IndicatorDashboard>()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        dashboards.MapGet("/access", async (
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetDashboardAccessQuery(user.GetUserId()), cancellationToken);
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetDashboardAccess")
+            .Produces<DashboardAccess>();
+
+        app.MapGet("/api/v1/leadership/overview", async (
+                [FromQuery] LeadershipPeriod? period,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await sender.Send(new GetLeadershipOverviewQuery(user.GetUserId(), period ?? LeadershipPeriod.Current), cancellationToken);
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithTags("Dashboards")
+            .RequireAuthorization()
+            .WithName("GetLeadershipOverview")
+            .Produces<LeadershipOverview>()
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
         app.MapGet("/api/v1/secretariat/overview", async (
                 System.Security.Claims.ClaimsPrincipal user,
                 ISender sender,

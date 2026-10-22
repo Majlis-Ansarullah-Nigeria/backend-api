@@ -46,6 +46,9 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
   { href: "/profile", key: "profile", icon: User },
 ];
 
+/** Added to the head navigation for people who have a dashboard (Zone/Dila heads, Leadership). */
+export const DASHBOARD_NAV_ITEM: NavItem = { href: "/dashboards", key: "dashboards", icon: BarChart3 };
+
 /**
  * Secretariat navigation. The full tree from the mockup (Overview, Inbox, Report types,
  * Windows, Organization, Users, Dashboards, Exports, Announcements, Audit log, Settings)
@@ -61,7 +64,7 @@ export const SECRETARIAT_NAV_ITEMS: NavItem[] = [
   { href: "/secretariat/windows", key: "windows", icon: Calendar },
   { href: "/secretariat/organization", key: "organization", icon: Network },
   { href: "/secretariat/users", key: "users", icon: Users },
-  { href: "/secretariat/dashboards/compliance", key: "dashboards", icon: BarChart3 },
+  { href: "/secretariat/dashboards", key: "dashboards", icon: BarChart3 },
   { href: "/secretariat/exports", key: "exports", icon: Download },
   { href: "/secretariat/announcements", key: "announcements", icon: Mail },
 ];
