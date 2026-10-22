@@ -199,12 +199,131 @@ export interface ComparisonUnitOption {
   reportTypes: HistoryReportTypeOption[];
 }
 
+export interface CompiledFigure {
+  fieldKey: string;
+  label: string;
+  type: TemplateFieldType;
+  /** @nullable */
+  unitLabel: string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  value: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  previous: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  target: number | string | null;
+}
+
+export type CompiledHighlightKind = number;
+
+export interface CompiledHighlight {
+  kind: CompiledHighlightKind;
+  fieldKey: string;
+  fieldLabel: string;
+  zoneName: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$ */
+  value: number | string;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  change: number | string | null;
+}
+
+export type UnitLevelCode = number;
+
+export interface CompiledLevelCount {
+  level: UnitLevelCode;
+  levelName: string;
+  levelPluralName: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  submitted: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+}
+
+export interface CompiledOverview {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  onTime: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  late: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  notReported: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  acknowledged: number | string;
+  levels: CompiledLevelCount[];
+}
+
+export interface CompiledReportListItem {
+  windowId: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  periodLabel: string;
+  opensAt: string;
+  isClosed: boolean;
+  hasNarrative: boolean;
+}
+
+export interface CompiledSection {
+  key: string;
+  title: string;
+  figures: CompiledFigure[];
+  highlights: CompiledHighlight[];
+}
+
+export interface IndicatorField {
+  fieldKey: string;
+  label: string;
+  type: TemplateFieldType;
+  /** @nullable */
+  unitLabel: string | null;
+  aggregation: AggregationRule;
+}
+
+export interface CompiledZone {
+  unitId: string;
+  name: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  submitted: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  expected: number | string;
+  /** @items.pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$ */
+  values: (number | string | null)[];
+}
+
+export interface CompiledReportView {
+  windowId: string;
+  reportTypeId: string;
+  reportTypeName: string;
+  periodLabel: string;
+  /** @nullable */
+  previousPeriodLabel: string | null;
+  referenceNumber: string;
+  compiledAt: string;
+  canEdit: boolean;
+  narrative: string;
+  /** @nullable */
+  narrativeUpdatedAt: string | null;
+  overview: CompiledOverview;
+  sections: CompiledSection[];
+  fields: IndicatorField[];
+  zones: CompiledZone[];
+}
+
 export interface DashboardReportTypeOption {
   id: string;
   name: string;
 }
-
-export type UnitLevelCode = number;
 
 export interface DashboardLevelOption {
   code: UnitLevelCode;
@@ -540,6 +659,7 @@ export interface CreateWindowScheduleResult {
 export interface DashboardAccess {
   hasIndicators: boolean;
   hasCompliance: boolean;
+  hasCompiledReports: boolean;
 }
 
 export interface DepartmentFieldValue {
@@ -714,15 +834,6 @@ export interface IndicatorChildRow {
   target: number | string | null;
 }
 
-export interface IndicatorField {
-  fieldKey: string;
-  label: string;
-  type: TemplateFieldType;
-  /** @nullable */
-  unitLabel: string | null;
-  aggregation: AggregationRule;
-}
-
 export interface IndicatorNode {
   unitId: string;
   name: string;
@@ -805,6 +916,8 @@ export interface LeadershipOverview {
   /** @nullable */
   reportTypeName: string | null;
   /** @nullable */
+  currentWindowId: string | null;
+  /** @nullable */
   currentPeriodLabel: string | null;
   /** @nullable */
   previousPeriodLabel: string | null;
@@ -833,6 +946,40 @@ export interface LeadershipOverview {
 export interface LoginRequest {
   identifier: string;
   password: string;
+}
+
+export type MapMeasure = number;
+
+export interface MapUnit {
+  unitId: string;
+  name: string;
+  code: string;
+  level: UnitLevelCode;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  latitude: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  longitude: number | string | null;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$
+     */
+  value: number | string | null;
+  hasChildren: boolean;
+}
+
+export interface MapView {
+  measure: MapMeasure;
+  field: null | IndicatorField;
+  /** @nullable */
+  periodLabel: string | null;
+  tiles: MapUnit[];
+  pins: MapUnit[];
 }
 
 export interface RoleAssignmentSummary {
@@ -1465,6 +1612,10 @@ export interface UnitTreeNode {
   hasVacantHead: boolean;
 }
 
+export interface UpdateCompiledNarrativeRequest {
+  narrative: string;
+}
+
 export interface UpdateNotificationPreferenceRequest {
   inAppEnabled: boolean;
   emailEnabled: boolean;
@@ -1721,5 +1872,12 @@ unitId?: string;
  * @pattern ^-?(?:0|[1-9]\d*)$
  */
 periods?: number | string;
+};
+
+export type GetMapViewParams = {
+reportTypeId?: string;
+fieldKey?: string;
+unitId?: string;
+measure?: MapMeasure;
 };
 

@@ -120,6 +120,7 @@ describe("SecretariatOverviewScreen", () => {
     expect(screen.getByText("4 returned reports past revision date")).toBeInTheDocument();
     expect(screen.getByText("5 units with no head")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Edit General Monthly Report template" })).toHaveAttribute("href", "/secretariat/report-types");
+    expect(screen.getByRole("link", { name: "Compile September 2026 report" })).toHaveAttribute("href", "/secretariat/compiled/w9");
   });
 
   it("shows an empty state when no window has opened, and an error state with retry", async () => {

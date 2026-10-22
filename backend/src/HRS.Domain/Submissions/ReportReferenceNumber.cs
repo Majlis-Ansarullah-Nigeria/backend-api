@@ -17,7 +17,19 @@ public static partial class ReportReferenceNumber
 {
     public static string Generate(ReportTypeCategory category, string periodLabel, DateTimeOffset fallbackDate, string unitCode)
     {
-        var typeCode = category switch
+        var period = ResolvePeriod(category, periodLabel, fallbackDate);
+        var unitSegment = unitCode.Replace("-", "", StringComparison.Ordinal);
+
+        return $"{TypeCode(category)}-{period}-{unitSegment}";
+    }
+
+    /// <summary>FR-REV-006's compiled national report: <c>NAT-{TYPECODE}-{period}</c>, e.g.
+    /// <c>NAT-GMR-2026-09</c> (the "Compiled national report" mockup).</summary>
+    public static string GenerateNational(ReportTypeCategory category, string periodLabel, DateTimeOffset fallbackDate) =>
+        $"NAT-{TypeCode(category)}-{ResolvePeriod(category, periodLabel, fallbackDate)}";
+
+    private static string TypeCode(ReportTypeCategory category) =>
+        category switch
         {
             ReportTypeCategory.GeneralMonthly => "GMR",
             ReportTypeCategory.Quarterly => "QTR",
@@ -27,12 +39,6 @@ public static partial class ReportReferenceNumber
             ReportTypeCategory.Survey => "SUR",
             _ => "RPT",
         };
-
-        var period = ResolvePeriod(category, periodLabel, fallbackDate);
-        var unitSegment = unitCode.Replace("-", "", StringComparison.Ordinal);
-
-        return $"{typeCode}-{period}-{unitSegment}";
-    }
 
     private static string ResolvePeriod(ReportTypeCategory category, string periodLabel, DateTimeOffset fallbackDate) =>
         category switch

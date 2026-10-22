@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ChevronRight, Clock, FileEdit, Inbox, LayoutGrid, Megaphone, Plus, Undo2, Users } from "lucide-react";
+import { AlertTriangle, ChevronRight, Clock, FileEdit, FileText, Inbox, LayoutGrid, Megaphone, Plus, Undo2, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
@@ -292,6 +292,15 @@ export function SecretariatOverviewScreen() {
             <QuickAction href="/secretariat/announcements" icon={<Megaphone className="size-4" aria-hidden="true" />}>
               {t("sendAnnouncementAction")}
             </QuickAction>
+            {data.currentWindow ? (
+              <Link
+                href={`/secretariat/compiled/${data.currentWindow.windowId}`}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-lime px-4 text-sm font-semibold text-forest-900 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+              >
+                <FileText className="size-4" aria-hidden="true" />
+                {t("compileAction", { period: data.currentWindow.periodLabel })}
+              </Link>
+            ) : null}
           </div>
         </section>
       </div>

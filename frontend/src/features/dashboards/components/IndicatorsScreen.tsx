@@ -13,6 +13,7 @@ import type { IndicatorDashboard, IndicatorField } from "@/lib/api/generated/hRS
 import { useGetIndicatorDashboard } from "@/lib/api/generated/dashboards/dashboards";
 import { DashboardSwitcher } from "@/features/dashboards/components/DashboardSwitcher";
 import { IndicatorChart } from "@/features/dashboards/components/IndicatorChart";
+import { MapCard } from "@/features/dashboards/components/MapCard";
 import {
   change,
   changeKind,
@@ -242,6 +243,15 @@ export function IndicatorsScreen({ basePath, initial }: { basePath: string; init
                 />
               </div>
             </section>
+          ) : null}
+
+          {data.children.length > 0 ? (
+            <MapCard
+              reportTypeId={data.reportTypeId ?? undefined}
+              fieldKey={data.fieldKey ?? undefined}
+              unitId={node?.unitId}
+              onOpenUnit={(unitId) => select({ unitId })}
+            />
           ) : null}
 
           {field && data.children.length > 0 ? (

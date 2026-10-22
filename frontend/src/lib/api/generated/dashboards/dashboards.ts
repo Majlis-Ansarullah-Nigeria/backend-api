@@ -29,8 +29,10 @@ import type {
   GetComplianceDashboardParams,
   GetIndicatorDashboardParams,
   GetLeadershipOverviewParams,
+  GetMapViewParams,
   IndicatorDashboard,
   LeadershipOverview,
+  MapView,
   ProblemDetails,
   SecretariatOverview,
   SendComplianceRemindersRequest,
@@ -526,6 +528,107 @@ export function useGetIndicatorDashboard<TData = Awaited<ReturnType<typeof getIn
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetIndicatorDashboardQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetMapViewUrl = (params?: GetMapViewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/dashboards/map?${stringifiedParams}` : `/api/v1/dashboards/map`
+}
+
+export const getMapView = async (params?: GetMapViewParams, options?: Parameters<typeof customFetch>[1]): Promise<MapView> => {
+
+  return customFetch<MapView>(getGetMapViewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMapViewQueryKey = (params?: GetMapViewParams,) => {
+    return [
+    `/api/v1/dashboards/map`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMapViewQueryOptions = <TData = Awaited<ReturnType<typeof getMapView>>, TError = ProblemDetails>(params?: GetMapViewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMapView>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMapViewQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMapView>>> = ({ signal }) => getMapView(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMapView>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMapViewQueryResult = NonNullable<Awaited<ReturnType<typeof getMapView>>>
+export type GetMapViewQueryError = ProblemDetails
+
+
+export function useGetMapView<TData = Awaited<ReturnType<typeof getMapView>>, TError = ProblemDetails>(
+ params: undefined |  GetMapViewParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMapView>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMapView>>,
+          TError,
+          Awaited<ReturnType<typeof getMapView>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMapView<TData = Awaited<ReturnType<typeof getMapView>>, TError = ProblemDetails>(
+ params?: GetMapViewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMapView>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMapView>>,
+          TError,
+          Awaited<ReturnType<typeof getMapView>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMapView<TData = Awaited<ReturnType<typeof getMapView>>, TError = ProblemDetails>(
+ params?: GetMapViewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMapView>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMapView<TData = Awaited<ReturnType<typeof getMapView>>, TError = ProblemDetails>(
+ params?: GetMapViewParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMapView>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMapViewQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

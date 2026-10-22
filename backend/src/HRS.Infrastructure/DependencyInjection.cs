@@ -1,13 +1,12 @@
 using System.Globalization;
 using Amazon.S3;
-using Hangfire;
-using Hangfire.PostgreSql;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
 using HRS.Application.Features.Notifications.Push;
 using HRS.Infrastructure.Access;
 using HRS.Infrastructure.Auth;
 using HRS.Infrastructure.Common;
+using HRS.Infrastructure.Compiled;
 using HRS.Infrastructure.Email;
 using HRS.Infrastructure.Excel;
 using HRS.Infrastructure.Files;
@@ -18,6 +17,8 @@ using HRS.Infrastructure.Organization;
 using HRS.Infrastructure.Pdf;
 using HRS.Infrastructure.Persistence;
 using HRS.Infrastructure.Security;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.StackExchangeRedis;
@@ -191,6 +192,7 @@ public static class DependencyInjection
         QuestPDF.Settings.License = LicenseType.Community;
         services.AddScoped<IPdfRenderer, QuestPdfReportReceiptRenderer>();
         services.AddScoped<IExcelRenderer, ClosedXmlExcelRenderer>();
+        services.AddScoped<ICompiledReportRenderer, CompiledReportRenderer>();
 
         // FR-HIS-004: the API only ever enqueues (client-side); the Worker's own Program.cs adds
         // AddHangfireServer() on top of this same registration to actually process jobs

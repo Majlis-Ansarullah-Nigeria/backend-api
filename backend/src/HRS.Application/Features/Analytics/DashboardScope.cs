@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
+using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,6 +43,22 @@ public static class DashboardScope
             .ThenBy(u => u.Name, StringComparer.Ordinal)
             .ToList();
         return new Scope(false, false, roots);
+    }
+
+    /// <summary>The node a dashboard request opens: the one asked for, or the user's first root.
+    /// Refused when it's outside every root the user's scope covers (FR-DSH-005).</summary>
+    public static Result<(IndicatorCalculator.UnitNode Node, IndicatorCalculator.UnitNode Root)> ResolveNode(
+        Scope scope, IReadOnlyList<IndicatorCalculator.UnitNode> units, Guid? unitId)
+    {
+        var node = unitId is { } id ? units.FirstOrDefault(u => u.Id == id) : scope.Roots[0];
+        if (node is null)
+        {
+            return Result.Failure<(IndicatorCalculator.UnitNode, IndicatorCalculator.UnitNode)>(Error.NotFound("UNIT_NOT_FOUND", "That unit doesn't exist."));
+        }
+
+        return scope.RootContaining(node) is { } root
+            ? Result.Success((node, root))
+            : Result.Failure<(IndicatorCalculator.UnitNode, IndicatorCalculator.UnitNode)>(Error.Forbidden("FORBIDDEN", "That unit is outside your dashboard."));
     }
 
     public static async Task<IReadOnlyList<IndicatorCalculator.UnitNode>> LoadUnitsAsync(IAppDbContext db, CancellationToken cancellationToken)

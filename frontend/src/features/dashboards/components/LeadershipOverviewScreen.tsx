@@ -1,6 +1,8 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { ApiError } from "@/lib/api/client";
@@ -146,6 +148,15 @@ export function LeadershipOverviewScreen() {
             })}
           </ul>
         </section>
+      ) : null}
+      {data.currentWindowId ? (
+        <Link
+          href={`/compiled/${data.currentWindowId}`}
+          className="inline-flex h-14 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-base font-semibold text-white hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
+        >
+          <FileText className="size-5" aria-hidden="true" />
+          {t("openCompiledAction")}
+        </Link>
       ) : null}
     </div>
   );

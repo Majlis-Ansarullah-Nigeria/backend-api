@@ -820,6 +820,41 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HRS.Domain.Review.CompiledReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Narrative")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasColumnName("narrative");
+
+                    b.Property<DateTimeOffset?>("NarrativeUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("narrative_updated_at");
+
+                    b.Property<Guid?>("NarrativeUpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("narrative_updated_by_user_id");
+
+                    b.Property<Guid>("WindowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("window_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_compiled_reports");
+
+                    b.HasIndex("WindowId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_compiled_reports_window_id");
+
+                    b.ToTable("compiled_reports", (string)null);
+                });
+
             modelBuilder.Entity("HRS.Domain.Review.SavedView", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1704,6 +1739,16 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_units_units_parent_id");
+                });
+
+            modelBuilder.Entity("HRS.Domain.Review.CompiledReport", b =>
+                {
+                    b.HasOne("HRS.Domain.Windows.SubmissionWindow", null)
+                        .WithMany()
+                        .HasForeignKey("WindowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_compiled_reports_submission_windows_window_id");
                 });
 
             modelBuilder.Entity("HRS.Domain.Review.SavedView", b =>

@@ -55,6 +55,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<ReportFieldTarget> ReportFieldTargets => Set<ReportFieldTarget>();
 
+    public DbSet<CompiledReport> CompiledReports => Set<CompiledReport>();
+
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
@@ -348,6 +350,19 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasOne<ReportType>()
                 .WithMany()
                 .HasForeignKey(t => t.ReportTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<CompiledReport>(compiled =>
+        {
+            compiled.ToTable("compiled_reports");
+            compiled.HasKey(c => c.Id);
+            compiled.Property(c => c.Narrative).IsRequired().HasMaxLength(CompiledReport.MaxNarrativeLength);
+            compiled.HasIndex(c => c.WindowId).IsUnique();
+            compiled
+                .HasOne<SubmissionWindow>()
+                .WithMany()
+                .HasForeignKey(c => c.WindowId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

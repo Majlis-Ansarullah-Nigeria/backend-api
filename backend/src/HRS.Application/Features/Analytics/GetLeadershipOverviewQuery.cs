@@ -21,6 +21,7 @@ public sealed record LeadershipFigure(string FieldKey, string Label, TemplateFie
 
 public sealed record LeadershipOverview(
     string? ReportTypeName,
+    Guid? CurrentWindowId,
     string? CurrentPeriodLabel,
     string? PreviousPeriodLabel,
     LeadershipPeriod Period,
@@ -62,7 +63,7 @@ public sealed class GetLeadershipOverviewQueryHandler(IAppDbContext db, IAccessP
             .OrderBy(r => r.Category == ReportTypeCategory.GeneralMonthly ? 0 : 1)
             .ThenBy(r => r.Name, StringComparer.Ordinal)
             .FirstOrDefault();
-        var empty = new LeadershipOverview(null, null, null, request.Period, null, 0, 0, null, [], null, null, null, []);
+        var empty = new LeadershipOverview(null, null, null, null, request.Period, null, 0, 0, null, [], null, null, null, []);
         if (reportType is null)
         {
             return Result.Success(empty);
@@ -118,6 +119,7 @@ public sealed class GetLeadershipOverviewQueryHandler(IAppDbContext db, IAccessP
 
         return Result.Success(new LeadershipOverview(
             reportType.Name,
+            windows[0].Id,
             windows[0].PeriodLabel,
             windows.Count > 1 ? windows[1].PeriodLabel : null,
             request.Period,

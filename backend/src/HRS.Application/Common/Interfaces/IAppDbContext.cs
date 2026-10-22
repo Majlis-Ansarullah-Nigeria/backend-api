@@ -49,6 +49,8 @@ public interface IAppDbContext
 
     DbSet<ReportFieldTarget> ReportFieldTargets { get; }
 
+    DbSet<CompiledReport> CompiledReports { get; }
+
     DbSet<ReportInstance> ReportInstances { get; }
 
     DbSet<ReportType> ReportTypes { get; }

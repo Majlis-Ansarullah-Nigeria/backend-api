@@ -17,6 +17,11 @@ vi.mock("@/lib/api/generated/dashboards/dashboards", () => ({
   useGetIndicatorDashboard: (...args: unknown[]) => useGetIndicatorDashboard(...args),
 }));
 
+// The map card has its own tests (MapCard.test.tsx).
+vi.mock("./MapCard", () => ({
+  MapCard: () => <div>Map view card</div>,
+}));
+
 // Recharts needs real layout to draw; the chart's own rendering isn't what's under test here.
 vi.mock("./IndicatorChart", () => ({
   IndicatorChart: ({ labels, mode }: { labels: { ariaLabel: string; target: string }; mode: string }) => (

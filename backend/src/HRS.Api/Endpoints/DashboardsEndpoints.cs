@@ -62,6 +62,24 @@ public static class DashboardsEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        dashboards.MapGet("/map", async (
+                [FromQuery] Guid? reportTypeId,
+                [FromQuery] string? fieldKey,
+                [FromQuery] Guid? unitId,
+                [FromQuery] MapMeasure? measure,
+                System.Security.Claims.ClaimsPrincipal user,
+                ISender sender,
+                CancellationToken cancellationToken) =>
+            {
+                var query = new GetMapViewQuery(user.GetUserId(), reportTypeId, fieldKey, unitId, measure ?? MapMeasure.Indicator);
+                var result = await sender.Send(query, cancellationToken);
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToProblemDetails();
+            })
+            .WithName("GetMapView")
+            .Produces<MapView>()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         dashboards.MapGet("/access", async (
                 System.Security.Claims.ClaimsPrincipal user,
                 ISender sender,

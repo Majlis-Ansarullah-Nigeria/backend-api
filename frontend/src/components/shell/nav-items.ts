@@ -15,7 +15,8 @@ export type NavItemKey =
   | "announcements"
   | "exports"
   | "overview"
-  | "dashboards";
+  | "dashboards"
+  | "compiled";
 
 export interface NavItem {
   href: string;
@@ -48,6 +49,9 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
 
 /** Added to the head navigation for people who have a dashboard (Zone/Dila heads, Leadership). */
 export const DASHBOARD_NAV_ITEM: NavItem = { href: "/dashboards", key: "dashboards", icon: BarChart3 };
+
+/** Added for Leadership, who read the compiled national reports (FR-REV-006). */
+export const COMPILED_NAV_ITEM: NavItem = { href: "/compiled", key: "compiled", icon: FileText };
 
 /**
  * Secretariat navigation. The full tree from the mockup (Overview, Inbox, Report types,

@@ -59,17 +59,13 @@ public sealed class GetIndicatorDashboardQueryHandler(IAppDbContext db, IAccessP
             return Result.Failure<IndicatorDashboard>(Error.Forbidden("FORBIDDEN", "You don't have a dashboard."));
         }
 
-        var node = request.UnitId is { } unitId ? units.FirstOrDefault(u => u.Id == unitId) : scope.Roots[0];
-        if (node is null)
+        var resolved = DashboardScope.ResolveNode(scope, units, request.UnitId);
+        if (resolved.IsFailure)
         {
-            return Result.Failure<IndicatorDashboard>(Error.NotFound("UNIT_NOT_FOUND", "That unit doesn't exist."));
+            return Result.Failure<IndicatorDashboard>(resolved.Error);
         }
 
-        var root = scope.RootContaining(node);
-        if (root is null)
-        {
-            return Result.Failure<IndicatorDashboard>(Error.Forbidden("FORBIDDEN", "That unit is outside your dashboard."));
-        }
+        var (node, root) = resolved.Value;
 
         var reportTypes = await db.ReportTypes.AsNoTracking().Where(r => r.ArchivedAt == null).ToListAsync(cancellationToken);
         var options = reportTypes

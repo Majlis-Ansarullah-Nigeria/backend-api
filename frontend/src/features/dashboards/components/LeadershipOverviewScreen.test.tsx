@@ -22,6 +22,7 @@ function renderWithIntl(ui: ReactElement) {
 
 const OVERVIEW = {
   reportTypeName: "General Monthly Report",
+  currentWindowId: "w9",
   currentPeriodLabel: "September",
   previousPeriodLabel: "August",
   period: 0,
@@ -63,6 +64,7 @@ describe("LeadershipOverviewScreen", () => {
     expect(screen.getByText("88%")).toBeInTheDocument();
     const zones = screen.getByRole("heading", { name: "Zones, September received" }).closest("section")!;
     expect(within(zones).getByText("74%")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open compiled report" })).toHaveAttribute("href", "/compiled/w9");
   });
 
   it("switches between the current period, the previous one and the year", async () => {

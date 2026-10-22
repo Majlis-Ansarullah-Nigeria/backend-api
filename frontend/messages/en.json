@@ -173,7 +173,9 @@
       "overview": "Overview",
       "overviewShort": "Overview",
       "dashboards": "Dashboards",
-      "dashboardsShort": "Dashboards"
+      "dashboardsShort": "Dashboards",
+      "compiled": "Compiled reports",
+      "compiledShort": "Compiled"
     }
   },
   "HeadHome": {
@@ -263,6 +265,70 @@
     "versionsAction": "Versions",
     "versionsActionLabel": "Version history of {report}, {period}"
   },
+  "MapView": {
+    "title": "Map view",
+    "measureLabel": "Colour by",
+    "measureFigure": "Figure",
+    "measureCompliance": "Compliance",
+    "viewLabel": "View",
+    "viewSchematic": "Schematic",
+    "viewMap": "Map",
+    "loading": "Loading map…",
+    "loadError": "We couldn't load the map.",
+    "noTiles": "Nothing to show here yet.",
+    "noPins": "No units in this view have a GPS location yet.",
+    "noData": "No data",
+    "compliancePercent": "{value}% submitted",
+    "legendFigure": "Latest figures",
+    "legendCompliance": "Reports submitted",
+    "legendLow": "Lower",
+    "legendHigh": "Higher",
+    "mapAriaLabel": "Map of units with a GPS location",
+    "schematicNote": "Schematic, laid out roughly by location where units have GPS. Select a tile to drill down.",
+    "mapNote": "Units with a GPS location, on OpenStreetMap."
+  },
+  "Compiled": {
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load the compiled report",
+    "listTitle": "Compiled reports",
+    "listSubtitle": "A national report for each period, built from acknowledged reports.",
+    "listEmptyTitle": "No periods yet",
+    "listEmptyDescription": "A compiled report becomes available once a submission window opens.",
+    "windowOpen": "Window open",
+    "windowClosed": "Window closed",
+    "hasSummary": "Summary written",
+    "breadcrumbLabel": "Breadcrumb",
+    "title": "Compiled national report",
+    "subtitle": "{period} · built from acknowledged reports · refreshes when new reports are acknowledged",
+    "refreshAction": "Refresh data",
+    "wordAction": "Word",
+    "pdfAction": "Download PDF",
+    "contentsLabel": "Contents",
+    "sectionDone": "Has content",
+    "organizationName": "Hierarchical Reporting Service",
+    "nationalSecretariat": "National Secretariat",
+    "reportKind": "National {reportType}",
+    "numbered": "{number} · {title}",
+    "sectionSummary": "Summary",
+    "sectionOverview": "Submission overview",
+    "sectionHighlights": "Zone highlights",
+    "sectionAppendix": "Appendix: zone tables",
+    "noSummary": "No summary has been written yet.",
+    "narrativeHelp": "Write the summary for this report. It appears at the start of the PDF and Word versions.",
+    "saveNarrative": "Save summary",
+    "narrativeSaved": "Saved {date}",
+    "overviewSentence": "Of {expected} units expected to report, {onTime} submitted on time, {late} late and {notReported} did not report. Figures include only acknowledged reports ({acknowledged} so far), compiled on {date}.",
+    "columnFigure": "Figure",
+    "columnPrevious": "Previous",
+    "columnChange": "Change",
+    "columnTarget": "Target",
+    "columnZone": "Zone",
+    "columnSubmitted": "Submitted",
+    "noHighlights": "No zone figures have been acknowledged yet.",
+    "highlightHighest": "{field}: highest in {zone} ({value}).",
+    "highlightRise": "{field}: the largest rise was {zone} ({change}, now {value}).",
+    "highlightFall": "{field}: the largest fall was {zone} ({change}, now {value})."
+  },
   "DashboardSwitcher": {
     "label": "Dashboards",
     "compliance": "Compliance",
@@ -320,7 +386,8 @@
     "onTimeLabel": "On-time rate",
     "noClosedPeriod": "No closed period yet",
     "zonesTitle": "Zones, {period} received",
-    "zonesTitleCurrent": "Zones, {period} received"
+    "zonesTitleCurrent": "Zones, {period} received",
+    "openCompiledAction": "Open compiled report"
   },
   "Compliance": {
     "breadcrumbLabel": "Breadcrumb",
@@ -417,7 +484,8 @@
     "editTemplateAction": "Edit {reportType} template",
     "editTemplatesAction": "Edit templates",
     "grantExtensionAction": "Grant an extension",
-    "sendAnnouncementAction": "Send announcement"
+    "sendAnnouncementAction": "Send announcement",
+    "compileAction": "Compile {period} report"
   },
   "Compare": {
     "breadcrumbLabel": "Breadcrumb",

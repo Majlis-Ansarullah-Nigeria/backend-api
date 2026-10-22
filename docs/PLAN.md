@@ -72,7 +72,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 ## M10 — Dashboards (FR-DSH)
 - [x] M10.1 Compliance dashboard with one-click reminders (FR-DSH-001).
 - [x] M10.2 Indicator dashboards, drill-down, scoped views (FR-DSH-002, FR-DSH-003, FR-DSH-005); field-level targets (FR-TPL-011); Leadership overview.
-- [ ] M10.3 Map view (FR-DSH-004); compiled national report export (FR-REV-006).
+- [x] M10.3 Map view (FR-DSH-004); compiled national report export (FR-REV-006).
 
 ## M11 — Admin and audit (FR-AUD, FR-ADM)
 - [ ] M11.1 Audit log write path for all listed actions + viewer + CSV (FR-AUD-001, FR-AUD-002).
