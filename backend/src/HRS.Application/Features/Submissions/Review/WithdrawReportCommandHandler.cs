@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.Submissions;
 using HRS.Domain.Windows;
@@ -11,7 +12,7 @@ namespace HRS.Application.Features.Submissions.Review;
 /// the window is open." Submitted is itself the "unread" signal (ReportInstance.Open's own doc
 /// comment — there's no separate IsRead flag): once the Secretariat opens it, status moves to
 /// InReview and Withdraw's own status guard already rejects it.</summary>
-public sealed class WithdrawReportCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class WithdrawReportCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IAuditLog auditLog)
     : IRequestHandler<WithdrawReportCommand, Result>
 {
     public async ValueTask<Result> Handle(WithdrawReportCommand request, CancellationToken cancellationToken)
@@ -48,6 +49,9 @@ public sealed class WithdrawReportCommandHandler(IAppDbContext db, IAccessPolicy
 
         instance.Withdraw();
         db.ReportRevisions.Add(instance.RecordWithdrawal(request.UserId, now));
+        auditLog.Add(new AuditEntry(
+            AuditActions.ReportWithdrawn, request.UserId, "report", instance.Id.ToString(),
+            await AuditDescriptions.ReportAsync(db, instance.WindowId, instance.UnitId, cancellationToken), instance.UnitId));
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

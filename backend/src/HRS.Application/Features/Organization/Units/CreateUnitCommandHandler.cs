@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using Mediator;
@@ -7,7 +8,7 @@ using Unit = HRS.Domain.Organization.Unit;
 
 namespace HRS.Application.Features.Organization.Units;
 
-public sealed class CreateUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class CreateUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IAuditLog auditLog)
     : IRequestHandler<CreateUnitCommand, Result<UnitSummary>>
 {
     public async ValueTask<Result<UnitSummary>> Handle(CreateUnitCommand request, CancellationToken cancellationToken)
@@ -69,6 +70,9 @@ public sealed class CreateUnitCommandHandler(IAppDbContext db, IAccessPolicy acc
             clock.UtcNow);
 
         db.Units.Add(unit);
+        auditLog.Add(new AuditEntry(
+            AuditActions.UnitCreated, request.UserId, "unit", unit.Id.ToString(), $"{unit.Name} ({unit.Code}) under {parent.Name}", unit.Id,
+            After: new { unit.Code, unit.Name, Parent = parent.Name }));
         await db.SaveChangesAsync(cancellationToken);
 
         return UnitSummary.FromEntity(unit, level.Code);

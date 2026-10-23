@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.Windows;
 using Mediator;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Application.Features.Windows.SubmissionWindows;
 
-public sealed class CreateSubmissionWindowCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class CreateSubmissionWindowCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IAuditLog auditLog)
     : IRequestHandler<CreateSubmissionWindowCommand, Result<CreateSubmissionWindowResult>>
 {
     public async ValueTask<Result<CreateSubmissionWindowResult>> Handle(
@@ -58,6 +59,9 @@ public sealed class CreateSubmissionWindowCommandHandler(IAppDbContext db, IAcce
             reminderSettings: request.ReminderSettings?.ToEntity());
 
         db.SubmissionWindows.Add(window);
+        auditLog.Add(new AuditEntry(
+            AuditActions.WindowCreated, request.UserId, "window", window.Id.ToString(), $"Opened a window for {window.PeriodLabel}",
+            After: WindowAudit.Snapshot(window)));
         await db.SaveChangesAsync(cancellationToken);
 
         return new CreateSubmissionWindowResult(SubmissionWindowSummary.FromEntity(window), ParentBeforeChildWarnings.Detect(request.DueDates));

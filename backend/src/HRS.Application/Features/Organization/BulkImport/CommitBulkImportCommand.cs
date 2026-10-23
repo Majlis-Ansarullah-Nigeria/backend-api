@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Identity.Invitations;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
@@ -23,7 +24,8 @@ public sealed class CommitBulkImportCommandHandler(
     IBulkImportFileReader fileReader,
     IIdentityService identityService,
     ISender sender,
-    IClock clock) : IRequestHandler<CommitBulkImportCommand, Result<BulkImportCommitResult>>
+    IClock clock,
+    IAuditLog auditLog) : IRequestHandler<CommitBulkImportCommand, Result<BulkImportCommitResult>>
 {
     public async ValueTask<Result<BulkImportCommitResult>> Handle(CommitBulkImportCommand request, CancellationToken cancellationToken)
     {
@@ -75,9 +77,13 @@ public sealed class CommitBulkImportCommandHandler(
             }
         }
 
+        var skippedErrorCount = resolved.Value.Count(r => r.Outcome == BulkImportOutcome.Error);
+        auditLog.Add(new AuditEntry(
+            AuditActions.UnitsImported, request.ActorUserId, "unit", null,
+            $"Imported units: {createdCount} created, {updatedCount} updated, {skippedErrorCount} skipped, {invitedCount} invited",
+            After: new { Created = createdCount, Updated = updatedCount, Skipped = skippedErrorCount, Invited = invitedCount }));
         await db.SaveChangesAsync(cancellationToken);
 
-        var skippedErrorCount = resolved.Value.Count(r => r.Outcome == BulkImportOutcome.Error);
         return Result.Success(new BulkImportCommitResult(createdCount, updatedCount, skippedErrorCount, invitedCount));
     }
 

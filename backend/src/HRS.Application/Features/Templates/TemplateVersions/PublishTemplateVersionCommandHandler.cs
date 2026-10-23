@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Notifications;
 using HRS.Domain.Common;
 using HRS.Domain.Notifications;
@@ -12,7 +13,7 @@ using Microsoft.Extensions.Options;
 namespace HRS.Application.Features.Templates.TemplateVersions;
 
 public sealed class PublishTemplateVersionCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IAuditLog auditLog)
     : IRequestHandler<PublishTemplateVersionCommand, Result<TemplateVersionSummary>>
 {
     private static readonly HashSet<ReportInstanceStatus> StaleDraftStatuses = [ReportInstanceStatus.Draft, ReportInstanceStatus.Returned];
@@ -82,6 +83,13 @@ public sealed class PublishTemplateVersionCommandHandler(
             }
         }
 
+        var reportTypeName = await db.ReportTypes.AsNoTracking()
+            .Where(r => r.Id == request.ReportTypeId).Select(r => r.Name).FirstAsync(cancellationToken);
+        auditLog.Add(new AuditEntry(
+            AuditActions.TemplatePublished, request.UserId, "template_version", version.Id.ToString(),
+            $"{reportTypeName} v{version.VersionNumber}",
+            Before: currentlyPublished is null ? null : new { Published = $"v{currentlyPublished.VersionNumber}" },
+            After: new { Published = $"v{version.VersionNumber}" }));
         await db.SaveChangesAsync(cancellationToken);
 
         return TemplateVersionSummary.FromEntity(version);

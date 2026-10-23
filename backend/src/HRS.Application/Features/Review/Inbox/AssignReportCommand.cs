@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Submissions;
@@ -13,7 +14,7 @@ namespace HRS.Application.Features.Review.Inbox;
 /// reasoning as SetReportFlaggedCommand.</summary>
 public sealed record AssignReportCommand(Guid UserId, Guid ReportId, Guid? AssignedToUserId) : IRequest<Result>;
 
-public sealed class AssignReportCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class AssignReportCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IAuditLog auditLog)
     : IRequestHandler<AssignReportCommand, Result>
 {
     public async ValueTask<Result> Handle(AssignReportCommand request, CancellationToken cancellationToken)
@@ -42,7 +43,12 @@ public sealed class AssignReportCommandHandler(IAppDbContext db, IAccessPolicy a
             }
         }
 
+        var previousAssignee = instance.AssignedToUserId;
         instance.AssignTo(request.AssignedToUserId);
+        auditLog.Add(new AuditEntry(
+            AuditActions.ReportAssigned, request.UserId, "report", instance.Id.ToString(),
+            await AuditDescriptions.ReportAsync(db, instance.WindowId, instance.UnitId, cancellationToken), instance.UnitId,
+            Before: new { AssignedTo = previousAssignee }, After: new { AssignedTo = request.AssignedToUserId }));
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

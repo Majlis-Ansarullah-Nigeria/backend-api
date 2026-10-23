@@ -1,6 +1,7 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Models;
 using HRS.Application.Features.Identity.Otp;
+using HRS.Application.UnitTests.Common;
 using HRS.Domain.Common;
 
 namespace HRS.Application.UnitTests.Features.Identity.Otp;
@@ -13,7 +14,7 @@ public class VerifyOtpCommandHandlerTests
         var user = new AuthenticatedUser(Guid.NewGuid(), "Head", "head@example.org");
         var tokens = new AuthTokens("access", DateTimeOffset.UtcNow.AddMinutes(15), "refresh", DateTimeOffset.UtcNow.AddDays(30));
         var identityService = new StubIdentityService { VerifyResult = Result.Success(user), Tokens = tokens };
-        var handler = new VerifyOtpCommandHandler(identityService);
+        var handler = new VerifyOtpCommandHandler(identityService, new RecordingAuditLog());
 
         var result = await handler.Handle(new VerifyOtpCommand("head@example.org", "123456", null, null), CancellationToken.None);
 
@@ -32,7 +33,7 @@ public class VerifyOtpCommandHandlerTests
             VerifyResult = Result.Success(user),
             ChallengeToken = "a-challenge-token",
         };
-        var handler = new VerifyOtpCommandHandler(identityService);
+        var handler = new VerifyOtpCommandHandler(identityService, new RecordingAuditLog());
 
         var result = await handler.Handle(new VerifyOtpCommand("head@example.org", "123456", null, null), CancellationToken.None);
 
@@ -46,7 +47,7 @@ public class VerifyOtpCommandHandlerTests
     {
         var error = Error.Unauthenticated("INVALID_OTP", "That code is invalid or has expired.");
         var identityService = new StubIdentityService { VerifyResult = Result.Failure<AuthenticatedUser>(error) };
-        var handler = new VerifyOtpCommandHandler(identityService);
+        var handler = new VerifyOtpCommandHandler(identityService, new RecordingAuditLog());
 
         var result = await handler.Handle(new VerifyOtpCommand("head@example.org", "000000", null, null), CancellationToken.None);
 

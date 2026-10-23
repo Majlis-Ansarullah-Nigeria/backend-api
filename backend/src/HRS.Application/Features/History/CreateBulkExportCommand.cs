@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.History;
 using Mediator;
@@ -12,7 +13,7 @@ namespace HRS.Application.Features.History;
 public sealed record CreateBulkExportCommand(Guid UserId, IReadOnlyList<Guid> InstanceIds, BulkExportFormat Format)
     : IRequest<Result<ExportSummary>>;
 
-public sealed class CreateBulkExportCommandHandler(IAppDbContext db, IClock clock, IBackgroundJobScheduler jobScheduler)
+public sealed class CreateBulkExportCommandHandler(IAppDbContext db, IClock clock, IBackgroundJobScheduler jobScheduler, IAuditLog auditLog)
     : IRequestHandler<CreateBulkExportCommand, Result<ExportSummary>>
 {
     public async ValueTask<Result<ExportSummary>> Handle(CreateBulkExportCommand request, CancellationToken cancellationToken)
@@ -26,6 +27,9 @@ public sealed class CreateBulkExportCommandHandler(IAppDbContext db, IClock cloc
         var export = BulkExport.Create(
             Guid.CreateVersion7(), request.UserId, request.Format, BulkExportScopeKind.InstanceIds, scopeJson, clock.UtcNow);
         db.BulkExports.Add(export);
+        auditLog.Add(new AuditEntry(
+            AuditActions.ExportRequested, request.UserId, "export", export.Id.ToString(),
+            $"{request.Format} of {request.InstanceIds.Count} report(s)", After: new { Format = request.Format.ToString(), Reports = request.InstanceIds.Count }));
         await db.SaveChangesAsync(cancellationToken);
 
         jobScheduler.EnqueueBulkExport(export.Id);

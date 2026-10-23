@@ -1,6 +1,7 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Analytics;
+using HRS.Domain.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.History;
 using HRS.Domain.Invitations;
@@ -56,6 +57,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ReportFieldTarget> ReportFieldTargets => Set<ReportFieldTarget>();
 
     public DbSet<CompiledReport> CompiledReports => Set<CompiledReport>();
+
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
@@ -364,6 +367,26 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(c => c.WindowId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AuditEvent>(audit =>
+        {
+            audit.ToTable("audit_events");
+            audit.HasKey(a => a.Id);
+            audit.Property(a => a.Action).IsRequired().HasMaxLength(64);
+            audit.Property(a => a.EntityType).IsRequired().HasMaxLength(64);
+            audit.Property(a => a.EntityId).HasMaxLength(64);
+            audit.Property(a => a.ActorEmail).HasMaxLength(256);
+            audit.Property(a => a.Summary).IsRequired().HasMaxLength(1000);
+            audit.Property(a => a.BeforeJson).HasColumnType("jsonb");
+            audit.Property(a => a.AfterJson).HasColumnType("jsonb");
+            audit.Property(a => a.IpAddress).HasMaxLength(64);
+            audit.Property(a => a.UserAgent).HasMaxLength(512);
+            // The viewer: newest first, filtered by action, person or unit.
+            audit.HasIndex(a => a.OccurredAt);
+            audit.HasIndex(a => new { a.Action, a.OccurredAt });
+            audit.HasIndex(a => new { a.ActorUserId, a.OccurredAt });
+            audit.HasIndex(a => new { a.UnitId, a.OccurredAt });
         });
 
         builder.Entity<OutboxMessage>(message =>

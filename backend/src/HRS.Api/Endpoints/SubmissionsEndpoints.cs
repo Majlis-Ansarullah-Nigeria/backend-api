@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Submissions.Attachments;
 using HRS.Application.Features.Submissions.Comments;
 using HRS.Application.Features.Submissions.MyReports;
@@ -111,10 +112,13 @@ public static class SubmissionsEndpoints
                 CancellationToken cancellationToken) =>
             {
                 var result = await sender.Send(new GetReportReceiptPdfQuery(user.GetUserId(), id, unitId), cancellationToken);
+                if (result.IsFailure)
+                {
+                    return result.ToProblemDetails();
+                }
 
-                return result.IsSuccess
-                    ? Results.File(result.Value, "application/pdf", "receipt.pdf")
-                    : result.ToProblemDetails();
+                await sender.Send(new RecordDownloadCommand(user.GetUserId(), DownloadKind.Report, id, "PDF", unitId), cancellationToken);
+                return Results.File(result.Value, "application/pdf", "receipt.pdf");
             })
             .WithName("GetReportReceiptPdf")
             .Produces(StatusCodes.Status200OK, contentType: "application/pdf")

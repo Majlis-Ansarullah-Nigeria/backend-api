@@ -1,6 +1,7 @@
 using System.Globalization;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Notifications;
 using HRS.Domain.Common;
 using HRS.Domain.Notifications;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.Options;
 namespace HRS.Application.Features.Windows.SubmissionWindows;
 
 public sealed class GrantWindowExtensionCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IAuditLog auditLog)
     : IRequestHandler<GrantWindowExtensionCommand, Result<SubmissionWindowSummary>>
 {
     public async ValueTask<Result<SubmissionWindowSummary>> Handle(GrantWindowExtensionCommand request, CancellationToken cancellationToken)
@@ -44,7 +45,15 @@ public sealed class GrantWindowExtensionCommandHandler(
         }
 
         var now = clock.UtcNow;
+        var before = WindowAudit.Snapshot(window);
         window.GrantExtension(request.UnitIds, request.NewDueAt, request.NewClosesAt, request.Reason, now);
+        var unitNames = await db.Units.AsNoTracking().Where(u => request.UnitIds.Contains(u.Id)).Select(u => u.Name).ToListAsync(cancellationToken);
+        auditLog.Add(new AuditEntry(
+            AuditActions.WindowExtended, request.UserId, "window", window.Id.ToString(),
+            $"{string.Join(", ", unitNames)} · due → {request.NewDueAt:d MMM}",
+            request.UnitIds.Count == 1 ? request.UnitIds[0] : null,
+            Before: new { before.DueDates, before.ClosesAt },
+            After: new { Units = unitNames, DueAt = request.NewDueAt, ClosesAt = request.NewClosesAt, request.Reason }));
 
         var reportType = await db.ReportTypes.AsNoTracking().FirstAsync(r => r.Id == window.ReportTypeId, cancellationToken);
         var unitNamesById = await db.Units.AsNoTracking()

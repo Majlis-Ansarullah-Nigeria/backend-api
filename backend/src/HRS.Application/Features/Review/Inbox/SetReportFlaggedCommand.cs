@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Submissions;
@@ -13,7 +14,7 @@ namespace HRS.Application.Features.Review.Inbox;
 /// flagging is Secretariat-internal bookkeeping, not something the submitter needs to know about.</summary>
 public sealed record SetReportFlaggedCommand(Guid UserId, Guid ReportId, bool IsFlagged) : IRequest<Result>;
 
-public sealed class SetReportFlaggedCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy)
+public sealed class SetReportFlaggedCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IAuditLog auditLog)
     : IRequestHandler<SetReportFlaggedCommand, Result>
 {
     public async ValueTask<Result> Handle(SetReportFlaggedCommand request, CancellationToken cancellationToken)
@@ -29,7 +30,12 @@ public sealed class SetReportFlaggedCommandHandler(IAppDbContext db, IAccessPoli
             return Result.Failure(Error.NotFound("REPORT_NOT_FOUND", "That report doesn't exist."));
         }
 
+        var wasFlagged = instance.IsFlagged;
         instance.SetFlagged(request.IsFlagged);
+        auditLog.Add(new AuditEntry(
+            AuditActions.ReportFlagged, request.UserId, "report", instance.Id.ToString(),
+            $"{(request.IsFlagged ? "Flagged" : "Unflagged")} {await AuditDescriptions.ReportAsync(db, instance.WindowId, instance.UnitId, cancellationToken)}",
+            instance.UnitId, Before: new { Flagged = wasFlagged }, After: new { Flagged = request.IsFlagged }));
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

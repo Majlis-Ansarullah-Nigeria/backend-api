@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using Mediator;
 
@@ -6,7 +7,7 @@ namespace HRS.Application.Features.Admin.Users;
 
 public sealed record DeactivateUserCommand(Guid ActorUserId, Guid TargetUserId) : IRequest<Result>;
 
-public sealed class DeactivateUserCommandHandler(IAccessPolicy accessPolicy, IIdentityService identityService)
+public sealed class DeactivateUserCommandHandler(IAccessPolicy accessPolicy, IIdentityService identityService, IAuditLog auditLog)
     : IRequestHandler<DeactivateUserCommand, Result>
 {
     public async ValueTask<Result> Handle(DeactivateUserCommand request, CancellationToken cancellationToken)
@@ -21,6 +22,14 @@ public sealed class DeactivateUserCommandHandler(IAccessPolicy accessPolicy, IId
             return Result.Failure(Error.Validation("CANNOT_DEACTIVATE_SELF", "You can't deactivate your own account."));
         }
 
-        return await identityService.DeactivateUserAsync(request.TargetUserId, cancellationToken);
+        var result = await identityService.DeactivateUserAsync(request.TargetUserId, cancellationToken);
+        if (result.IsSuccess)
+        {
+            await auditLog.RecordAsync(
+                new AuditEntry(AuditActions.UserDeactivated, request.ActorUserId, "user", request.TargetUserId.ToString(), "Deactivated the account"),
+                cancellationToken);
+        }
+
+        return result;
     }
 }

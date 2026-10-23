@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.History;
 using HRS.Domain.History;
 using Mediator;
@@ -44,7 +45,13 @@ public static class ExportsEndpoints
                 CancellationToken cancellationToken) =>
             {
                 var result = await sender.Send(new GetExportDownloadUrlQuery(user.GetUserId(), id), cancellationToken);
-                return result.IsSuccess ? Results.Ok(new ExportDownloadUrlResponse(result.Value)) : result.ToProblemDetails();
+                if (result.IsFailure)
+                {
+                    return result.ToProblemDetails();
+                }
+
+                await sender.Send(new RecordDownloadCommand(user.GetUserId(), DownloadKind.Export, id, "File"), cancellationToken);
+                return Results.Ok(new ExportDownloadUrlResponse(result.Value));
             })
             .WithName("GetExportDownloadUrl")
             .Produces<ExportDownloadUrlResponse>()

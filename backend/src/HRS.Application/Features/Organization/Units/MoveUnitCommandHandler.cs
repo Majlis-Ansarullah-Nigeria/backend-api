@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using Mediator;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Application.Features.Organization.Units;
 
-public sealed class MoveUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy)
+public sealed class MoveUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IAuditLog auditLog)
     : IRequestHandler<MoveUnitCommand, Result<UnitSummary>>
 {
     public async ValueTask<Result<UnitSummary>> Handle(MoveUnitCommand request, CancellationToken cancellationToken)
@@ -71,6 +72,7 @@ public sealed class MoveUnitCommandHandler(IAppDbContext db, IAccessPolicy acces
         }
 
         var oldPath = unit.Path;
+        var oldParentName = await db.Units.AsNoTracking().Where(u => u.Id == unit.ParentId).Select(u => u.Name).FirstOrDefaultAsync(cancellationToken);
         var descendants = await db.Units
             .Where(u => u.Path.StartsWith(oldPath + "."))
             .ToListAsync(cancellationToken);
@@ -82,6 +84,10 @@ public sealed class MoveUnitCommandHandler(IAppDbContext db, IAccessPolicy acces
             descendant.RebasePath(unit.Path + descendant.Path[oldPath.Length..]);
         }
 
+        auditLog.Add(new AuditEntry(
+            AuditActions.UnitMoved, request.UserId, "unit", unit.Id.ToString(), $"{unit.Name}: {oldParentName} → {newParent.Name}", unit.Id,
+            Before: new { Parent = oldParentName, Path = oldPath },
+            After: new { Parent = newParent.Name, unit.Path }));
         await db.SaveChangesAsync(cancellationToken);
 
         return UnitSummary.FromEntity(unit, level.Code);

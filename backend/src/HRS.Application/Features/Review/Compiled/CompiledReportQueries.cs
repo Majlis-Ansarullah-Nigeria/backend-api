@@ -1,5 +1,6 @@
 using FluentValidation;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.Review;
 using Mediator;
@@ -104,7 +105,7 @@ public sealed class UpdateCompiledNarrativeCommandValidator : AbstractValidator<
     }
 }
 
-public sealed class UpdateCompiledNarrativeCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class UpdateCompiledNarrativeCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IAuditLog auditLog)
     : IRequestHandler<UpdateCompiledNarrativeCommand, Result>
 {
     public async ValueTask<Result> Handle(UpdateCompiledNarrativeCommand request, CancellationToken cancellationToken)
@@ -127,7 +128,12 @@ public sealed class UpdateCompiledNarrativeCommandHandler(IAppDbContext db, IAcc
             db.CompiledReports.Add(compiled);
         }
 
+        var before = compiled.Narrative;
         compiled.UpdateNarrative(request.Narrative.Trim(), request.UserId, clock.UtcNow);
+        auditLog.Add(new AuditEntry(
+            AuditActions.CompiledReportEdited, request.UserId, "compiled_report", request.WindowId.ToString(),
+            $"Edited the summary of {await AuditDescriptions.WindowAsync(db, request.WindowId, cancellationToken)}",
+            Before: new { Summary = before }, After: new { Summary = compiled.Narrative }));
         await db.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

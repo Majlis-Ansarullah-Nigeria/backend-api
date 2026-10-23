@@ -1,6 +1,7 @@
 using HRS.Application.Common;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.Invitations;
 using Mediator;
@@ -14,7 +15,8 @@ public sealed class CreateInvitationCommandHandler(
     IIdentityService identityService,
     IEmailSender emailSender,
     IClock clock,
-    IOptions<AppOptions> appOptions) : IRequestHandler<CreateInvitationCommand, Result<CreateInvitationResult>>
+    IOptions<AppOptions> appOptions,
+    IAuditLog auditLog) : IRequestHandler<CreateInvitationCommand, Result<CreateInvitationResult>>
 {
     public async ValueTask<Result<CreateInvitationResult>> Handle(
         CreateInvitationCommand request, CancellationToken cancellationToken)
@@ -47,6 +49,10 @@ public sealed class CreateInvitationCommandHandler(
             request.PendingStartsAt, request.PendingEndsAt);
 
         db.Invitations.Add(invitation);
+        auditLog.Add(new AuditEntry(
+            AuditActions.InvitationSent, request.AppointedBy, "invitation", invitation.Id.ToString(),
+            $"Invited {invitation.Email}", request.PendingHeadOfUnitId,
+            After: new { invitation.Email, Role = request.PendingRole?.ToString(), request.PendingHeadOfUnitId }));
         await db.SaveChangesAsync(cancellationToken);
 
         var acceptUrl = $"{appOptions.Value.PublicUrl.TrimEnd('/')}/invite/{token}";

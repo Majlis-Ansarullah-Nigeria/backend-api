@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Notifications;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
@@ -18,7 +19,7 @@ namespace HRS.Application.Features.Review.Inbox;
 public sealed record ReturnReportCommand(Guid UserId, Guid ReportId, string Comment) : IRequest<Result>;
 
 public sealed class ReturnReportCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IAuditLog auditLog)
     : IRequestHandler<ReturnReportCommand, Result>
 {
     public async ValueTask<Result> Handle(ReturnReportCommand request, CancellationToken cancellationToken)
@@ -56,6 +57,10 @@ public sealed class ReturnReportCommandHandler(
         var now = clock.UtcNow;
         var comment = request.Comment.Trim();
         instance.Return(comment, now);
+        auditLog.Add(new AuditEntry(
+            AuditActions.ReportReturned, request.UserId, "report", instance.Id.ToString(),
+            await AuditDescriptions.ReportAsync(db, instance.WindowId, instance.UnitId, cancellationToken), instance.UnitId,
+            After: new { Comment = comment, instance.RevisionDeadline }));
 
         var placeholders = new Dictionary<string, string>
         {

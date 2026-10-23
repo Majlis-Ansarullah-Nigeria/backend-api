@@ -1,11 +1,12 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using Mediator;
 
 namespace HRS.Application.Features.Identity.Mfa;
 
-public sealed class DisableTotpCommandHandler(IIdentityService identityService, IAccessPolicy accessPolicy)
+public sealed class DisableTotpCommandHandler(IIdentityService identityService, IAccessPolicy accessPolicy, IAuditLog auditLog)
     : IRequestHandler<DisableTotpCommand, Result>
 {
     public async ValueTask<Result> Handle(DisableTotpCommand request, CancellationToken cancellationToken)
@@ -24,6 +25,9 @@ public sealed class DisableTotpCommandHandler(IIdentityService identityService, 
         }
 
         await identityService.DisableTotpAsync(request.UserId, cancellationToken);
+        await auditLog.RecordAsync(
+            new AuditEntry(AuditActions.MfaDisabled, request.UserId, "user", request.UserId.ToString(), "Turned off two-step verification"),
+            cancellationToken);
 
         return Result.Success();
     }

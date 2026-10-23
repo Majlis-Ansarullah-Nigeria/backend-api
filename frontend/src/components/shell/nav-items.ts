@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Building2, Calendar, Download, FileText, History, Home, Inbox, LayoutGrid, LayoutTemplate, Mail, Network, User, Users, type LucideIcon } from "lucide-react";
+import { BarChart3, Bell, Building2, Calendar, Download, FileText, History, Home, Inbox, LayoutGrid, LayoutTemplate, Mail, Network, ShieldCheck, User, Users, type LucideIcon } from "lucide-react";
 
 export type NavItemKey =
   | "home"
@@ -16,7 +16,8 @@ export type NavItemKey =
   | "exports"
   | "overview"
   | "dashboards"
-  | "compiled";
+  | "compiled"
+  | "audit";
 
 export interface NavItem {
   href: string;
@@ -58,7 +59,7 @@ export const COMPILED_NAV_ITEM: NavItem = { href: "/compiled", key: "compiled", 
  * Windows, Organization, Users, Dashboards, Exports, Announcements, Audit log, Settings)
  * lands incrementally as each of those routes is built — Report types (M3.1), Windows (M4.5),
  * Organization (M2.2), Users (M2.4), Inbox (M7.1), Announcements/email wording (M8.1/M8.3),
- * Exports (M9.2), Overview and Dashboards (M10.1) exist so far. No mobile board exists for these screens, so AppShell hides the
+ * Exports (M9.2), Overview and Dashboards (M10.1) and Audit log (M11.1) exist so far. No mobile board exists for these screens, so AppShell hides the
  * bottom tabs here.
  */
 export const SECRETARIAT_NAV_ITEMS: NavItem[] = [
@@ -71,4 +72,5 @@ export const SECRETARIAT_NAV_ITEMS: NavItem[] = [
   { href: "/secretariat/dashboards", key: "dashboards", icon: BarChart3 },
   { href: "/secretariat/exports", key: "exports", icon: Download },
   { href: "/secretariat/announcements", key: "announcements", icon: Mail },
+  { href: "/secretariat/audit", key: "audit", icon: ShieldCheck },
 ];

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.History;
@@ -15,7 +16,7 @@ public sealed record CreateOrganizationExportCommand(
     Guid UserId, Guid? ReportTypeId, Guid? FromWindowId, Guid? ToWindowId, int? Status, BulkExportFormat Format)
     : IRequest<Result<ExportSummary>>;
 
-public sealed class CreateOrganizationExportCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IBackgroundJobScheduler jobScheduler)
+public sealed class CreateOrganizationExportCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IBackgroundJobScheduler jobScheduler, IAuditLog auditLog)
     : IRequestHandler<CreateOrganizationExportCommand, Result<ExportSummary>>
 {
     public async ValueTask<Result<ExportSummary>> Handle(CreateOrganizationExportCommand request, CancellationToken cancellationToken)
@@ -29,6 +30,9 @@ public sealed class CreateOrganizationExportCommandHandler(IAppDbContext db, IAc
         var export = BulkExport.Create(
             Guid.CreateVersion7(), request.UserId, request.Format, BulkExportScopeKind.OrganizationFilter, scopeJson, clock.UtcNow);
         db.BulkExports.Add(export);
+        auditLog.Add(new AuditEntry(
+            AuditActions.ExportRequested, request.UserId, "export", export.Id.ToString(),
+            $"{request.Format} export for the organization", After: new { Format = request.Format.ToString(), Scope = scopeJson }));
         await db.SaveChangesAsync(cancellationToken);
 
         jobScheduler.EnqueueBulkExport(export.Id);

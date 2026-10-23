@@ -1,5 +1,6 @@
 using HRS.Domain.Access;
 using HRS.Domain.Analytics;
+using HRS.Domain.Audit;
 using HRS.Domain.Common;
 using HRS.Domain.History;
 using HRS.Domain.Invitations;
@@ -50,6 +51,8 @@ public interface IAppDbContext
     DbSet<ReportFieldTarget> ReportFieldTargets { get; }
 
     DbSet<CompiledReport> CompiledReports { get; }
+
+    DbSet<AuditEvent> AuditEvents { get; }
 
     DbSet<ReportInstance> ReportInstances { get; }
 

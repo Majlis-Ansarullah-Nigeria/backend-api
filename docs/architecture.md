@@ -35,7 +35,8 @@ Enforced by `tests/HRS.ArchitectureTests`.
 - **Authorization:** resource-based `IAccessPolicy` + scope specification applied to every query. Roles come from time-bounded `RoleAssignment`s, not from claims alone; the active assignment is sent as a header/cookie and re-validated per request.
 - **Templates:** a published `TemplateVersion.Schema` (JSONB) drives both the frontend form engine and backend validation. Answers are JSONB keyed by stable field keys. Numeric answers are copied to `report_metrics` for dashboards.
 - **Expressions:** computed fields and `showIf` use a small safe expression language with two implementations (C# and TypeScript) tested against the shared fixtures in `shared/expression-fixtures.json`.
-- **Outbox:** domain events are stored in `outbox_messages` in the same transaction and dispatched by the worker (notifications, audit log, metrics, webhooks).
+- **Outbox:** domain events are stored in `outbox_messages` in the same transaction and dispatched by the worker (notifications, metrics, webhooks).
+- **Audit log:** written to `audit_events` in the same transaction as the change it records, append-only (ADR 0007).
 - **Idempotency & concurrency:** `Idempotency-Key` on state-changing POSTs; `If-Match` + row version on autosave.
 
 ## Frontend

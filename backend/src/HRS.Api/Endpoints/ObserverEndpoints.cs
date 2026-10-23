@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Observer.ChildReport;
 using HRS.Application.Features.Observer.ComplianceGrid;
 using HRS.Application.Features.Observer.Nudge;
@@ -78,10 +79,13 @@ public static class ObserverEndpoints
                 CancellationToken cancellationToken) =>
             {
                 var result = await sender.Send(new GetChildReportPdfQuery(user.GetUserId(), unitId, reportId), cancellationToken);
+                if (result.IsFailure)
+                {
+                    return result.ToProblemDetails();
+                }
 
-                return result.IsSuccess
-                    ? Results.File(result.Value, "application/pdf", "child-report.pdf")
-                    : result.ToProblemDetails();
+                await sender.Send(new RecordDownloadCommand(user.GetUserId(), DownloadKind.Report, reportId, "PDF", unitId), cancellationToken);
+                return Results.File(result.Value, "application/pdf", "child-report.pdf");
             })
             .WithName("GetChildReportPdf")
             .Produces(StatusCodes.Status200OK, contentType: "application/pdf")

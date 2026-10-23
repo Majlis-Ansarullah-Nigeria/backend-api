@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using Mediator;
 
@@ -6,7 +7,7 @@ namespace HRS.Application.Features.Admin.Users;
 
 public sealed record RevokeAllSessionsCommand(Guid ActorUserId, Guid TargetUserId) : IRequest<Result>;
 
-public sealed class RevokeAllSessionsCommandHandler(IAccessPolicy accessPolicy, IIdentityService identityService)
+public sealed class RevokeAllSessionsCommandHandler(IAccessPolicy accessPolicy, IIdentityService identityService, IAuditLog auditLog)
     : IRequestHandler<RevokeAllSessionsCommand, Result>
 {
     public async ValueTask<Result> Handle(RevokeAllSessionsCommand request, CancellationToken cancellationToken)
@@ -17,6 +18,9 @@ public sealed class RevokeAllSessionsCommandHandler(IAccessPolicy accessPolicy, 
         }
 
         await identityService.RevokeAllSessionsAsync(request.TargetUserId, cancellationToken);
+        await auditLog.RecordAsync(
+            new AuditEntry(AuditActions.SessionsRevoked, request.ActorUserId, "user", request.TargetUserId.ToString(), "Signed out of every session"),
+            cancellationToken);
 
         return Result.Success();
     }

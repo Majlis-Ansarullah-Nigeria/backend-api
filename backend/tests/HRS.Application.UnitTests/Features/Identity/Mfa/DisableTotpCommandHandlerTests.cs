@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Features.Identity.Mfa;
+using HRS.Application.UnitTests.Common;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
 
@@ -12,7 +13,7 @@ public class DisableTotpCommandHandlerTests
     {
         var identityService = new RecordingIdentityService();
         var accessPolicy = new StubAccessPolicy { HasSecretariat = false, HasSysAdmin = false };
-        var handler = new DisableTotpCommandHandler(identityService, accessPolicy);
+        var handler = new DisableTotpCommandHandler(identityService, accessPolicy, new RecordingAuditLog());
         var userId = Guid.NewGuid();
 
         var result = await handler.Handle(new DisableTotpCommand(userId), CancellationToken.None);
@@ -28,7 +29,7 @@ public class DisableTotpCommandHandlerTests
     {
         var identityService = new RecordingIdentityService();
         var accessPolicy = new StubAccessPolicy { HasSecretariat = hasSecretariat, HasSysAdmin = hasSysAdmin };
-        var handler = new DisableTotpCommandHandler(identityService, accessPolicy);
+        var handler = new DisableTotpCommandHandler(identityService, accessPolicy, new RecordingAuditLog());
 
         var result = await handler.Handle(new DisableTotpCommand(Guid.NewGuid()), CancellationToken.None);
 

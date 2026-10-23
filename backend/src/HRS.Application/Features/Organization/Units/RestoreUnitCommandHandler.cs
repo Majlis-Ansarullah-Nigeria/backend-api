@@ -1,11 +1,12 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Application.Features.Organization.Units;
 
-public sealed class RestoreUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy)
+public sealed class RestoreUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IAuditLog auditLog)
     : IRequestHandler<RestoreUnitCommand, Result>
 {
     public async ValueTask<Result> Handle(RestoreUnitCommand request, CancellationToken cancellationToken)
@@ -23,6 +24,7 @@ public sealed class RestoreUnitCommandHandler(IAppDbContext db, IAccessPolicy ac
         }
 
         unit.Restore();
+        auditLog.Add(new AuditEntry(AuditActions.UnitRestored, request.UserId, "unit", unit.Id.ToString(), $"Restored {unit.Name}", unit.Id));
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

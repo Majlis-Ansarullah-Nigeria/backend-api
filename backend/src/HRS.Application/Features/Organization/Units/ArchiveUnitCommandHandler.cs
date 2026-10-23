@@ -1,11 +1,12 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Domain.Common;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Application.Features.Organization.Units;
 
-public sealed class ArchiveUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class ArchiveUnitCommandHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IAuditLog auditLog)
     : IRequestHandler<ArchiveUnitCommand, Result>
 {
     public async ValueTask<Result> Handle(ArchiveUnitCommand request, CancellationToken cancellationToken)
@@ -28,6 +29,7 @@ public sealed class ArchiveUnitCommandHandler(IAppDbContext db, IAccessPolicy ac
         }
 
         unit.Archive(clock.UtcNow);
+        auditLog.Add(new AuditEntry(AuditActions.UnitArchived, request.UserId, "unit", unit.Id.ToString(), $"Archived {unit.Name}", unit.Id));
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

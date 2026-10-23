@@ -1,6 +1,7 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Models;
 using HRS.Application.Features.Identity.Login;
+using HRS.Application.UnitTests.Common;
 using HRS.Domain.Common;
 
 namespace HRS.Application.UnitTests.Features.Identity.Login;
@@ -13,7 +14,8 @@ public class LoginCommandHandlerTests
         var user = new AuthenticatedUser(Guid.NewGuid(), "Head", "head@example.org");
         var tokens = new AuthTokens("access", DateTimeOffset.UtcNow.AddMinutes(15), "refresh", DateTimeOffset.UtcNow.AddDays(30));
         var identityService = new StubIdentityService { ValidateResult = Result.Success(user), Tokens = tokens };
-        var handler = new LoginCommandHandler(identityService);
+        var auditLog = new RecordingAuditLog();
+        var handler = new LoginCommandHandler(identityService, auditLog);
 
         var result = await handler.Handle(new LoginCommand("head@example.org", "password", null, null), CancellationToken.None);
 
@@ -21,6 +23,8 @@ public class LoginCommandHandlerTests
         var loggedIn = Assert.IsType<LoggedIn>(result.Value);
         Assert.Equal(user.Id, loggedIn.Result.UserId);
         Assert.Equal(tokens, loggedIn.Result.Tokens);
+        var entry = Assert.Single(auditLog.Entries);
+        Assert.Equal(("auth.signed_in", user.Id), (entry.Action, entry.ActorUserId));
     }
 
     [Fact]
@@ -32,13 +36,15 @@ public class LoginCommandHandlerTests
             ValidateResult = Result.Success(user),
             ChallengeToken = "a-challenge-token",
         };
-        var handler = new LoginCommandHandler(identityService);
+        var auditLog = new RecordingAuditLog();
+        var handler = new LoginCommandHandler(identityService, auditLog);
 
         var result = await handler.Handle(new LoginCommand("head@example.org", "password", null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         var challenge = Assert.IsType<MfaChallengeRequired>(result.Value);
         Assert.Equal("a-challenge-token", challenge.ChallengeToken);
+        Assert.Empty(auditLog.Entries);
     }
 
     [Fact]
@@ -46,12 +52,15 @@ public class LoginCommandHandlerTests
     {
         var error = Error.Unauthenticated("INVALID_CREDENTIALS", "Invalid email/phone or password.");
         var identityService = new StubIdentityService { ValidateResult = Result.Failure<AuthenticatedUser>(error) };
-        var handler = new LoginCommandHandler(identityService);
+        var auditLog = new RecordingAuditLog();
+        var handler = new LoginCommandHandler(identityService, auditLog);
 
         var result = await handler.Handle(new LoginCommand("head@example.org", "wrong", null, null), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(error, result.Error);
+        var entry = Assert.Single(auditLog.Entries);
+        Assert.Equal(("auth.sign_in_failed", (Guid?)null, "head@example.org"), (entry.Action, entry.ActorUserId, entry.ActorEmail));
     }
 
     private sealed class StubIdentityService : IIdentityService

@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.History;
 using HRS.Application.Features.Submissions.MyReports;
 using HRS.Domain.History;
@@ -52,10 +53,13 @@ public static class HistoryEndpoints
                 CancellationToken cancellationToken) =>
             {
                 var result = await sender.Send(new GetHistoryReportPdfQuery(user.GetUserId(), instanceId), cancellationToken);
+                if (result.IsFailure)
+                {
+                    return result.ToProblemDetails();
+                }
 
-                return result.IsSuccess
-                    ? Results.File(result.Value, "application/pdf", "report.pdf")
-                    : result.ToProblemDetails();
+                await sender.Send(new RecordDownloadCommand(user.GetUserId(), DownloadKind.Report, instanceId, "PDF"), cancellationToken);
+                return Results.File(result.Value, "application/pdf", "report.pdf");
             })
             .WithName("GetHistoryReportPdf")
             .Produces(StatusCodes.Status200OK, contentType: "application/pdf")
@@ -69,10 +73,13 @@ public static class HistoryEndpoints
                 CancellationToken cancellationToken) =>
             {
                 var result = await sender.Send(new GetHistoryReportExcelQuery(user.GetUserId(), instanceId), cancellationToken);
+                if (result.IsFailure)
+                {
+                    return result.ToProblemDetails();
+                }
 
-                return result.IsSuccess
-                    ? Results.File(result.Value, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "report.xlsx")
-                    : result.ToProblemDetails();
+                await sender.Send(new RecordDownloadCommand(user.GetUserId(), DownloadKind.Report, instanceId, "Excel"), cancellationToken);
+                return Results.File(result.Value, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "report.xlsx");
             })
             .WithName("GetHistoryReportExcel")
             .Produces(StatusCodes.Status200OK, contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

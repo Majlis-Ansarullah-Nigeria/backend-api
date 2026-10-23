@@ -4,10 +4,12 @@ using System.Threading.RateLimiting;
 using HRS.Api.Common;
 using HRS.Api.Endpoints;
 using HRS.Application;
+using HRS.Application.Common.Interfaces;
 using HRS.Infrastructure;
 using HRS.Infrastructure.Notifications;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -33,6 +35,22 @@ try
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
+
+    // FR-AUD-001 records the client's IP. Behind Dokploy's proxy the TCP peer is the proxy, so
+    // read X-Forwarded-For — but only from proxies on the networks configured here (private
+    // container networks by default), so a client can't forge its own address.
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+        foreach (var network in builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>() ?? [])
+        {
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+        }
+    });
 
     var signingKey = builder.Configuration["Auth:SigningKey"]
         ?? throw new InvalidOperationException("Missing Auth:SigningKey.");
@@ -101,6 +119,7 @@ try
 
     var app = builder.Build();
 
+    app.UseForwardedHeaders();
     app.UseSerilogRequestLogging();
     app.UseExceptionHandler();
 
@@ -132,6 +151,7 @@ try
     app.MapHistoryEndpoints();
     app.MapDashboardsEndpoints();
     app.MapCompiledReportsEndpoints();
+    app.MapAuditEndpoints();
     app.MapExportsEndpoints();
 
     // architecture.md: Traefik routes "/hubs/*" to this process only — the Worker publishes

@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Identity.Invitations;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
@@ -12,7 +13,8 @@ public sealed class CreateRoleAssignmentCommandHandler(
     IAccessPolicy accessPolicy,
     IIdentityService identityService,
     ISender sender,
-    IClock clock) : IRequestHandler<CreateRoleAssignmentCommand, Result<CreateRoleAssignmentResult>>
+    IClock clock,
+    IAuditLog auditLog) : IRequestHandler<CreateRoleAssignmentCommand, Result<CreateRoleAssignmentResult>>
 {
     public async ValueTask<Result<CreateRoleAssignmentResult>> Handle(
         CreateRoleAssignmentCommand request, CancellationToken cancellationToken)
@@ -80,6 +82,10 @@ public sealed class CreateRoleAssignmentCommandHandler(
                 request.StartsAt, request.EndsAt, appointedBy: request.ActorUserId);
 
             db.RoleAssignments.Add(assignment);
+            auditLog.Add(new AuditEntry(
+                AuditActions.RoleAssigned, request.ActorUserId, "role_assignment", assignment.Id.ToString(),
+                $"{request.Email} → {request.Role}, {unit.Name}", unit.Id,
+                After: new { request.Email, Role = request.Role.ToString(), Unit = unit.Name, request.StartsAt, request.EndsAt }));
             await db.SaveChangesAsync(cancellationToken);
 
             return Result.Success(new CreateRoleAssignmentResult(assignment.Id, Invited: false));

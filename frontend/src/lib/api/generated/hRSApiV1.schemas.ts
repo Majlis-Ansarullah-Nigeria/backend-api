@@ -60,6 +60,59 @@ export interface AttachmentSummary {
   sizeBytes: number | string;
 }
 
+export interface AuditEventRow {
+  id: string;
+  occurredAt: string;
+  /** @nullable */
+  actorUserId: string | null;
+  actorName: string;
+  action: string;
+  entityType: string;
+  /** @nullable */
+  entityId: string | null;
+  /** @nullable */
+  unitId: string | null;
+  /** @nullable */
+  unitName: string | null;
+  summary: string;
+  /** @nullable */
+  beforeJson: string | null;
+  /** @nullable */
+  afterJson: string | null;
+  /** @nullable */
+  ipAddress: string | null;
+  /** @nullable */
+  userAgent: string | null;
+}
+
+export interface AuditEventPage {
+  rows: AuditEventRow[];
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  totalCount: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  page: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  pageSize: number | string;
+}
+
+export interface AuditPersonOption {
+  userId: string;
+  name: string;
+}
+
+export interface AuditUnitOption {
+  unitId: string;
+  name: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  depth: number | string;
+}
+
+export interface AuditFilterOptions {
+  actions: string[];
+  people: AuditPersonOption[];
+  units: AuditUnitOption[];
+}
+
 export type BulkExportFormat = number;
 
 export type BulkExportStatus = number;
@@ -1879,5 +1932,29 @@ reportTypeId?: string;
 fieldKey?: string;
 unitId?: string;
 measure?: MapMeasure;
+};
+
+export type GetAuditEventsParams = {
+action?: string;
+actorUserId?: string;
+unitId?: string;
+from?: string;
+to?: string;
+/**
+ * @pattern ^-?(?:0|[1-9]\d*)$
+ */
+page?: number | string;
+/**
+ * @pattern ^-?(?:0|[1-9]\d*)$
+ */
+pageSize?: number | string;
+};
+
+export type ExportAuditEventsCsvParams = {
+action?: string;
+actorUserId?: string;
+unitId?: string;
+from?: string;
+to?: string;
 };
 

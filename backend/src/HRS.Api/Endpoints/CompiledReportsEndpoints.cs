@@ -1,4 +1,5 @@
 using HRS.Api.Common;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Review.Compiled;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
@@ -72,9 +73,13 @@ public static class CompiledReportsEndpoints
         Guid windowId, CompiledReportFormat format, System.Security.Claims.ClaimsPrincipal user, ISender sender, CancellationToken cancellationToken)
     {
         var result = await sender.Send(new ExportCompiledReportQuery(user.GetUserId(), windowId, format), cancellationToken);
-        return result.IsSuccess
-            ? Results.File(result.Value.Content, result.Value.ContentType, result.Value.FileName)
-            : result.ToProblemDetails();
+        if (result.IsFailure)
+        {
+            return result.ToProblemDetails();
+        }
+
+        await sender.Send(new RecordDownloadCommand(user.GetUserId(), DownloadKind.CompiledReport, windowId, format.ToString()), cancellationToken);
+        return Results.File(result.Value.Content, result.Value.ContentType, result.Value.FileName);
     }
 }
 

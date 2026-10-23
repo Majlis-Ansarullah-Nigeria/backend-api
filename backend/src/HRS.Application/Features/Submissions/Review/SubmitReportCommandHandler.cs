@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Submissions.ReportInstances;
 using HRS.Application.Features.Templates.TemplateVersions;
@@ -18,7 +19,7 @@ namespace HRS.Application.Features.Submissions.Review;
 
 public sealed class SubmitReportCommandHandler(
     IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IPdfRenderer pdfRenderer, IEmailSender emailSender,
-    IIdentityService identityService, IOptions<AppOptions> appOptions)
+    IIdentityService identityService, IOptions<AppOptions> appOptions, IAuditLog auditLog)
     : IRequestHandler<SubmitReportCommand, Result<SubmitReportResult>>
 {
     public async ValueTask<Result<SubmitReportResult>> Handle(SubmitReportCommand request, CancellationToken cancellationToken)
@@ -133,6 +134,10 @@ public sealed class SubmitReportCommandHandler(
 
         instance.Submit(isLate, referenceNumber, request.IsNil, now, request.UserId);
         db.ReportRevisions.Add(instance.RecordSubmission(request.UserId, now));
+        auditLog.Add(new AuditEntry(
+            AuditActions.ReportSubmitted, request.UserId, "report", instance.Id.ToString(),
+            $"{reportType.Name} · {window.PeriodLabel} · {unitRow.Name}{(isLate ? " (late)" : string.Empty)}", request.UnitId,
+            After: new { Reference = instance.ReferenceNumber, IsLate = isLate, request.IsNil }));
 
         // FR-NOT-002's "child submitted (to observer)" — only when this report type actually has
         // an observer scope (FR-OBS's ObserverDepth>=1 gate, same check Nudge/PrivateNotes use)

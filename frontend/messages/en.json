@@ -175,7 +175,9 @@
       "dashboards": "Dashboards",
       "dashboardsShort": "Dashboards",
       "compiled": "Compiled reports",
-      "compiledShort": "Compiled"
+      "compiledShort": "Compiled",
+      "audit": "Audit log",
+      "auditShort": "Audit"
     }
   },
   "HeadHome": {
@@ -264,6 +266,42 @@
     "comparePeriodsAction": "Compare periods",
     "versionsAction": "Versions",
     "versionsActionLabel": "Version history of {report}, {period}"
+  },
+  "Audit": {
+    "title": "Audit log",
+    "subtitle": "Every sign-in, change, submission and download. Read-only.",
+    "exportCsv": "Export CSV",
+    "exportFailed": "Couldn't export the audit log. Try again.",
+    "actionLabel": "Action",
+    "allActions": "All actions",
+    "personLabel": "Person",
+    "anyone": "Anyone",
+    "unitLabel": "Unit",
+    "allUnits": "All units",
+    "dateLabel": "Date",
+    "lastDays": "Last {days} days",
+    "allTime": "All time",
+    "loading": "Loading…",
+    "loadErrorTitle": "We couldn't load the audit log",
+    "forbiddenTitle": "Only the Secretariat and the system administrator can see the audit log",
+    "emptyTitle": "Nothing recorded",
+    "emptyDescription": "No entries match these filters.",
+    "columnWhen": "When",
+    "columnWho": "Who",
+    "columnAction": "Action",
+    "columnDetails": "Details",
+    "columnIp": "IP",
+    "detailsFor": "Show details: {summary}",
+    "showingCount": "Showing {shown} of {total}",
+    "previousPage": "Previous",
+    "nextPage": "Next",
+    "detailsTitle": "{action} · details",
+    "detailsWhen": "{when} (WAT)",
+    "noChanges": "No before or after values for this entry.",
+    "before": "Before",
+    "after": "After",
+    "nothing": "—",
+    "userAgent": "Device: {agent}"
   },
   "MapView": {
     "title": "Map view",

@@ -1,6 +1,7 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
 using HRS.Application.Features.Analytics;
+using HRS.Application.Features.Audit;
 using HRS.Application.Features.Notifications;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
@@ -18,7 +19,7 @@ namespace HRS.Application.Features.Review.Inbox;
 public sealed record AcknowledgeReportCommand(Guid UserId, Guid ReportId) : IRequest<Result>;
 
 public sealed class AcknowledgeReportCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IAuditLog auditLog)
     : IRequestHandler<AcknowledgeReportCommand, Result>
 {
     public async ValueTask<Result> Handle(AcknowledgeReportCommand request, CancellationToken cancellationToken)
@@ -51,6 +52,9 @@ public sealed class AcknowledgeReportCommandHandler(
         var now = clock.UtcNow;
         instance.Acknowledge(now);
         await ReportMetricWriter.ReplaceAsync(db, instance, window, cancellationToken);
+        auditLog.Add(new AuditEntry(
+            AuditActions.ReportAcknowledged, request.UserId, "report", instance.Id.ToString(),
+            $"{reportType.Name} · {window.PeriodLabel} · {unitName}", instance.UnitId));
 
         var placeholders = new Dictionary<string, string>
         {

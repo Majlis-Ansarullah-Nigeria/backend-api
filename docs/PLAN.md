@@ -75,7 +75,7 @@ Work top to bottom. Each line is sized for one Claude Code session: run `/implem
 - [x] M10.3 Map view (FR-DSH-004); compiled national report export (FR-REV-006).
 
 ## M11 — Admin and audit (FR-AUD, FR-ADM)
-- [ ] M11.1 Audit log write path for all listed actions + viewer + CSV (FR-AUD-001, FR-AUD-002).
+- [x] M11.1 Audit log write path for all listed actions + viewer + CSV (FR-AUD-001, FR-AUD-002).
 - [ ] M11.2 Organization settings and branding; system health page (FR-ADM-001, FR-ADM-005).
 - [ ] M11.3 Webhooks, feature flags (FR-ADM-003, FR-ADM-004); global search palette (FR-SRC-001, FR-SRC-002).
 
