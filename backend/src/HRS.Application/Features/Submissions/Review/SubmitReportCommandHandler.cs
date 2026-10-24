@@ -19,7 +19,7 @@ namespace HRS.Application.Features.Submissions.Review;
 
 public sealed class SubmitReportCommandHandler(
     IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IPdfRenderer pdfRenderer, IEmailSender emailSender,
-    IIdentityService identityService, IOptions<AppOptions> appOptions, IAuditLog auditLog)
+    IIdentityService identityService, IOptions<AppOptions> appOptions, IAuditLog auditLog, IOrganizationBrandingProvider brandingProvider)
     : IRequestHandler<SubmitReportCommand, Result<SubmitReportResult>>
 {
     public async ValueTask<Result<SubmitReportResult>> Handle(SubmitReportCommand request, CancellationToken cancellationToken)
@@ -186,9 +186,10 @@ public sealed class SubmitReportCommandHandler(
 
         var receiptData = await ReportReceiptBuilder.BuildAsync(
             db, instance, schema, reportTypeName, periodLabel, unitName, unitLevel, referenceNumber, now, cancellationToken);
-        var pdfBytes = pdfRenderer.RenderReportReceipt(receiptData);
+        var branding = await brandingProvider.GetAsync(cancellationToken, includeLogo: true);
+        var pdfBytes = pdfRenderer.RenderReportReceipt(receiptData, branding);
 
-        var submittedAtText = now.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture);
+        var submittedAtText = branding.DateTime(now);
         await emailSender.QueueAsync(
             new EmailMessage(
                 user.Email,

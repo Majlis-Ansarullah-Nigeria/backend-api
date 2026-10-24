@@ -6,9 +6,9 @@ namespace HRS.Application.Common.Interfaces;
 /// given report's own schema doesn't have that field).</summary>
 public interface IExcelRenderer
 {
-    byte[] RenderSingleReport(ReportReceiptData data);
+    byte[] RenderSingleReport(ReportReceiptData data, OrganizationBranding branding);
 
-    byte[] RenderBulkWorkbook(IReadOnlyList<BulkExportReportRow> rows);
+    byte[] RenderBulkWorkbook(IReadOnlyList<BulkExportReportRow> rows, OrganizationBranding branding);
 }
 
 /// <summary>One row of the bulk workbook. AnswersByFieldKey uses the schema's stable field key as

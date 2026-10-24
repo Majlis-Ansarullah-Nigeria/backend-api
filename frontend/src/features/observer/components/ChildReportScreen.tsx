@@ -15,8 +15,10 @@ import { getChildReportPdf, useGetChildReport } from "@/lib/api/generated/observ
 import { downloadBlob } from "@/features/organization/utils/bulk-import";
 import { PrivateNotesCard } from "@/features/observer/components/PrivateNotesCard";
 import { reportInstanceStatusChipVariant, REPORT_INSTANCE_STATUS } from "@/features/submissions/utils/report-status";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 export function ChildReportScreen({ unitId, reportId }: { unitId: string; reportId: string }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("ChildReport");
   const [downloading, setDownloading] = useState(false);
 
@@ -79,7 +81,7 @@ export function ChildReportScreen({ unitId, reportId }: { unitId: string; report
               <>
                 {" · "}
                 {t("submittedMeta", {
-                  date: new Date(data.submittedAt).toLocaleString(),
+                  date: fmt.dateTime(data.submittedAt),
                   name: data.submittedByName ?? t("unknownSubmitter"),
                 })}
               </>

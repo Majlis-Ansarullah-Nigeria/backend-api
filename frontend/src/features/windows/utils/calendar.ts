@@ -26,13 +26,15 @@ export function toDateKey(iso: string): string {
   return `${year}-${month}-${day}`;
 }
 
-/** One opens event, one due event per level, and one closes event, per window. */
-export function buildCalendarEvents(windows: WindowForCalendar[]): CalendarEvent[] {
+/** One opens event, one due event per level, and one closes event, per window. dayKey decides which
+ * calendar day an instant falls on — pass the organization's (FR-ADM-001); the default is the
+ * viewer's local time zone. */
+export function buildCalendarEvents(windows: WindowForCalendar[], dayKey: (iso: string) => string = toDateKey): CalendarEvent[] {
   const events: CalendarEvent[] = [];
 
   for (const { window, reportTypeId, reportTypeName } of windows) {
     events.push({
-      date: toDateKey(window.opensAt),
+      date: dayKey(window.opensAt),
       type: "opens",
       label: `${reportTypeName} opens`,
       windowId: window.id,
@@ -41,7 +43,7 @@ export function buildCalendarEvents(windows: WindowForCalendar[]): CalendarEvent
 
     for (const due of window.dueDates) {
       events.push({
-        date: toDateKey(due.dueAt),
+        date: dayKey(due.dueAt),
         type: "due",
         label: `${levelLabel(due.level)} due · ${reportTypeName}`,
         windowId: window.id,
@@ -50,7 +52,7 @@ export function buildCalendarEvents(windows: WindowForCalendar[]): CalendarEvent
     }
 
     events.push({
-      date: toDateKey(window.closesAt),
+      date: dayKey(window.closesAt),
       type: "closes",
       label: `${reportTypeName} closes`,
       windowId: window.id,

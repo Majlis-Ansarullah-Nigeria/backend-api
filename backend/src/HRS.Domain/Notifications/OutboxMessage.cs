@@ -55,4 +55,16 @@ public sealed class OutboxMessage
         Attempts++;
         LastError = error;
     }
+
+    /// <summary>FR-ADM-005's "Retry failed notifications": a message the dispatcher gave up on
+    /// gets a fresh set of attempts. Already-sent messages are never resent.</summary>
+    public void ResetForRetry()
+    {
+        if (ProcessedAt is not null)
+        {
+            throw new InvalidOperationException("A sent notification can't be retried.");
+        }
+
+        Attempts = 0;
+    }
 }

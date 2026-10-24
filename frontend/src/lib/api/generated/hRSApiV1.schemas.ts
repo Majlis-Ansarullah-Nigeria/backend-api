@@ -113,6 +113,8 @@ export interface AuditFilterOptions {
   units: AuditUnitOption[];
 }
 
+export type BrandColor = number;
+
 export type BulkExportFormat = number;
 
 export type BulkExportStatus = number;
@@ -715,6 +717,8 @@ export interface DashboardAccess {
   hasCompiledReports: boolean;
 }
 
+export type DateFormatStyle = number;
+
 export interface DepartmentFieldValue {
   fieldKey: string;
   label: string;
@@ -935,6 +939,19 @@ export interface InvitationPreview {
   expiresAt: string;
 }
 
+export interface JobQueueStatus {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  servers: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  enqueued: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  processing: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  scheduled: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  failed: number | string;
+}
+
 export interface LeadershipFigure {
   fieldKey: string;
   label: string;
@@ -1096,6 +1113,17 @@ export type NotificationEventType = number;
 
 export type NotificationFilter = number;
 
+export interface NotificationHealth {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  sentLast24Hours: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  waitingRetry: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  givenUp: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  pending: number | string;
+}
+
 export interface NotificationPreferenceView {
   category: NotificationCategory;
   inAppEnabled: boolean;
@@ -1124,6 +1152,23 @@ export interface NotificationTemplateSummary {
   subject: string;
   body: string;
   updatedAt: string;
+}
+
+export interface OrganizationSettingsDto {
+  name: string;
+  hasLogo: boolean;
+  /** @nullable */
+  logoVersion: string | null;
+  brandColor: BrandColor;
+  brandPrimary: string;
+  brandDark: string;
+  timeZone: string;
+  dateFormat: DateFormatStyle;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  fiscalYearStartMonth: number | string;
+  /** @nullable */
+  updatedAt: string | null;
+  canEdit: boolean;
 }
 
 export interface OtpRequest {
@@ -1451,6 +1496,11 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+export interface RetryNotificationsResponse {
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  retried: number | string;
+}
+
 export interface ReturnInboxReportRequest {
   comment: string;
 }
@@ -1574,6 +1624,16 @@ export interface SubmitReportResult {
   isLate: boolean;
 }
 
+export interface SystemHealth {
+  jobs: null | JobQueueStatus;
+  notifications: NotificationHealth;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  attachmentBytes: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  attachmentCount: number | string;
+  emailTransport: string;
+}
+
 export type TemplateVersionStatus = number;
 
 export interface TemplateVersionDetail {
@@ -1601,6 +1661,11 @@ export interface TemplateVersionSummary {
   publishedAt: string | null;
   /** @nullable */
   retiredAt: string | null;
+}
+
+export interface TimeZoneOption {
+  id: string;
+  label: string;
 }
 
 export interface TotpEnrollment {
@@ -1681,6 +1746,15 @@ export interface UpdateNotificationSettingsRequest {
 export interface UpdateNotificationTemplateRequest {
   subject: string;
   body: string;
+}
+
+export interface UpdateOrganizationSettingsRequest {
+  name: string;
+  brandColor: BrandColor;
+  timeZone: string;
+  dateFormat: DateFormatStyle;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  fiscalYearStartMonth: number | string;
 }
 
 export interface UpdateReportTypeRequest {
@@ -1956,5 +2030,9 @@ actorUserId?: string;
 unitId?: string;
 from?: string;
 to?: string;
+};
+
+export type UploadLogoBody = {
+  file: IFormFile;
 };
 

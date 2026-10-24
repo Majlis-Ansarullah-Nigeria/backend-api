@@ -16,7 +16,8 @@ public sealed class CreateInvitationCommandHandler(
     IEmailSender emailSender,
     IClock clock,
     IOptions<AppOptions> appOptions,
-    IAuditLog auditLog) : IRequestHandler<CreateInvitationCommand, Result<CreateInvitationResult>>
+    IAuditLog auditLog,
+    IOrganizationBrandingProvider brandingProvider) : IRequestHandler<CreateInvitationCommand, Result<CreateInvitationResult>>
 {
     public async ValueTask<Result<CreateInvitationResult>> Handle(
         CreateInvitationCommand request, CancellationToken cancellationToken)
@@ -57,13 +58,14 @@ public sealed class CreateInvitationCommandHandler(
 
         var acceptUrl = $"{appOptions.Value.PublicUrl.TrimEnd('/')}/invite/{token}";
 
+        var branding = await brandingProvider.GetAsync(cancellationToken);
         await emailSender.QueueAsync(
             new EmailMessage(
                 invitation.Email,
-                "You've been invited to HRS",
+                $"You've been invited to {branding.Name}",
                 $"Hi {invitation.Name},\n\n"
-                    + $"You've been invited to join the Reporting Service. Set up your account:\n{acceptUrl}\n\n"
-                    + $"This invitation expires on {invitation.ExpiresAt:d MMMM yyyy}."),
+                    + $"You've been invited to join {branding.Name}'s reporting service. Set up your account:\n{acceptUrl}\n\n"
+                    + $"This invitation expires on {branding.Date(invitation.ExpiresAt)}."),
             cancellationToken);
 
         return new CreateInvitationResult(invitation.Id, invitation.Email, invitation.ExpiresAt);

@@ -11,7 +11,7 @@ namespace HRS.Infrastructure.Pdf;
 /// download — two different documents sharing the same section/field table layout.</summary>
 public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
 {
-    public byte[] RenderReportReceipt(ReportReceiptData data)
+    public byte[] RenderReportReceipt(ReportReceiptData data, OrganizationBranding branding)
     {
         var document = Document.Create(container =>
         {
@@ -23,6 +23,7 @@ public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
 
                 page.Header().Column(column =>
                 {
+                    column.Item().PaddingBottom(6).Element(c => PdfBranding.Header(c, branding));
                     column.Item().Text(data.ReportTypeName).FontSize(18).Bold();
                     column.Item().Text($"{data.PeriodLabel} · {data.UnitName}").FontSize(11).FontColor(Colors.Grey.Darken1);
 
@@ -36,7 +37,7 @@ public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
                         row.RelativeItem().AlignRight().Text(text =>
                         {
                             text.Span(data.ReferenceNumber is null ? "Generated: " : "Submitted: ").SemiBold();
-                            text.Span(data.GeneratedAt.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture));
+                            text.Span(branding.DateTime(data.GeneratedAt));
                         });
                     });
                 });
@@ -45,7 +46,7 @@ public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
 
                 page.Footer().AlignCenter().Text(text =>
                 {
-                    text.Span("Hierarchical Reporting Service").FontColor(Colors.Grey.Medium);
+                    text.Span(branding.Name).FontColor(Colors.Grey.Medium);
                 });
             });
         });
@@ -53,7 +54,7 @@ public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
         return document.GeneratePdf();
     }
 
-    public byte[] RenderHistoryReport(HistoryReportPdfData data)
+    public byte[] RenderHistoryReport(HistoryReportPdfData data, OrganizationBranding branding)
     {
         var qrCodeBytes = GenerateQrCodePng(data.OnlineRecordUrl);
 
@@ -69,9 +70,7 @@ public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
                 {
                     row.RelativeItem().Column(column =>
                     {
-                        // No organization branding/logo upload exists yet (M11.2) — the org name
-                        // stands in for an actual logo image until that ships.
-                        column.Item().Text("Hierarchical Reporting Service").FontSize(12).SemiBold().FontColor(Colors.Green.Darken2);
+                        column.Item().PaddingBottom(4).Element(c => PdfBranding.Header(c, branding));
                         column.Item().Text(data.ReportTypeName).FontSize(18).Bold();
                         column.Item().Text($"{data.PeriodLabel} · {data.UnitName}").FontSize(11).FontColor(Colors.Grey.Darken1);
 
@@ -85,7 +84,7 @@ public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
                             detailRow.RelativeItem().AlignRight().Text(text =>
                             {
                                 text.Span("Submitted: ").SemiBold();
-                                text.Span(data.GeneratedAt.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture));
+                                text.Span(branding.DateTime(data.GeneratedAt));
                             });
                         });
                     });
@@ -101,7 +100,7 @@ public sealed class QuestPdfReportReceiptRenderer : IPdfRenderer
 
                 page.Footer().AlignCenter().Text(text =>
                 {
-                    text.Span("Hierarchical Reporting Service").FontColor(Colors.Grey.Medium);
+                    text.Span(branding.Name).FontColor(Colors.Grey.Medium);
                 });
             });
         });

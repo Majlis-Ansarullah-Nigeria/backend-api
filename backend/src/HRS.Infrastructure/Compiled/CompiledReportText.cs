@@ -1,4 +1,5 @@
 using System.Globalization;
+using HRS.Application.Common.Interfaces;
 using HRS.Application.Features.Review.Compiled;
 using HRS.Domain.Templates;
 
@@ -8,9 +9,6 @@ namespace HRS.Infrastructure.Compiled;
 /// same thing. The web view formats the same data through the frontend's i18n layer.</summary>
 internal static class CompiledReportText
 {
-    // No organization branding exists yet (M11.2) — the same stand-in the history PDFs use.
-    public const string OrganizationName = "Hierarchical Reporting Service";
-
     public static string Figure(double? value, TemplateFieldType type, string? unitLabel)
     {
         if (value is not { } number)
@@ -41,11 +39,11 @@ internal static class CompiledReportText
             : $"{sign}{difference.ToString("#,0.##", CultureInfo.InvariantCulture)}";
     }
 
-    public static string OverviewSentence(CompiledReportView report) =>
+    public static string OverviewSentence(CompiledReportView report, OrganizationBranding branding) =>
         $"Of {report.Overview.Expected} units expected to report, {report.Overview.OnTime} submitted on time, " +
         $"{report.Overview.Late} late and {report.Overview.NotReported} did not report. " +
         $"Figures include only acknowledged reports ({report.Overview.Acknowledged} so far), compiled on " +
-        $"{report.CompiledAt.ToOffset(TimeSpan.FromHours(1)).ToString("d MMMM yyyy, HH:mm", CultureInfo.InvariantCulture)} (WAT).";
+        $"{branding.DateTime(report.CompiledAt)}.";
 
     public static string Highlight(CompiledHighlight highlight, CompiledFigure? figure)
     {

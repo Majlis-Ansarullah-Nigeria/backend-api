@@ -11,6 +11,7 @@ import type { ApiError } from "@/lib/api/client";
 import type { WindowReopenSummary } from "@/lib/api/generated/hRSApiV1.schemas";
 import { getGetSubmissionWindowQueryKey, useReopenWindow } from "@/lib/api/generated/windows/windows";
 import type { UnitOption } from "./ExtensionsPanel";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 export function ReopenPanel({
   reportTypeId,
@@ -23,6 +24,7 @@ export function ReopenPanel({
   reopens: WindowReopenSummary[];
   units: UnitOption[];
 }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Windows");
   const queryClient = useQueryClient();
   const reopenWindow = useReopenWindow<ApiError>();
@@ -132,7 +134,7 @@ export function ReopenPanel({
               <p className="font-medium text-ink">{unitName(reopen.unitId)}</p>
               <p className="mt-1 text-xs text-ink-muted">{reopen.reason}</p>
               <p className="mt-1 text-xs text-ink-muted">
-                {t("reopenedUntilOn", { date: new Date(reopen.reopenedUntil).toLocaleDateString() })}
+                {t("reopenedUntilOn", { date: fmt.date(reopen.reopenedUntil) })}
               </p>
             </div>
           ))

@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Building2, Calendar, Download, FileText, History, Home, Inbox, LayoutGrid, LayoutTemplate, Mail, Network, ShieldCheck, User, Users, type LucideIcon } from "lucide-react";
+import { BarChart3, Bell, Building2, Calendar, Download, FileText, History, Home, Inbox, LayoutGrid, LayoutTemplate, Mail, Network, Settings, ShieldCheck, User, Users, type LucideIcon } from "lucide-react";
 
 export type NavItemKey =
   | "home"
@@ -17,7 +17,8 @@ export type NavItemKey =
   | "overview"
   | "dashboards"
   | "compiled"
-  | "audit";
+  | "audit"
+  | "settings";
 
 export interface NavItem {
   href: string;
@@ -73,4 +74,5 @@ export const SECRETARIAT_NAV_ITEMS: NavItem[] = [
   { href: "/secretariat/exports", key: "exports", icon: Download },
   { href: "/secretariat/announcements", key: "announcements", icon: Mail },
   { href: "/secretariat/audit", key: "audit", icon: ShieldCheck },
+  { href: "/admin/settings", key: "settings", icon: Settings },
 ];

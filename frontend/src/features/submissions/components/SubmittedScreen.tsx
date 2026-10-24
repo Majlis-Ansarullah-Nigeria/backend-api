@@ -12,8 +12,10 @@ import type { ReportInstanceForEditing } from "@/lib/api/generated/hRSApiV1.sche
 import { getReportReceiptPdf, useGetReportInstanceForEditing } from "@/lib/api/generated/submissions/submissions";
 import { downloadBlob } from "@/features/organization/utils/bulk-import";
 import { reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 export function SubmittedScreen({ id, unitId }: { id: string; unitId: string }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("ReportSubmitted");
   const query = useGetReportInstanceForEditing<ReportInstanceForEditing, ApiError>(id, { unit: unitId });
   const [downloading, setDownloading] = useState(false);
@@ -58,7 +60,7 @@ export function SubmittedScreen({ id, unitId }: { id: string; unitId: string }) 
         </div>
         <div className="flex items-baseline justify-between gap-3 text-sm">
           <span className="text-ink-muted">{t("submitted")}</span>
-          <span className="font-medium text-ink">{new Date(data.submittedAt ?? "").toLocaleString()}</span>
+          <span className="font-medium text-ink">{data.submittedAt ? fmt.dateTime(data.submittedAt) : "—"}</span>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm">
           <span className="text-ink-muted">{t("status")}</span>

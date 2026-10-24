@@ -7,7 +7,8 @@ namespace HRS.Application.Features.Observer.ChildReport;
 
 public sealed record GetChildReportPdfQuery(Guid UserId, Guid ChildUnitId, Guid ReportId) : IRequest<Result<byte[]>>;
 
-public sealed class GetChildReportPdfQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IPdfRenderer pdfRenderer, IClock clock)
+public sealed class GetChildReportPdfQueryHandler(
+    IAppDbContext db, IAccessPolicy accessPolicy, IPdfRenderer pdfRenderer, IClock clock, IOrganizationBrandingProvider brandingProvider)
     : IRequestHandler<GetChildReportPdfQuery, Result<byte[]>>
 {
     public async ValueTask<Result<byte[]>> Handle(GetChildReportPdfQuery request, CancellationToken cancellationToken)
@@ -25,6 +26,6 @@ public sealed class GetChildReportPdfQueryHandler(IAppDbContext db, IAccessPolic
             db, instance, schema, reportType.Name, window.PeriodLabel, childUnitName, (int)childLevelCode,
             instance.ReferenceNumber, instance.SubmittedAt ?? clock.UtcNow, cancellationToken, hideConfidentialValues: true);
 
-        return pdfRenderer.RenderReportReceipt(receipt);
+        return pdfRenderer.RenderReportReceipt(receipt, await brandingProvider.GetAsync(cancellationToken, includeLogo: true));
     }
 }

@@ -13,6 +13,7 @@ import { useGetMyReports } from "@/lib/api/generated/submissions/submissions";
 import { cn } from "@/lib/utils";
 import { countdownText } from "@/features/submissions/utils/countdown";
 import { isActionableStatus, isSentStatus, REPORT_LINE_STATUS, reportStatusChipVariant } from "@/features/submissions/utils/report-status";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 type Tab = "due" | "submitted" | "all";
 
@@ -99,6 +100,7 @@ export function MyReportsScreen() {
 }
 
 function ReportRow({ report }: { report: MyReportSummary }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("MyReports");
   const href = `/reports/${report.instanceId ?? report.windowId}/edit?unit=${report.unitId}${report.status === REPORT_LINE_STATUS.Returned ? "&returned=1" : ""}`;
   const actionLabel =
@@ -120,7 +122,7 @@ function ReportRow({ report }: { report: MyReportSummary }) {
       </td>
       <td className="px-4 py-3 text-ink-muted">{report.unitName}</td>
       <td className="px-4 py-3 text-ink-muted">
-        {new Date(report.dueAt).toLocaleDateString()}
+        {fmt.date(report.dueAt)}
         <span className="block text-xs">{countdownText(report.dueAt)}</span>
       </td>
       <td className="px-4 py-3">

@@ -23,7 +23,7 @@ public static class BulkExportProcessor
 
     public static async Task RunAsync(
         IAppDbContext db, IFileStorage fileStorage, IPdfRenderer pdfRenderer, IExcelRenderer excelRenderer, IClock clock,
-        string publicUrl, Guid bulkExportId, CancellationToken cancellationToken)
+        string publicUrl, Guid bulkExportId, CancellationToken cancellationToken, OrganizationBranding? branding = null)
     {
         var export = await db.BulkExports.FirstOrDefaultAsync(e => e.Id == bulkExportId, cancellationToken);
         if (export is null || export.Status != BulkExportStatus.Pending)
@@ -53,8 +53,8 @@ public static class BulkExportProcessor
                 : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
             var fileBytes = export.Format == BulkExportFormat.ZipOfPdfs
-                ? BuildZipOfPdfs(pdfRenderer, reports)
-                : excelRenderer.RenderBulkWorkbook([.. reports.Select(r => r.WorkbookRow)]);
+                ? BuildZipOfPdfs(pdfRenderer, reports, branding ?? OrganizationBranding.Default)
+                : excelRenderer.RenderBulkWorkbook([.. reports.Select(r => r.WorkbookRow)], branding ?? OrganizationBranding.Default);
 
             await fileStorage.UploadAsync(key, fileBytes, contentType, cancellationToken);
 
@@ -202,7 +202,7 @@ public static class BulkExportProcessor
         return new ResolvedReport(pdfData, workbookRow);
     }
 
-    private static byte[] BuildZipOfPdfs(IPdfRenderer pdfRenderer, List<ResolvedReport> reports)
+    private static byte[] BuildZipOfPdfs(IPdfRenderer pdfRenderer, List<ResolvedReport> reports, OrganizationBranding branding)
     {
         using var stream = new MemoryStream();
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
@@ -210,7 +210,7 @@ public static class BulkExportProcessor
             var usedNames = new HashSet<string>();
             foreach (var report in reports)
             {
-                var bytes = pdfRenderer.RenderHistoryReport(report.PdfData);
+                var bytes = pdfRenderer.RenderHistoryReport(report.PdfData, branding);
                 var baseName = (report.PdfData.ReferenceNumber ?? $"{report.PdfData.ReportTypeName}-{report.PdfData.UnitName}").Replace('/', '-');
                 var fileName = $"{baseName}.pdf";
                 var suffix = 1;

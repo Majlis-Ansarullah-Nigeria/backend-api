@@ -8,15 +8,7 @@ import { ApiError } from "@/lib/api/client";
 import type { ReportRevisionEntry, ReportRevisionHistory } from "@/lib/api/generated/hRSApiV1.schemas";
 import { useGetReportRevisions } from "@/lib/api/generated/history/history";
 import { REPORT_REVISION_ACTION } from "@/features/history/utils/comparison";
-
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "Africa/Lagos",
-});
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const ACTION_KEYS: Record<number, "actionSubmitted" | "actionWithdrawn" | "actionResubmitted"> = {
   [REPORT_REVISION_ACTION.Submitted]: "actionSubmitted",
@@ -60,6 +52,7 @@ export function ReportVersionsPanel({ reportId }: { reportId: string }) {
 }
 
 function RevisionItem({ revision }: { revision: ReportRevisionEntry }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Versions");
   const actionKey = ACTION_KEYS[Number(revision.action)] ?? "actionSubmitted";
   const isFirst = Number(revision.revisionNo) === 1;
@@ -71,8 +64,8 @@ function RevisionItem({ revision }: { revision: ReportRevisionEntry }) {
       </p>
       <p className="text-xs text-ink-muted">
         {revision.actorName
-          ? t("revisionMeta", { date: DATE_TIME_FORMATTER.format(new Date(revision.createdAt)), actor: revision.actorName })
-          : DATE_TIME_FORMATTER.format(new Date(revision.createdAt))}
+          ? t("revisionMeta", { date: fmt.dateTime(revision.createdAt), actor: revision.actorName })
+          : fmt.dateTime(revision.createdAt)}
       </p>
 
       {isFirst ? null : revision.changes.length === 0 ? (

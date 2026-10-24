@@ -13,18 +13,8 @@ import { exportAuditEventsCsv, useGetAuditEvents, useGetAuditFilterOptions } fro
 import { downloadBlob } from "@/features/organization/utils/bulk-import";
 import { auditTone, DATE_RANGES, initials, jsonLines, rangeStart } from "@/features/audit/utils/audit";
 import { cn } from "@/lib/utils";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
-const ORG_TIME_ZONE = "Africa/Lagos";
-const WHEN = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: ORG_TIME_ZONE });
-const WHEN_FULL = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  timeZone: ORG_TIME_ZONE,
-});
 
 const SELECT_CLASS =
   "h-11 rounded-sm border border-line-strong bg-surface px-3 text-sm text-ink outline-none focus-visible:border-green-600 focus-visible:ring-2 focus-visible:ring-green-600/40";
@@ -205,10 +195,11 @@ export function AuditLogScreen() {
 }
 
 function AuditRow({ row, selected, onSelect }: { row: AuditEventRow; selected: boolean; onSelect: () => void }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Audit");
   return (
     <tr className={cn("border-b border-line last:border-0", selected && "bg-mint/50")}>
-      <td className="whitespace-nowrap px-4 py-3.5 text-ink-muted">{WHEN.format(new Date(row.occurredAt))}</td>
+      <td className="whitespace-nowrap px-4 py-3.5 text-ink-muted">{fmt.dayMonthTime(row.occurredAt)}</td>
       <td className="px-4 py-3.5">
         <span className="flex items-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-full bg-mint text-xs font-bold text-green-700" aria-hidden="true">
@@ -231,6 +222,7 @@ function AuditRow({ row, selected, onSelect }: { row: AuditEventRow; selected: b
 }
 
 function AuditDetails({ row }: { row: AuditEventRow }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Audit");
   const before = jsonLines(row.beforeJson);
   const after = jsonLines(row.afterJson);
@@ -240,7 +232,7 @@ function AuditDetails({ row }: { row: AuditEventRow }) {
         <h2 id="audit-details-title" className="text-lg font-bold text-ink">
           {t("detailsTitle", { action: row.action })}
         </h2>
-        <p className="text-sm text-ink-muted">{t("detailsWhen", { when: WHEN_FULL.format(new Date(row.occurredAt)) })}</p>
+        <p className="text-sm text-ink-muted">{t("detailsWhen", { when: fmt.dateTimeSeconds(row.occurredAt), offset: fmt.offset(row.occurredAt) })}</p>
       </div>
       {before.length === 0 && after.length === 0 ? (
         <p className="mt-3 text-sm text-ink-muted">{t("noChanges")}</p>

@@ -24,8 +24,8 @@ import { downloadBlob } from "@/features/organization/utils/bulk-import";
 import { HISTORY_STATUS_ORDER, historyStatusOptionLabel } from "@/features/history/utils/history-status";
 import { BULK_EXPORT_FORMAT } from "@/features/exports/utils/export-status";
 import { reportStatusChipVariant } from "@/features/submissions/utils/report-status";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" });
 
 interface Filters {
   reportTypeId?: string;
@@ -297,6 +297,7 @@ function HistoryTableRow({
   selected: boolean;
   onToggleSelected: (checked: boolean) => void;
 }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("History");
   const href = row.isObserved ? `/units/${row.unitId}/reports/${row.instanceId}` : `/reports/${row.instanceId}/edit?unit=${row.unitId}`;
   const [downloading, setDownloading] = useState<"pdf" | "excel" | null>(null);
@@ -328,7 +329,7 @@ function HistoryTableRow({
         <p className="text-xs text-ink-muted">{row.periodLabel}</p>
       </td>
       <td className="px-4 py-3.5 text-ink">{row.unitName}</td>
-      <td className="px-4 py-3.5 text-ink">{row.submittedAt ? DATE_FORMATTER.format(new Date(row.submittedAt)) : "—"}</td>
+      <td className="px-4 py-3.5 text-ink">{row.submittedAt ? fmt.date(row.submittedAt) : "—"}</td>
       <td className="px-4 py-3.5">
         <StatusChip status={reportStatusChipVariant(row.status)} />
       </td>

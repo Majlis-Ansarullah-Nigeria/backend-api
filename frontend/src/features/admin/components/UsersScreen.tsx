@@ -13,6 +13,7 @@ import { roleLabel } from "@/features/admin/utils/role-name";
 import { USER_STATUS, filterUsersByTab, searchUsers, statusLabel, type UserStatusTab } from "@/features/admin/utils/users";
 import { cn } from "@/lib/utils";
 import { UserDetailPanel } from "./UserDetailPanel";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const STATUS_BADGE_STYLES: Record<number, string> = {
   [USER_STATUS.Active]: "bg-status-acknowledged-bg text-status-acknowledged-fg",
@@ -21,6 +22,7 @@ const STATUS_BADGE_STYLES: Record<number, string> = {
 };
 
 export function UsersScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("AdminUsers");
   const users = useGetUsers<UserListItem[], ApiError>();
   const tree = useGetOrganizationTree<UnitTreeNode[], ApiError>({ includeArchived: true });
@@ -114,7 +116,7 @@ export function UsersScreen() {
                           : "—"}
                       </td>
                       <td className="px-3 py-2.5 text-ink-muted">
-                        {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : t("never")}
+                        {user.lastLoginAt ? fmt.dateTime(user.lastLoginAt) : t("never")}
                       </td>
                       <td className="px-3 py-2.5">
                         <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-medium", STATUS_BADGE_STYLES[user.status])}>

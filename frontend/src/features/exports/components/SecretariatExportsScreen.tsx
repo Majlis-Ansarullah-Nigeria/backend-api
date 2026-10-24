@@ -16,10 +16,11 @@ import { useGetReportTypes } from "@/lib/api/generated/templates/templates";
 import { useGetSubmissionWindows } from "@/lib/api/generated/windows/windows";
 import { HISTORY_STATUS_ORDER, historyStatusOptionLabel } from "@/features/history/utils/history-status";
 import { BULK_EXPORT_FORMAT, BULK_EXPORT_STATUS, exportStatusChipVariant } from "@/features/exports/utils/export-status";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 export function SecretariatExportsScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Exports");
   const tHistory = useTranslations("History");
 
@@ -190,7 +191,7 @@ export function SecretariatExportsScreen() {
                     <td className="px-4 py-3.5">
                       <StatusChip status={exportStatusChipVariant(exportSummary.status)} label={exportStatusLabel(t, exportSummary.status)} />
                     </td>
-                    <td className="px-4 py-3.5 text-ink">{DATE_TIME_FORMATTER.format(new Date(exportSummary.createdAt))}</td>
+                    <td className="px-4 py-3.5 text-ink">{fmt.dayMonthTime(exportSummary.createdAt)}</td>
                     <td className="px-4 py-3.5 text-ink">{exportSummary.requestedByName || "—"}</td>
                     <td className="px-4 py-3.5 text-right">
                       <Link href={`/exports/${exportSummary.id}`} className="text-sm font-medium text-green-700 underline-offset-2 hover:underline">

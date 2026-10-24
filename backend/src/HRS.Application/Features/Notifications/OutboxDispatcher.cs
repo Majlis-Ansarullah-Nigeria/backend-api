@@ -20,7 +20,7 @@ public static class OutboxDispatcher
 
     /// <summary>After this many failed attempts, a message is left alone rather than retried
     /// forever — a poison message (e.g. a template that always fails to render) shouldn't spin.</summary>
-    private const int MaxAttempts = 5;
+    public const int MaxAttempts = 5;
 
     public static async Task<int> RunAsync(
         IAppDbContext db,
@@ -43,6 +43,10 @@ public static class OutboxDispatcher
         {
             return 0;
         }
+
+        // FR-ADM-001: every template can say {{organizationName}}.
+        var organizationName = await db.OrganizationSettings.AsNoTracking().Select(s => s.Name).FirstOrDefaultAsync(cancellationToken)
+            ?? OrganizationBranding.DefaultName;
 
         var templatesByEventType = await db.NotificationTemplates.AsNoTracking()
             .ToDictionaryAsync(t => t.EventType, cancellationToken);
@@ -81,6 +85,7 @@ public static class OutboxDispatcher
             var placeholders = JsonSerializer.Deserialize<Dictionary<string, string>>(message.PayloadJson, JsonSerializerOptions.Web)
                 ?? new Dictionary<string, string>();
             placeholders["headName"] = recipient.Name;
+            placeholders.TryAdd("organizationName", organizationName);
 
             string subject;
             string body;

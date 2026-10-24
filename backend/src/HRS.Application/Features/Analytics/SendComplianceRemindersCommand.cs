@@ -27,7 +27,7 @@ public sealed record SendComplianceRemindersCommand(Guid UserId, Guid WindowId, 
     : IRequest<Result<SendRemindersResult>>;
 
 public sealed class SendComplianceRemindersCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IOrganizationBrandingProvider brandingProvider)
     : IRequestHandler<SendComplianceRemindersCommand, Result<SendRemindersResult>>
 {
     public async ValueTask<Result<SendRemindersResult>> Handle(SendComplianceRemindersCommand request, CancellationToken cancellationToken)
@@ -70,6 +70,7 @@ public sealed class SendComplianceRemindersCommandHandler(
             .ToDictionary(g => g.Key, g => g.Select(a => a.UserId).Distinct().ToList());
 
         var publicUrl = appOptions.Value.PublicUrl.TrimEnd('/');
+        var branding = await brandingProvider.GetAsync(cancellationToken);
         var reminded = 0;
         foreach (var unit in targets)
         {
@@ -84,7 +85,7 @@ public sealed class SendComplianceRemindersCommandHandler(
                 ["unitName"] = unit.Name,
                 ["reportTypeName"] = reportTypeName,
                 ["periodLabel"] = window.PeriodLabel,
-                ["dueDate"] = dueAt.ToString("d MMM yyyy", CultureInfo.InvariantCulture),
+                ["dueDate"] = branding.Date(dueAt),
                 ["link"] = $"{publicUrl}/reports/{window.Id}/edit?unit={unit.Id}",
             };
             var eventType = now > dueAt ? NotificationEventType.Overdue : NotificationEventType.Reminder;

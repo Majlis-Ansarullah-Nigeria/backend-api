@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRS.Application.Features.Submissions.Review;
 
-public sealed class GetReportReceiptPdfQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IPdfRenderer pdfRenderer, IClock clock)
+public sealed class GetReportReceiptPdfQueryHandler(
+    IAppDbContext db, IAccessPolicy accessPolicy, IPdfRenderer pdfRenderer, IClock clock, IOrganizationBrandingProvider brandingProvider)
     : IRequestHandler<GetReportReceiptPdfQuery, Result<byte[]>>
 {
     public async ValueTask<Result<byte[]>> Handle(GetReportReceiptPdfQuery request, CancellationToken cancellationToken)
@@ -41,6 +42,6 @@ public sealed class GetReportReceiptPdfQueryHandler(IAppDbContext db, IAccessPol
             db, instance, schema, reportType.Name, window.PeriodLabel, unitRow.Name, (int)unitRow.LevelCode,
             instance.ReferenceNumber, generatedAt, cancellationToken);
 
-        return pdfRenderer.RenderReportReceipt(receiptData);
+        return pdfRenderer.RenderReportReceipt(receiptData, await brandingProvider.GetAsync(cancellationToken, includeLogo: true));
     }
 }

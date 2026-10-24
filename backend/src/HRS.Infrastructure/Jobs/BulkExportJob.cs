@@ -14,8 +14,13 @@ namespace HRS.Infrastructure.Jobs;
 /// Worker-hosted class couldn't be enqueued by type from the request thread.
 /// </summary>
 public sealed class BulkExportJob(
-    IAppDbContext db, IFileStorage fileStorage, IPdfRenderer pdfRenderer, IExcelRenderer excelRenderer, IClock clock, IOptions<AppOptions> appOptions)
+    IAppDbContext db, IFileStorage fileStorage, IPdfRenderer pdfRenderer, IExcelRenderer excelRenderer, IClock clock, IOptions<AppOptions> appOptions,
+    IOrganizationBrandingProvider brandingProvider)
 {
-    public Task RunAsync(Guid bulkExportId, CancellationToken cancellationToken) =>
-        BulkExportProcessor.RunAsync(db, fileStorage, pdfRenderer, excelRenderer, clock, appOptions.Value.PublicUrl, bulkExportId, cancellationToken);
+    public async Task RunAsync(Guid bulkExportId, CancellationToken cancellationToken)
+    {
+        var branding = await brandingProvider.GetAsync(cancellationToken, includeLogo: true);
+        await BulkExportProcessor.RunAsync(
+            db, fileStorage, pdfRenderer, excelRenderer, clock, appOptions.Value.PublicUrl, bulkExportId, cancellationToken, branding);
+    }
 }

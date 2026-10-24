@@ -8,7 +8,7 @@ namespace HRS.Application.Features.History;
 /// <summary>FR-HIS-003's single-report Excel download.</summary>
 public sealed record GetHistoryReportExcelQuery(Guid UserId, Guid InstanceId) : IRequest<Result<byte[]>>;
 
-public sealed class GetHistoryReportExcelQueryHandler(IAppDbContext db, IExcelRenderer excelRenderer, IClock clock)
+public sealed class GetHistoryReportExcelQueryHandler(IAppDbContext db, IExcelRenderer excelRenderer, IClock clock, IOrganizationBrandingProvider brandingProvider)
     : IRequestHandler<GetHistoryReportExcelQuery, Result<byte[]>>
 {
     public async ValueTask<Result<byte[]>> Handle(GetHistoryReportExcelQuery request, CancellationToken cancellationToken)
@@ -24,6 +24,6 @@ public sealed class GetHistoryReportExcelQueryHandler(IAppDbContext db, IExcelRe
             db, r.Instance, r.Schema, r.ReportType.Name, r.Window.PeriodLabel, r.UnitName, (int)r.UnitLevelCode,
             r.Instance.ReferenceNumber, r.Instance.SubmittedAt ?? clock.UtcNow, cancellationToken, hideConfidentialValues: r.IsObserved);
 
-        return excelRenderer.RenderSingleReport(receipt);
+        return excelRenderer.RenderSingleReport(receipt, await brandingProvider.GetAsync(cancellationToken));
     }
 }

@@ -15,6 +15,7 @@ import { useGetReportTypes } from "@/lib/api/generated/templates/templates";
 import { useGetSubmissionWindows } from "@/lib/api/generated/windows/windows";
 import { UNIT_LEVEL_CODE, levelLabel } from "@/features/templates/utils/report-type";
 import { reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const DEPARTMENT_LEVEL_ORDER = [UNIT_LEVEL_CODE.Zone, UNIT_LEVEL_CODE.Dila, UNIT_LEVEL_CODE.Muqam, UNIT_LEVEL_CODE.Department];
 
@@ -26,6 +27,7 @@ interface FilterState {
 }
 
 export function DepartmentScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Department");
 
   const [filter, setFilter] = useState<FilterState>({});
@@ -149,7 +151,7 @@ export function DepartmentScreen() {
                 <div className="flex items-center gap-2">
                   <StatusChip status={reportInstanceStatusChipVariant(Number(row.status))} />
                   {row.submittedAt ? (
-                    <span className="text-xs text-ink-muted">{t("submittedMeta", { date: new Date(row.submittedAt).toLocaleString() })}</span>
+                    <span className="text-xs text-ink-muted">{t("submittedMeta", { date: fmt.dateTime(row.submittedAt) })}</span>
                   ) : null}
                 </div>
               </div>

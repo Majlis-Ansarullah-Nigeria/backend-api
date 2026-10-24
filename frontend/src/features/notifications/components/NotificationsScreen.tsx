@@ -24,6 +24,7 @@ import {
   notificationEventTypeStyle,
 } from "@/features/notifications/utils/notification-event-type";
 import { formatNotificationTimestamp, notificationDayGroup } from "@/features/notifications/utils/format-notification-time";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const ICONS: Record<NotificationIconName, typeof Bell> = {
   calendar: Calendar,
@@ -46,6 +47,7 @@ const FILTER_VALUES: Record<FilterKey, number> = {
 };
 
 export function NotificationsScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Notifications");
   const queryClient = useQueryClient();
 
@@ -72,7 +74,7 @@ export function NotificationsScreen() {
 
   const groups = (notifications.data ?? []).reduce<{ today: NotificationSummary[]; earlier: NotificationSummary[] }>(
     (acc, notification) => {
-      acc[notificationDayGroup(notification.createdAt)].push(notification);
+      acc[notificationDayGroup(notification.createdAt, new Date(), fmt)].push(notification);
       return acc;
     },
     { today: [], earlier: [] },
@@ -166,6 +168,7 @@ function NotificationGroup({
   items: NotificationSummary[];
   onOpen: (notification: NotificationSummary) => void;
 }) {
+  const fmt = useOrgFormat();
   return (
     <div>
       <p className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-ink-muted sm:px-6">{label}</p>
@@ -192,7 +195,7 @@ function NotificationGroup({
                   <p className={cn("text-sm leading-snug", isUnread ? "font-bold text-ink" : "font-medium text-ink")}>
                     {notification.subject}
                   </p>
-                  <p className="mt-0.5 text-xs font-semibold text-ink-muted">{formatNotificationTimestamp(notification.createdAt)}</p>
+                  <p className="mt-0.5 text-xs font-semibold text-ink-muted">{formatNotificationTimestamp(notification.createdAt, new Date(), fmt)}</p>
                 </div>
                 {isUnread ? <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-green-600" aria-hidden="true" /> : null}
               </button>

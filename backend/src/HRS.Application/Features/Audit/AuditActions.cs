@@ -47,12 +47,15 @@ public static class AuditActions
 
     public const string AuditExported = "audit.exported";
 
+    public const string SettingsUpdated = "settings.updated";
+    public const string NotificationsRetried = "notifications.retried";
+
     public static readonly IReadOnlyList<string> All =
     [
         SignedIn, SignInFailed, MfaEnabled, MfaDisabled, MfaReset, UserDeactivated, UserReactivated, SessionsRevoked,
         InvitationSent, InvitationAccepted, RoleAssigned, UnitCreated, UnitUpdated, UnitArchived, UnitRestored, UnitMoved,
         UnitsImported, TemplatePublished, WindowCreated, WindowUpdated, WindowExtended, WindowReopened, ReportSubmitted,
         ReportWithdrawn, ReportAcknowledged, ReportReturned, ReportFlagged, ReportAssigned, ExportRequested, ExportDownloaded,
-        ReportDownloaded, CompiledReportDownloaded, CompiledReportEdited, AuditExported,
+        ReportDownloaded, CompiledReportDownloaded, CompiledReportEdited, AuditExported, SettingsUpdated, NotificationsRetried,
     ];
 }

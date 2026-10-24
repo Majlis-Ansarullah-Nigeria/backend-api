@@ -12,7 +12,8 @@ using Microsoft.Extensions.Options;
 namespace HRS.Application.Features.Windows.SubmissionWindows;
 
 public sealed class GrantWindowExtensionCommandHandler(
-    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IAuditLog auditLog)
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IAuditLog auditLog,
+    IOrganizationBrandingProvider brandingProvider)
     : IRequestHandler<GrantWindowExtensionCommand, Result<SubmissionWindowSummary>>
 {
     public async ValueTask<Result<SubmissionWindowSummary>> Handle(GrantWindowExtensionCommand request, CancellationToken cancellationToken)
@@ -45,12 +46,13 @@ public sealed class GrantWindowExtensionCommandHandler(
         }
 
         var now = clock.UtcNow;
+        var branding = await brandingProvider.GetAsync(cancellationToken);
         var before = WindowAudit.Snapshot(window);
         window.GrantExtension(request.UnitIds, request.NewDueAt, request.NewClosesAt, request.Reason, now);
         var unitNames = await db.Units.AsNoTracking().Where(u => request.UnitIds.Contains(u.Id)).Select(u => u.Name).ToListAsync(cancellationToken);
         auditLog.Add(new AuditEntry(
             AuditActions.WindowExtended, request.UserId, "window", window.Id.ToString(),
-            $"{string.Join(", ", unitNames)} · due → {request.NewDueAt:d MMM}",
+            $"{string.Join(", ", unitNames)} · due → {branding.Date(request.NewDueAt)}",
             request.UnitIds.Count == 1 ? request.UnitIds[0] : null,
             Before: new { before.DueDates, before.ClosesAt },
             After: new { Units = unitNames, DueAt = request.NewDueAt, ClosesAt = request.NewClosesAt, request.Reason }));
@@ -68,7 +70,7 @@ public sealed class GrantWindowExtensionCommandHandler(
                 ["unitName"] = unitNamesById.GetValueOrDefault(unitId, "Your unit"),
                 ["reportTypeName"] = reportType.Name,
                 ["periodLabel"] = window.PeriodLabel,
-                ["dueDate"] = request.NewDueAt.ToString("d MMM yyyy", CultureInfo.InvariantCulture),
+                ["dueDate"] = branding.Date(request.NewDueAt),
                 ["reason"] = request.Reason,
                 ["link"] = $"{publicUrl}/reports/{window.Id}/edit?unit={unitId}",
             };

@@ -6,9 +6,9 @@ namespace HRS.Application.Common.Interfaces;
 /// record).</summary>
 public interface IPdfRenderer
 {
-    byte[] RenderReportReceipt(ReportReceiptData data);
+    byte[] RenderReportReceipt(ReportReceiptData data, OrganizationBranding branding);
 
-    byte[] RenderHistoryReport(HistoryReportPdfData data);
+    byte[] RenderHistoryReport(HistoryReportPdfData data, OrganizationBranding branding);
 }
 
 public sealed record ReportReceiptData(

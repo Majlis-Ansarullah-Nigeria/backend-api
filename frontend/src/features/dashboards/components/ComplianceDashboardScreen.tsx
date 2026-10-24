@@ -15,8 +15,8 @@ import { DashboardSwitcher } from "@/features/dashboards/components/DashboardSwi
 import { OnTimeLateChart } from "@/features/dashboards/components/OnTimeLateChart";
 import { complianceKpis, isOnTrack, percentOf, type PeriodCounts, UNIT_LEVEL } from "@/features/dashboards/utils/compliance";
 import { cn } from "@/lib/utils";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
-const DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Lagos" });
 
 const SELECT_CLASS =
   "h-11 rounded-sm border border-line-strong bg-surface px-3 text-sm text-ink outline-none focus-visible:border-green-600 focus-visible:ring-2 focus-visible:ring-green-600/40";
@@ -28,6 +28,7 @@ export interface ComplianceSelection {
 
 /** FR-DSH-001: the "Compliance dashboard" board. */
 export function ComplianceDashboardScreen({ initial }: { initial: ComplianceSelection }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Compliance");
   const router = useRouter();
   const [selection, setSelection] = useState<ComplianceSelection>(initial);
@@ -221,7 +222,7 @@ export function ComplianceDashboardScreen({ initial }: { initial: ComplianceSele
                   <p className="text-sm text-ink-muted">
                     {t(new Date(latest.dueAt) < new Date() ? "dueWas" : "dueIs", {
                       level: level.name,
-                      date: DATE_FORMATTER.format(new Date(latest.dueAt)),
+                      date: fmt.dayMonth(latest.dueAt),
                     })}
                   </p>
                 ) : null}

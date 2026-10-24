@@ -25,7 +25,8 @@ public static class WindowJobRunner
     private static readonly HashSet<WindowJobEventType> NotifiableEventTypes =
         [WindowJobEventType.Opened, WindowJobEventType.Reminder, WindowJobEventType.Overdue, WindowJobEventType.Escalated];
 
-    public static async Task<int> RunAsync(IAppDbContext db, IClock clock, string publicUrl, CancellationToken cancellationToken)
+    public static async Task<int> RunAsync(
+        IAppDbContext db, IClock clock, string publicUrl, CancellationToken cancellationToken, OrganizationBranding? branding = null)
     {
         var now = clock.UtcNow;
 
@@ -86,7 +87,7 @@ public static class WindowJobRunner
                     ["unitName"] = unit.Name,
                     ["reportTypeName"] = reportTypeName,
                     ["periodLabel"] = window.PeriodLabel,
-                    ["dueDate"] = dueAt.Value.ToString("d MMM yyyy", CultureInfo.InvariantCulture),
+                    ["dueDate"] = (branding ?? OrganizationBranding.Default).Date(dueAt.Value),
                     ["link"] = $"{publicUrl.TrimEnd('/')}/reports/{window.Id}/edit?unit={unit.Id}",
                 };
 

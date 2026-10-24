@@ -24,6 +24,7 @@ import {
 } from "@/lib/api/generated/notifications/notifications";
 import { NOTIFICATION_EVENT_TYPE_ORDER, notificationEventTypeLabel } from "@/features/notifications/utils/notification-event-type";
 import { ANNOUNCEMENT_AUDIENCE, ANNOUNCEMENT_AUDIENCE_ORDER, announcementAudienceLabel } from "@/features/notifications/utils/announcement-audience";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const PLACEHOLDERS = ["{{headName}}", "{{unitName}}", "{{dueDate}}", "{{link}}"];
 
@@ -68,6 +69,7 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
 }
 
 function AnnouncementsTab() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Announcements");
   const queryClient = useQueryClient();
 
@@ -169,7 +171,7 @@ function AnnouncementsTab() {
               <li key={announcement.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
                 <span className="text-sm font-bold text-ink">{announcement.title}</span>
                 <span className="text-xs font-medium text-ink-muted">
-                  {new Date(announcement.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                  {fmt.dayMonth(announcement.createdAt)}
                   {" · "}
                   {announcementAudienceLabel(announcement.audience)}
                   {" · "}

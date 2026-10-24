@@ -7,7 +7,7 @@ namespace HRS.Infrastructure.Excel;
 /// <summary>FR-HIS-003's single-report Excel and FR-HIS-004's bulk workbook.</summary>
 public sealed class ClosedXmlExcelRenderer : IExcelRenderer
 {
-    public byte[] RenderSingleReport(ReportReceiptData data)
+    public byte[] RenderSingleReport(ReportReceiptData data, OrganizationBranding branding)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("Report");
@@ -16,7 +16,7 @@ public sealed class ClosedXmlExcelRenderer : IExcelRenderer
         sheet.Cell(1, 1).Style.Font.SetBold().Font.FontSize = 14;
         sheet.Cell(2, 1).Value = $"{data.PeriodLabel} · {data.UnitName}";
         sheet.Cell(3, 1).Value = $"Reference: {data.ReferenceNumber ?? "DRAFT — not yet submitted"}";
-        sheet.Cell(4, 1).Value = $"Generated: {data.GeneratedAt.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture)}";
+        sheet.Cell(4, 1).Value = $"Generated: {branding.DateTime(data.GeneratedAt)}";
 
         var row = 6;
         foreach (var section in data.Sections)
@@ -42,7 +42,7 @@ public sealed class ClosedXmlExcelRenderer : IExcelRenderer
         return stream.ToArray();
     }
 
-    public byte[] RenderBulkWorkbook(IReadOnlyList<BulkExportReportRow> rows)
+    public byte[] RenderBulkWorkbook(IReadOnlyList<BulkExportReportRow> rows, OrganizationBranding branding)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("Reports");
@@ -85,7 +85,7 @@ public sealed class ClosedXmlExcelRenderer : IExcelRenderer
             sheet.Cell(excelRow, 2).Value = row.UnitName;
             sheet.Cell(excelRow, 3).Value = row.PeriodLabel;
             sheet.Cell(excelRow, 4).Value = row.ReferenceNumber ?? "";
-            sheet.Cell(excelRow, 5).Value = row.SubmittedAt?.ToString("d MMM yyyy", CultureInfo.InvariantCulture) ?? "";
+            sheet.Cell(excelRow, 5).Value = row.SubmittedAt is { } submittedAt ? branding.Date(submittedAt) : "";
             sheet.Cell(excelRow, 6).Value = row.Status;
 
             for (var col = 0; col < fieldKeysInOrder.Count; col++)

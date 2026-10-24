@@ -11,29 +11,27 @@ import type { OverviewWindowEvent, SecretariatOverview } from "@/lib/api/generat
 import { useGetSecretariatOverview } from "@/lib/api/generated/dashboards/dashboards";
 import { isOnTrack, percentOf, WINDOW_EVENT_KIND } from "@/features/dashboards/utils/compliance";
 import { cn } from "@/lib/utils";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
+import { createOrgFormatter, DEFAULT_ORG_FORMAT, type OrgFormatter } from "@/lib/org/format";
 
-const ORG_TIME_ZONE = "Africa/Lagos";
-const DAY_MONTH = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: ORG_TIME_ZONE });
-const MONTH_SHORT = new Intl.DateTimeFormat("en", { month: "short", timeZone: ORG_TIME_ZONE });
-const DAY_OF_MONTH = new Intl.DateTimeFormat("en", { day: "numeric", timeZone: ORG_TIME_ZONE });
-const HOUR = new Intl.DateTimeFormat("en", { hour: "numeric", hourCycle: "h23", timeZone: ORG_TIME_ZONE });
-const YMD = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: ORG_TIME_ZONE });
+const DEFAULT_FORMAT = createOrgFormatter(DEFAULT_ORG_FORMAT);
 
 /** Morning / afternoon / evening by the organization's clock, not the browser's. */
-export function greetingKey(now: Date): "greetingMorning" | "greetingAfternoon" | "greetingEvening" {
-  const hour = Number(HOUR.format(now));
+export function greetingKey(now: Date, fmt: OrgFormatter = DEFAULT_FORMAT): "greetingMorning" | "greetingAfternoon" | "greetingEvening" {
+  const hour = fmt.hour(now);
   return hour < 12 ? "greetingMorning" : hour < 17 ? "greetingAfternoon" : "greetingEvening";
 }
 
 /** "today" / "tomorrow" / "on 5 Oct", by calendar day in the organization's time zone. */
-export function relativeDueDay(dueAt: Date, now: Date): "today" | "tomorrow" | "date" {
+export function relativeDueDay(dueAt: Date, now: Date, fmt: OrgFormatter = DEFAULT_FORMAT): "today" | "tomorrow" | "date" {
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const due = YMD.format(dueAt);
-  return due === YMD.format(now) ? "today" : due === YMD.format(tomorrow) ? "tomorrow" : "date";
+  const due = fmt.dayKey(dueAt);
+  return due === fmt.dayKey(now) ? "today" : due === fmt.dayKey(tomorrow) ? "tomorrow" : "date";
 }
 
 /** The "Secretariat overview" board. */
 export function SecretariatOverviewScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Overview");
   const query = useGetSecretariatOverview<SecretariatOverview, ApiError>();
   const [levelTab, setLevelTab] = useState<number | null>(null);
@@ -55,21 +53,21 @@ export function SecretariatOverviewScreen() {
   const firstName = data.userName.split(" ")[0] ?? "";
   const zoneTab = data.byZone.find((level) => Number(level.level) === levelTab) ?? data.byZone[0];
   const nextDue = data.nextDue;
-  const nextDueWhen = nextDue ? relativeDueDay(new Date(nextDue.dueAt), now) : null;
+  const nextDueWhen = nextDue ? relativeDueDay(new Date(nextDue.dueAt), now, fmt) : null;
 
   return (
     <div className="flex flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-ink sm:text-3xl">
-            {firstName ? t(greetingKey(now), { name: firstName }) : t("greetingNoName")}
+            {firstName ? t(greetingKey(now, fmt), { name: firstName }) : t("greetingNoName")}
           </h1>
           {data.currentWindow ? (
             <p className="mt-1 text-sm text-ink-muted">
               {t(data.currentWindow.isClosed ? "currentWindowClosed" : "currentWindowOpen", {
                 period: data.currentWindow.periodLabel,
                 reportType: data.currentWindow.reportTypeName,
-                date: DAY_MONTH.format(new Date(data.currentWindow.opensAt)),
+                date: fmt.dayMonth(data.currentWindow.opensAt),
               })}
             </p>
           ) : null}
@@ -102,7 +100,7 @@ export function SecretariatOverviewScreen() {
         />
         {nextDue ? (
           <Tile
-            label={t(`kpiDue_${nextDueWhen}`, { levels: nextDue.levelPluralName, date: DAY_MONTH.format(new Date(nextDue.dueAt)) })}
+            label={t(`kpiDue_${nextDueWhen}`, { levels: nextDue.levelPluralName, date: fmt.dayMonth(nextDue.dueAt) })}
             value={Number(nextDue.notSubmitted)}
             tone="text-status-late-fg"
             detail={t("kpiDueDetail")}
@@ -216,7 +214,7 @@ export function SecretariatOverviewScreen() {
                           expected,
                           strong: (chunks) => <strong className="text-ink">{chunks}</strong>,
                         })}
-                        {level.dueAt ? ` · ${t("levelDue", { date: DAY_MONTH.format(new Date(level.dueAt)) })}` : null}
+                        {level.dueAt ? ` · ${t("levelDue", { date: fmt.dayMonth(level.dueAt) })}` : null}
                       </span>
                     </div>
                     <div
@@ -332,6 +330,7 @@ function Tile({
 }
 
 function UpcomingItem({ event }: { event: OverviewWindowEvent }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Overview");
   const at = new Date(event.at);
   const levels = event.levelNames.length === 1 ? t("levelOnly", { level: event.levelNames[0] }) : event.levelNames.join(", ");
@@ -341,8 +340,8 @@ function UpcomingItem({ event }: { event: OverviewWindowEvent }) {
   return (
     <li className="flex items-center gap-4 border-t border-line py-3 first:border-t-0">
       <div className="flex w-10 flex-col items-center">
-        <span className="text-xs font-bold uppercase text-green-700">{MONTH_SHORT.format(at)}</span>
-        <span className="text-xl font-bold text-ink">{DAY_OF_MONTH.format(at)}</span>
+        <span className="text-xs font-bold uppercase text-green-700">{fmt.monthShort(at)}</span>
+        <span className="text-xl font-bold text-ink">{fmt.dayOfMonth(at)}</span>
       </div>
       <div>
         <p className="font-semibold text-ink">

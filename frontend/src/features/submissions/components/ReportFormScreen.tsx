@@ -37,6 +37,7 @@ import {
   reportInstanceStatusChipVariant,
 } from "@/features/submissions/utils/report-status";
 import { sectionProgress } from "@/features/submissions/utils/section-progress";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const AUTOSAVE_DELAY_MS = 10_000;
 
@@ -54,6 +55,7 @@ const COPYABLE_FIELD_TYPES: ReadonlySet<number> = new Set([
 ]);
 
 export function ReportFormScreen({ id, unitId }: { id: string; unitId: string }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("ReportForm");
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -370,7 +372,7 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
           <p className="font-semibold">{t("returnedBannerTitle")}</p>
           <p className="mt-1">{data.returnComment}</p>
           {data.revisionDeadline ? (
-            <p className="mt-2 text-xs">{t("revisionDeadline", { date: new Date(data.revisionDeadline).toLocaleString() })}</p>
+            <p className="mt-2 text-xs">{t("revisionDeadline", { date: fmt.dateTime(data.revisionDeadline) })}</p>
           ) : null}
         </div>
       ) : null}

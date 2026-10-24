@@ -11,6 +11,7 @@ import { useGetLeadershipOverview } from "@/lib/api/generated/dashboards/dashboa
 import { isOnTrack, percentOf } from "@/features/dashboards/utils/compliance";
 import { change, changeKind, formatIndicator, formatSigned } from "@/features/dashboards/utils/indicators";
 import { cn } from "@/lib/utils";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 // Matches backend/src/HRS.Application/Features/Analytics/GetLeadershipOverviewQuery.cs's enum.
 export const LEADERSHIP_PERIOD = {
@@ -19,12 +20,12 @@ export const LEADERSHIP_PERIOD = {
   Year: 2,
 } as const;
 
-const DAY_MONTH = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Lagos" });
 
 const toNumber = (value: number | string | null | undefined): number | null => (value == null ? null : Number(value));
 
 /** The "Leadership overview (mobile)" board — Leadership's home (FR-DSH-002). */
 export function LeadershipOverviewScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Leadership");
   const [period, setPeriod] = useState<number>(LEADERSHIP_PERIOD.Current);
   const query = useGetLeadershipOverview<LeadershipOverview, ApiError>({ period });
@@ -91,7 +92,7 @@ export function LeadershipOverviewScreen() {
             {isYear
               ? t("receivedYear")
               : data.closesAt
-                ? t(new Date(data.closesAt) < new Date() ? "windowClosed" : "windowCloses", { date: DAY_MONTH.format(new Date(data.closesAt)) })
+                ? t(new Date(data.closesAt) < new Date() ? "windowClosed" : "windowCloses", { date: fmt.dayMonth(data.closesAt) })
                 : null}
           </p>
         </div>

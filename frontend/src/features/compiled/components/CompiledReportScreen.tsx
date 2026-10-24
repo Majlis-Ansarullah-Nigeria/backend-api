@@ -20,16 +20,17 @@ import {
 import { downloadBlob } from "@/features/organization/utils/bulk-import";
 import { change, changeKind, formatIndicator, formatSigned } from "@/features/dashboards/utils/indicators";
 import { cn } from "@/lib/utils";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 // Matches backend/src/HRS.Application/Features/Review/Compiled/CompiledReportView.cs.
 const HIGHLIGHT_KIND = { Highest: 0, LargestRise: 1, LargestFall: 2 } as const;
 const MAX_NARRATIVE = 20_000;
 
-const DATE_TIME = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
 const toNumber = (value: number | string | null | undefined): number | null => (value == null ? null : Number(value));
 
 /** FR-REV-006: the "Compiled national report" board. */
 export function CompiledReportScreen({ windowId, basePath }: { windowId: string; basePath: string }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Compiled");
   const query = useGetCompiledReport<CompiledReportView, ApiError>(windowId);
   const [downloading, setDownloading] = useState<"pdf" | "word" | null>(null);
@@ -164,7 +165,7 @@ export function CompiledReportScreen({ windowId, basePath }: { windowId: string;
                 late: Number(report.overview.late),
                 notReported: Number(report.overview.notReported),
                 acknowledged: Number(report.overview.acknowledged),
-                date: DATE_TIME.format(new Date(report.compiledAt)),
+                date: `${fmt.dateTime(report.compiledAt)} (${fmt.offset(report.compiledAt)})`,
               })}
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -299,6 +300,7 @@ function HighlightText({ highlight, figure }: { highlight: CompiledHighlight; fi
 }
 
 function NarrativeEditor({ windowId, initial, updatedAt }: { windowId: string; initial: string; updatedAt?: string | null }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Compiled");
   const queryClient = useQueryClient();
   const save = useUpdateCompiledNarrative();
@@ -327,7 +329,7 @@ function NarrativeEditor({ windowId, initial, updatedAt }: { windowId: string; i
           {t("saveNarrative")}
         </Button>
         {!dirty && updatedAt ? (
-          <span className="text-xs text-ink-muted">{t("narrativeSaved", { date: DATE_TIME.format(new Date(updatedAt)) })}</span>
+          <span className="text-xs text-ink-muted">{t("narrativeSaved", { date: fmt.dateTime(updatedAt) })}</span>
         ) : null}
       </div>
     </div>

@@ -23,6 +23,7 @@ import { useAcceptInvitation } from "@/lib/api/generated/identity/identity";
 import { useGetInvitation } from "@/lib/api/generated/invitations/invitations";
 import type { InvitationPreview } from "@/lib/api/generated/hRSApiV1.schemas";
 import { cn } from "@/lib/utils";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 export interface AcceptInvitationFormProps {
   token: string;
@@ -60,6 +61,7 @@ export function AcceptInvitationForm({ token }: AcceptInvitationFormProps) {
 }
 
 function InvitationAcceptFields({ token, invitation }: { token: string; invitation: InvitationPreview }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("AcceptInvitation");
   const router = useRouter();
   const acceptInvitation = useAcceptInvitation<ApiError>();
@@ -192,7 +194,7 @@ function InvitationAcceptFields({ token, invitation }: { token: string; invitati
         </Button>
       </form>
 
-      <p className="text-center text-xs text-ink-muted">{t("expiresOn", { date: formatDate(invitation.expiresAt) })}</p>
+      <p className="text-center text-xs text-ink-muted">{t("expiresOn", { date: fmt.date(invitation.expiresAt) })}</p>
     </div>
   );
 }
@@ -207,6 +209,4 @@ function PasswordCriterion({ met, label }: { met: boolean; label: string }) {
   );
 }
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
-}
+

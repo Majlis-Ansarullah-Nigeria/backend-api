@@ -72,7 +72,8 @@ public sealed record CompiledReportFile(byte[] Content, string ContentType, stri
 /// <summary>FR-REV-006's "exportable to Word and PDF" — the same live report, rendered.</summary>
 public sealed record ExportCompiledReportQuery(Guid UserId, Guid WindowId, CompiledReportFormat Format) : IRequest<Result<CompiledReportFile>>;
 
-public sealed class ExportCompiledReportQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, ICompiledReportRenderer renderer)
+public sealed class ExportCompiledReportQueryHandler(
+    IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, ICompiledReportRenderer renderer, IOrganizationBrandingProvider brandingProvider)
     : IRequestHandler<ExportCompiledReportQuery, Result<CompiledReportFile>>
 {
     public async ValueTask<Result<CompiledReportFile>> Handle(ExportCompiledReportQuery request, CancellationToken cancellationToken)
@@ -85,10 +86,11 @@ public sealed class ExportCompiledReportQueryHandler(IAppDbContext db, IAccessPo
         }
 
         var report = view.Value;
+        var branding = await brandingProvider.GetAsync(cancellationToken, includeLogo: true);
         return request.Format == CompiledReportFormat.Word
             ? Result.Success(new CompiledReportFile(
-                renderer.RenderWord(report), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{report.ReferenceNumber}.docx"))
-            : Result.Success(new CompiledReportFile(renderer.RenderPdf(report), "application/pdf", $"{report.ReferenceNumber}.pdf"));
+                renderer.RenderWord(report, branding), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"{report.ReferenceNumber}.docx"))
+            : Result.Success(new CompiledReportFile(renderer.RenderPdf(report, branding), "application/pdf", $"{report.ReferenceNumber}.pdf"));
     }
 }
 

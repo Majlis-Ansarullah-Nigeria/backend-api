@@ -194,6 +194,8 @@ public static class DependencyInjection
         services.AddScoped<IExcelRenderer, ClosedXmlExcelRenderer>();
         services.AddScoped<ICompiledReportRenderer, CompiledReportRenderer>();
         services.AddScoped<IRequestContext, NoRequestContext>();
+        services.AddScoped<IJobQueueMonitor, HangfireJobQueueMonitor>();
+        services.AddSingleton<IEmailTransportInfo, EmailTransportInfo>();
 
         // FR-HIS-004: the API only ever enqueues (client-side); the Worker's own Program.cs adds
         // AddHangfireServer() on top of this same registration to actually process jobs

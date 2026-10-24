@@ -1,27 +1,31 @@
-function isSameCalendarDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+import { createOrgFormatter, DEFAULT_ORG_FORMAT, type OrgFormatter } from "@/lib/org/format";
+
+const DEFAULT_FORMAT = createOrgFormatter(DEFAULT_ORG_FORMAT);
+
+/** Calendar days in the organization's time zone (FR-ADM-001), not the browser's. */
+function isSameCalendarDay(a: Date, b: Date, fmt: OrgFormatter): boolean {
+  return fmt.dayKey(a) === fmt.dayKey(b);
 }
 
 /** The mockup's two section headers: "Today" for anything created on today's calendar date
- * (local time), "Earlier" for everything before — a simple, deliberately coarse split. */
-export function notificationDayGroup(createdAt: string, now: Date = new Date()): "today" | "earlier" {
-  return isSameCalendarDay(new Date(createdAt), now) ? "today" : "earlier";
+ * (organization time), "Earlier" for everything before — a simple, deliberately coarse split. */
+export function notificationDayGroup(createdAt: string, now: Date = new Date(), fmt: OrgFormatter = DEFAULT_FORMAT): "today" | "earlier" {
+  return isSameCalendarDay(new Date(createdAt), now, fmt) ? "today" : "earlier";
 }
 
 /** Per-row timestamp label matching the mockup: time-of-day today, "Yesterday" for yesterday,
  * "D MMM" otherwise. */
-export function formatNotificationTimestamp(createdAt: string, now: Date = new Date()): string {
+export function formatNotificationTimestamp(createdAt: string, now: Date = new Date(), fmt: OrgFormatter = DEFAULT_FORMAT): string {
   const created = new Date(createdAt);
 
-  if (isSameCalendarDay(created, now)) {
-    return created.toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit" });
+  if (isSameCalendarDay(created, now, fmt)) {
+    return fmt.time(created);
   }
 
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (isSameCalendarDay(created, yesterday)) {
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  if (isSameCalendarDay(created, yesterday, fmt)) {
     return "Yesterday";
   }
 
-  return created.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return fmt.dayMonth(created);
 }

@@ -60,7 +60,7 @@ public sealed class ReopenWindowCommandHandler(IAppDbContext db, IAccessPolicy a
         var unitNames = await db.Units.AsNoTracking().Where(u => request.UnitIds.Contains(u.Id)).Select(u => u.Name).ToListAsync(cancellationToken);
         auditLog.Add(new AuditEntry(
             AuditActions.WindowReopened, request.UserId, "window", window.Id.ToString(),
-            $"{window.PeriodLabel} reopened for {string.Join(", ", unitNames)} until {request.ReopenedUntil:d MMM}",
+            $"{window.PeriodLabel} reopened for {string.Join(", ", unitNames)} until {request.ReopenedUntil.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}",
             request.UnitIds.Count == 1 ? request.UnitIds[0] : null,
             After: new { Units = unitNames, request.ReopenedUntil, request.Reason }));
         await db.SaveChangesAsync(cancellationToken);

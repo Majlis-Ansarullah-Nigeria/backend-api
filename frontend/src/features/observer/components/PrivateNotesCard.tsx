@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api/client";
 import type { PrivateNoteView } from "@/lib/api/generated/hRSApiV1.schemas";
 import { addPrivateNote, getGetPrivateNotesQueryKey, useGetPrivateNotes } from "@/lib/api/generated/observer/observer";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 /** FR-OBS-004: a simple append-only log, visible to whoever currently heads the observing unit —
  * never the individual author (the backend scopes notes by ObserverUnitId, not AuthorUserId). */
 export function PrivateNotesCard({ unitId, reportId }: { unitId: string; reportId: string }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("ChildReport");
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
@@ -40,7 +42,7 @@ export function PrivateNotesCard({ unitId, reportId }: { unitId: string; reportI
           <div key={note.id} className="rounded-md bg-status-upcoming-bg p-3 text-sm">
             <p className="text-ink">{note.body}</p>
             <p className="mt-1 text-xs text-ink-muted">
-              {note.authorName} · {new Date(note.createdAt).toLocaleDateString()}
+              {note.authorName} · {fmt.date(note.createdAt)}
             </p>
           </div>
         ))}

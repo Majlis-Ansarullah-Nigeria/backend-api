@@ -8,11 +8,12 @@ namespace HRS.Worker;
 /// <summary>Hangfire's resolvable unit of work for BR-WIN-08's window jobs — a thin adapter that
 /// hands off to the actual (and independently testable) <see cref="WindowJobRunner"/>.</summary>
 public sealed partial class WindowJobsRecurringJob(
-    IAppDbContext db, IClock clock, IOptions<AppOptions> appOptions, ILogger<WindowJobsRecurringJob> logger)
+    IAppDbContext db, IClock clock, IOptions<AppOptions> appOptions, IOrganizationBrandingProvider brandingProvider, ILogger<WindowJobsRecurringJob> logger)
 {
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        var created = await WindowJobRunner.RunAsync(db, clock, appOptions.Value.PublicUrl, cancellationToken);
+        var branding = await brandingProvider.GetAsync(cancellationToken);
+        var created = await WindowJobRunner.RunAsync(db, clock, appOptions.Value.PublicUrl, cancellationToken, branding);
 
         if (created > 0)
         {

@@ -22,6 +22,7 @@ import {
   type CalendarEventType,
 } from "@/features/windows/utils/calendar";
 import { SchedulesPanel } from "./SchedulesPanel";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const EVENT_STYLES: Record<CalendarEventType, string> = {
   opens: "bg-status-acknowledged-bg text-status-acknowledged-fg",
@@ -29,10 +30,12 @@ const EVENT_STYLES: Record<CalendarEventType, string> = {
   closes: "bg-status-returned-bg text-status-returned-fg",
 };
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" });
+// A month label, not an instant — formatted in UTC so no zone can shift it into another month.
+const MONTH_FORMATTER = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 const WEEKDAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 export function WindowsCalendarScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Windows");
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -72,6 +75,7 @@ export function WindowsCalendarScreen() {
         visibleReportTypes.flatMap((reportType, index) =>
           (windowQueries[index]?.data ?? []).map((window) => ({ window, reportTypeId: reportType.id, reportTypeName: reportType.name })),
         ),
+        (iso) => fmt.dayKey(iso),
       );
   const eventsByDate = groupEventsByDate(events);
 
@@ -116,7 +120,7 @@ export function WindowsCalendarScreen() {
           <Button type="button" size="sm" variant="outline" aria-label={t("previousMonth")} onClick={() => goToMonth(-1)}>
             <ChevronLeft className="size-4" aria-hidden="true" />
           </Button>
-          <h2 className="min-w-40 text-lg font-bold text-ink">{MONTH_FORMATTER.format(new Date(year, month, 1))}</h2>
+          <h2 className="min-w-40 text-lg font-bold text-ink">{MONTH_FORMATTER.format(Date.UTC(year, month, 1))}</h2>
           <Button type="button" size="sm" variant="outline" aria-label={t("nextMonth")} onClick={() => goToMonth(1)}>
             <ChevronRight className="size-4" aria-hidden="true" />
           </Button>
@@ -177,6 +181,7 @@ function MonthGrid({
   month: number;
   eventsByDate: Map<string, CalendarEvent[]>;
 }) {
+  const fmt = useOrgFormat();
   const days = buildMonthGrid(year, month);
 
   return (
@@ -193,7 +198,7 @@ function MonthGrid({
           const inMonth = day.getMonth() === month;
           const key = toDateKey(day.toISOString());
           const dayEvents = eventsByDate.get(key) ?? [];
-          const isToday = key === toDateKey(new Date().toISOString());
+          const isToday = key === fmt.dayKey(new Date());
 
           return (
             <div key={key} className={cn("min-h-28 border-b border-r border-line p-2", !inMonth && "bg-ground/50")}>
@@ -227,6 +232,7 @@ function MonthGrid({
 }
 
 function ListView({ events }: { events: CalendarEvent[] }) {
+  const fmt = useOrgFormat();
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
 
   return (
@@ -239,7 +245,7 @@ function ListView({ events }: { events: CalendarEvent[] }) {
         >
           <span className="text-sm text-ink">{event.label}</span>
           <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", EVENT_STYLES[event.type])}>
-            {new Date(event.date).toLocaleDateString()}
+            {fmt.calendarDate(event.date)}
           </span>
         </Link>
       ))}

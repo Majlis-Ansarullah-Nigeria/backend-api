@@ -152,6 +152,7 @@ try
     app.MapDashboardsEndpoints();
     app.MapCompiledReportsEndpoints();
     app.MapAuditEndpoints();
+    app.MapSettingsEndpoints();
     app.MapExportsEndpoints();
 
     // architecture.md: Traefik routes "/hubs/*" to this process only — the Worker publishes

@@ -13,10 +13,11 @@ import { useGetMyReports } from "@/lib/api/generated/submissions/submissions";
 import { AnnouncementBanner } from "@/features/notifications/components/AnnouncementBanner";
 import { countdownText } from "@/features/submissions/utils/countdown";
 import { isActionableStatus, isSentStatus, REPORT_LINE_STATUS, reportStatusChipVariant } from "@/features/submissions/utils/report-status";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
-const DATE_FORMATTER = new Intl.DateTimeFormat("en", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 export function HeadHomeScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("HeadHome");
   const me = useGetMe<MeProfile, ApiError>();
   const reports = useGetMyReports<MyReportSummary[], ApiError>();
@@ -58,7 +59,7 @@ export function HeadHomeScreen() {
         <div>
           <h1 className="text-2xl font-bold text-ink">{t("greeting", { name: firstName })}</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            {DATE_FORMATTER.format(new Date())} · {t("dueThisWeekCount", { count: dueThisWeek })}
+            {fmt.weekdayDate(new Date())} · {t("dueThisWeekCount", { count: dueThisWeek })}
           </p>
         </div>
         <Link href="/reports">
@@ -133,7 +134,7 @@ export function HeadHomeScreen() {
                       {report.reportTypeName} · {report.periodLabel}
                     </p>
                     <p className="text-xs text-ink-muted">
-                      {t("submittedOn", { date: report.submittedAt ? new Date(report.submittedAt).toLocaleDateString() : "" })}
+                      {t("submittedOn", { date: report.submittedAt ? fmt.date(report.submittedAt) : "" })}
                     </p>
                   </div>
                 </div>

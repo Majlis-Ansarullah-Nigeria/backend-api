@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api/client";
 import type { CommentThread } from "@/lib/api/generated/hRSApiV1.schemas";
 import { getGetReportCommentsQueryKey, useAddReportComment, useGetReportComments } from "@/lib/api/generated/submissions/submissions";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 export interface CommentableField {
   fieldKey: string;
@@ -154,11 +155,12 @@ export function CommentsPanel({ reportId, fields }: { reportId: string; fields: 
 }
 
 function CommentBubble({ authorName, body, createdAt }: { authorName: string; body: string; createdAt: string }) {
+  const fmt = useOrgFormat();
   return (
     <div className="mt-2">
       <p className="text-sm">
         <span className="font-semibold text-ink">{authorName}</span>{" "}
-        <span className="text-xs text-ink-muted">{new Date(createdAt).toLocaleString()}</span>
+        <span className="text-xs text-ink-muted">{fmt.dateTime(createdAt)}</span>
       </p>
       <p className="mt-0.5 text-sm text-ink">{body}</p>
     </div>

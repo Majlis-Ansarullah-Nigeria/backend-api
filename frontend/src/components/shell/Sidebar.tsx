@@ -12,21 +12,28 @@ import { UnitSwitcher } from "./UnitSwitcher";
 
 export interface SidebarProps {
   orgName?: string;
+  /** FR-ADM-001's uploaded logo, shown in place of the app mark when set. */
+  logoUrl?: string | null;
   user: { name: string; initials: string };
   unit: UnitOption;
   navItems?: NavItem[];
 }
 
-export function Sidebar({ orgName, user, unit, navItems = PRIMARY_NAV_ITEMS }: SidebarProps) {
+export function Sidebar({ orgName, logoUrl, user, unit, navItems = PRIMARY_NAV_ITEMS }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("Shell");
 
   return (
     <aside className="hidden h-dvh w-72 shrink-0 flex-col bg-forest-900 text-white md:flex">
       <div className="flex items-center gap-3 px-5 pb-4 pt-6">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-600">
-          <BarChart3 className="size-5 text-lime" aria-hidden="true" />
-        </span>
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- served by the API with its own caching
+          <img src={logoUrl} alt="" className="size-10 shrink-0 rounded-xl bg-white object-contain p-1" />
+        ) : (
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-600">
+            <BarChart3 className="size-5 text-lime" aria-hidden="true" />
+          </span>
+        )}
         <div className="min-w-0">
           <p className="truncate text-sm font-bold leading-tight">{t("appName")}</p>
           <p className="truncate text-xs text-white/60">{orgName ?? t("orgPlaceholder")}</p>

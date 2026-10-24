@@ -21,6 +21,7 @@ import {
 import { getGetOrganizationTreeQueryKey, useCreateRoleAssignment } from "@/lib/api/generated/organization/organization";
 import { DELEGATE_SCOPE, ROLE_NAME, delegateScopeLabel, roleLabel } from "@/features/admin/utils/role-name";
 import { USER_STATUS } from "@/features/admin/utils/users";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 const addRoleSchema = z.object({
   unitId: z.string().trim().min(1, "Choose a unit"),
@@ -37,6 +38,7 @@ function toIsoMidnightUtc(dateOnly: string): string {
 }
 
 export function UserDetailPanel({ user, units }: { user: UserListItem; units: UnitTreeNode[] }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("AdminUsers");
   const queryClient = useQueryClient();
   const [isAddingRole, setIsAddingRole] = useState(false);
@@ -88,8 +90,8 @@ export function UserDetailPanel({ user, units }: { user: UserListItem; units: Un
                   {assignment.delegateScope !== null ? ` · ${delegateScopeLabel(assignment.delegateScope)}` : ""} · {assignment.unitName}
                 </p>
                 <p className="text-xs text-ink-muted">
-                  {new Date(assignment.startsAt).toLocaleDateString()} –{" "}
-                  {assignment.endsAt ? new Date(assignment.endsAt).toLocaleDateString() : t("openEnded")}
+                  {fmt.date(assignment.startsAt)} –{" "}
+                  {assignment.endsAt ? fmt.date(assignment.endsAt) : t("openEnded")}
                   {!assignment.isActive ? ` · ${t("notYetActive")}` : ""}
                 </p>
               </li>

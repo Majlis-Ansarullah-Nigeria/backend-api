@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { UNIT_LEVEL_CODE, levelLabel } from "@/features/templates/utils/report-type";
 import { REPORT_INSTANCE_STATUS, reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
 import { InboxDetailPanel } from "./InboxDetailPanel";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 type Tab = "unread" | "flagged" | "mine" | "all";
 
@@ -56,6 +57,7 @@ interface FilterState {
 const EMPTY_FILTER: FilterState = {};
 
 export function InboxScreen() {
+  const fmt = useOrgFormat();
   const t = useTranslations("Inbox");
 
   const [filter, setFilter] = useState<FilterState>(EMPTY_FILTER);
@@ -380,7 +382,7 @@ export function InboxScreen() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-ink-muted">
-                      {item.submittedAt ? new Date(item.submittedAt).toLocaleString() : t("notSubmittedYet")}
+                      {item.submittedAt ? fmt.dateTime(item.submittedAt) : t("notSubmittedYet")}
                     </td>
                     <td className="px-4 py-3 text-ink-muted">{item.assignedToName ?? t("unassigned")}</td>
                   </tr>

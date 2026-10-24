@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
+using HRS.Domain.Admin;
 using HRS.Domain.Analytics;
 using HRS.Domain.Audit;
 using HRS.Domain.Common;
@@ -59,6 +60,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<CompiledReport> CompiledReports => Set<CompiledReport>();
 
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+
+    public DbSet<OrganizationSettings> OrganizationSettings => Set<OrganizationSettings>();
 
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
@@ -367,6 +370,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(c => c.WindowId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<OrganizationSettings>(settings =>
+        {
+            settings.ToTable("organization_settings");
+            settings.HasKey(s => s.Id);
+            settings.Property(s => s.Name).IsRequired().HasMaxLength(Domain.Admin.OrganizationSettings.MaxNameLength);
+            settings.Property(s => s.TimeZone).IsRequired().HasMaxLength(64);
+            settings.Property(s => s.LogoStorageKey).HasMaxLength(200);
+            settings.Property(s => s.LogoContentType).HasMaxLength(64);
         });
 
         builder.Entity<AuditEvent>(audit =>

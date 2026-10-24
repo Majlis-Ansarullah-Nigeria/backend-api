@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import type { ApiError } from "@/lib/api/client";
 import type { WindowExtensionSummary } from "@/lib/api/generated/hRSApiV1.schemas";
 import { getGetSubmissionWindowQueryKey, useGrantWindowExtension } from "@/lib/api/generated/windows/windows";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 export interface UnitOption {
   id: string;
@@ -27,6 +28,7 @@ export function ExtensionsPanel({
   extensions: WindowExtensionSummary[];
   units: UnitOption[];
 }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Windows");
   const queryClient = useQueryClient();
   const grantExtension = useGrantWindowExtension<ApiError>();
@@ -144,7 +146,7 @@ export function ExtensionsPanel({
               <p className="font-medium text-ink">{unitName(extension.unitId)}</p>
               <p className="mt-1 text-xs text-ink-muted">{extension.reason}</p>
               <p className="mt-1 text-xs text-ink-muted">
-                {t("dueOn", { date: new Date(extension.newDueAt).toLocaleDateString() })}
+                {t("dueOn", { date: fmt.date(extension.newDueAt) })}
               </p>
             </div>
           ))

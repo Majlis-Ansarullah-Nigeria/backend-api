@@ -23,7 +23,7 @@ namespace HRS.Infrastructure.Compiled;
 /// </summary>
 public sealed class CompiledReportRenderer : ICompiledReportRenderer
 {
-    public byte[] RenderPdf(CompiledReportView report)
+    public byte[] RenderPdf(CompiledReportView report, OrganizationBranding branding)
     {
         var figuresByKey = report.Sections.SelectMany(s => s.Figures).ToDictionary(f => f.FieldKey);
 
@@ -41,25 +41,25 @@ public sealed class CompiledReportRenderer : ICompiledReportRenderer
                     {
                         row.RelativeItem().Column(column =>
                         {
-                            column.Item().Text(CompiledReportText.OrganizationName).FontSize(12).SemiBold();
+                            column.Item().Element(c => HRS.Infrastructure.Pdf.PdfBranding.Header(c, branding));
                             column.Item().Text("National Secretariat").FontColor(PdfColors.Grey.Darken1);
                         });
                         row.AutoItem().AlignRight().Text(report.ReferenceNumber).FontSize(9).SemiBold();
                     });
-                    header.Item().PaddingTop(6).LineHorizontal(2).LineColor(PdfColors.Green.Darken2);
+                    header.Item().PaddingTop(6).LineHorizontal(2).LineColor(branding.PrimaryColor);
                 });
 
                 page.Content().PaddingTop(16).Column(column =>
                 {
                     column.Spacing(14);
-                    column.Item().Text($"National {report.ReportTypeName}".ToUpperInvariant()).FontSize(9).SemiBold().FontColor(PdfColors.Green.Darken2);
+                    column.Item().Text($"National {report.ReportTypeName}".ToUpperInvariant()).FontSize(9).SemiBold().FontColor(branding.PrimaryColor);
                     column.Item().Text(report.PeriodLabel).FontSize(24).Bold();
 
                     column.Item().Element(c => Heading(c, "1 · Summary"));
                     column.Item().Text(string.IsNullOrWhiteSpace(report.Narrative) ? "No summary has been written yet." : report.Narrative);
 
                     column.Item().Element(c => Heading(c, "2 · Submission overview"));
-                    column.Item().Text(CompiledReportText.OverviewSentence(report));
+                    column.Item().Text(CompiledReportText.OverviewSentence(report, branding));
                     column.Item().Row(row =>
                     {
                         foreach (var level in report.Overview.Levels)
@@ -167,7 +167,7 @@ public sealed class CompiledReportRenderer : ICompiledReportRenderer
     private static void BodyCell(TableDescriptor table, string text) =>
         table.Cell().BorderBottom(0.5f).BorderColor(PdfColors.Grey.Lighten3).PaddingVertical(4).Text(text);
 
-    public byte[] RenderWord(CompiledReportView report)
+    public byte[] RenderWord(CompiledReportView report, OrganizationBranding branding)
     {
         var figuresByKey = report.Sections.SelectMany(s => s.Figures).ToDictionary(f => f.FieldKey);
 
@@ -178,7 +178,12 @@ public sealed class CompiledReportRenderer : ICompiledReportRenderer
             var body = new Body();
             main.Document = new WordDocument(body);
 
-            body.Append(Paragraph(CompiledReportText.OrganizationName, bold: true));
+            if (branding is { Logo: { } logo, LogoContentType: "image/png" })
+            {
+                body.Append(WordLogo.Paragraph(main, logo));
+            }
+
+            body.Append(Paragraph(branding.Name, bold: true));
             body.Append(Paragraph($"National Secretariat · {report.ReferenceNumber}"));
             body.Append(Paragraph($"National {report.ReportTypeName}", size: 20));
             body.Append(Paragraph(report.PeriodLabel, bold: true, size: 48));
@@ -190,7 +195,7 @@ public sealed class CompiledReportRenderer : ICompiledReportRenderer
             }
 
             body.Append(Paragraph("2 · Submission overview", bold: true, size: 28));
-            body.Append(Paragraph(CompiledReportText.OverviewSentence(report)));
+            body.Append(Paragraph(CompiledReportText.OverviewSentence(report, branding)));
             body.Append(Table(
                 ["Level", "Submitted", "Expected"],
                 report.Overview.Levels.Select(l => new[] { l.LevelPluralName, l.Submitted.ToString(System.Globalization.CultureInfo.InvariantCulture), l.Expected.ToString(System.Globalization.CultureInfo.InvariantCulture) })));

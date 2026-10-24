@@ -26,6 +26,7 @@ import {
 import { REPORT_INSTANCE_STATUS, reportInstanceStatusChipVariant } from "@/features/submissions/utils/report-status";
 import { ReportVersionsPanel } from "@/features/history/components/ReportVersionsPanel";
 import { CommentsPanel } from "./CommentsPanel";
+import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 
 // A report can still be acknowledged/returned from Submitted (the handlers auto-open it first)
 // or InReview; once Returned or Acknowledged, only Flag remains available.
@@ -39,6 +40,7 @@ export function InboxDetailPanel({
   /** The report's unit and type, for the "Compare periods" link (FR-HIS-005). */
   compareWith?: { unitId: string; reportTypeId: string; windowId: string };
 }) {
+  const fmt = useOrgFormat();
   const t = useTranslations("Inbox");
   const queryClient = useQueryClient();
   const [isReturning, setIsReturning] = useState(false);
@@ -114,7 +116,7 @@ export function InboxDetailPanel({
         </div>
 
         {data.submittedAt ? (
-          <p className="mt-2 text-xs text-ink-muted">{t("submittedMeta", { date: new Date(data.submittedAt).toLocaleString() })}</p>
+          <p className="mt-2 text-xs text-ink-muted">{t("submittedMeta", { date: fmt.dateTime(data.submittedAt) })}</p>
         ) : null}
 
         {data.returnComment ? (
