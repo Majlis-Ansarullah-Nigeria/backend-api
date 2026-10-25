@@ -1,6 +1,7 @@
-import { BarChart3, Bell, Download, PenLine } from "lucide-react";
+import { Bell, Download, PenLine } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { BrandMark } from "@/components/shared/BrandMark";
 
 export async function AuthSplitLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations("Login");
@@ -9,9 +10,7 @@ export async function AuthSplitLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh">
       <div className="relative hidden w-1/2 shrink-0 flex-col justify-between overflow-hidden bg-forest-900 px-10 py-10 text-white lg:flex xl:px-16">
         <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-600">
-            <BarChart3 className="size-5 text-lime" aria-hidden="true" />
-          </span>
+          <BrandMark />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold leading-tight">{t("appName")}</p>
             <p className="truncate text-xs text-white/60">{t("orgPlaceholder")}</p>

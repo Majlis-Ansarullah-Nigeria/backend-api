@@ -1,9 +1,10 @@
 "use client";
 
-import { BarChart3, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandMark } from "@/components/shared/BrandMark";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { isNavItemActive, PRIMARY_NAV_ITEMS, type NavItem } from "./nav-items";
@@ -39,14 +40,7 @@ export function Sidebar({
   return (
     <aside className="hidden h-dvh w-72 shrink-0 flex-col bg-forest-900 text-white md:flex">
       <div className="flex items-center gap-3 px-5 pb-4 pt-6">
-        {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- served by the API with its own caching
-          <img src={logoUrl} alt="" className="size-10 shrink-0 rounded-xl bg-white object-contain p-1" />
-        ) : (
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-600">
-            <BarChart3 className="size-5 text-lime" aria-hidden="true" />
-          </span>
-        )}
+        <BrandMark logoUrl={logoUrl} />
         <div className="min-w-0">
           <p className="truncate text-sm font-bold leading-tight">{t("appName")}</p>
           <p className="truncate text-xs text-white/60">{orgName ?? t("orgPlaceholder")}</p>

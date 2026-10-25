@@ -1,6 +1,6 @@
-import { BarChart3 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { BrandMark } from "@/components/shared/BrandMark";
 
 export default async function InviteLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations("AcceptInvitation");
@@ -8,9 +8,7 @@ export default async function InviteLayout({ children }: { children: ReactNode }
   return (
     <div className="flex min-h-dvh flex-col items-center bg-ground px-4 py-10">
       <div className="flex w-full max-w-lg items-center gap-3 pb-6">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-green-600">
-          <BarChart3 className="size-5 text-lime" aria-hidden="true" />
-        </span>
+        <BrandMark className="size-9" />
         <p className="text-base font-bold text-ink">{t("appName")}</p>
       </div>
 
