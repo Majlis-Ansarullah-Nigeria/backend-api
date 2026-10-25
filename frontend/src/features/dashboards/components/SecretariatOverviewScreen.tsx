@@ -13,6 +13,7 @@ import { isOnTrack, percentOf, WINDOW_EVENT_KIND } from "@/features/dashboards/u
 import { cn } from "@/lib/utils";
 import { useOrgFormat } from "@/lib/org/OrgFormatContext";
 import { createOrgFormatter, DEFAULT_ORG_FORMAT, type OrgFormatter } from "@/lib/org/format";
+import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
 
 const DEFAULT_FORMAT = createOrgFormatter(DEFAULT_ORG_FORMAT);
 
@@ -33,6 +34,7 @@ export function relativeDueDay(dueAt: Date, now: Date, fmt: OrgFormatter = DEFAU
 export function SecretariatOverviewScreen() {
   const fmt = useOrgFormat();
   const t = useTranslations("Overview");
+  const { isEnabled } = useFeatureFlags();
   const query = useGetSecretariatOverview<SecretariatOverview, ApiError>();
   const [levelTab, setLevelTab] = useState<number | null>(null);
 
@@ -193,12 +195,14 @@ export function SecretariatOverviewScreen() {
               <h2 id="overview-levels-title" className="text-lg font-bold text-ink">
                 {t("byLevelTitle")}
               </h2>
-              <Link
-                href={`/secretariat/dashboards/compliance?reportTypeId=${data.currentWindow.reportTypeId}`}
-                className="text-sm font-semibold text-green-700 underline underline-offset-2"
-              >
-                {t("detailsLink")}
-              </Link>
+              {isEnabled(FEATURE_MODULE.Dashboards) ? (
+                <Link
+                  href={`/secretariat/dashboards/compliance?reportTypeId=${data.currentWindow.reportTypeId}`}
+                  className="text-sm font-semibold text-green-700 underline underline-offset-2"
+                >
+                  {t("detailsLink")}
+                </Link>
+              ) : null}
             </div>
             <ul className="mt-2 flex flex-col">
               {data.byLevel.map((level) => {
@@ -290,7 +294,7 @@ export function SecretariatOverviewScreen() {
             <QuickAction href="/secretariat/announcements" icon={<Megaphone className="size-4" aria-hidden="true" />}>
               {t("sendAnnouncementAction")}
             </QuickAction>
-            {data.currentWindow ? (
+            {data.currentWindow && isEnabled(FEATURE_MODULE.CompiledReports) ? (
               <Link
                 href={`/secretariat/compiled/${data.currentWindow.windowId}`}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-lime px-4 text-sm font-semibold text-forest-900 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"

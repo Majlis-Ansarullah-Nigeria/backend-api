@@ -27,6 +27,7 @@ import { REPORT_INSTANCE_STATUS, reportInstanceStatusChipVariant } from "@/featu
 import { ReportVersionsPanel } from "@/features/history/components/ReportVersionsPanel";
 import { CommentsPanel } from "./CommentsPanel";
 import { useOrgFormat } from "@/lib/org/OrgFormatContext";
+import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
 
 // A report can still be acknowledged/returned from Submitted (the handlers auto-open it first)
 // or InReview; once Returned or Acknowledged, only Flag remains available.
@@ -42,6 +43,7 @@ export function InboxDetailPanel({
 }) {
   const fmt = useOrgFormat();
   const t = useTranslations("Inbox");
+  const versionsOn = useFeatureFlags().isEnabled(FEATURE_MODULE.ComparisonAndVersions);
   const queryClient = useQueryClient();
   const [isReturning, setIsReturning] = useState(false);
   const [returnComment, setReturnComment] = useState("");
@@ -238,9 +240,9 @@ export function InboxDetailPanel({
         </div>
       ))}
 
-      <ReportVersionsPanel reportId={reportId} />
+      {versionsOn ? <ReportVersionsPanel reportId={reportId} /> : null}
 
-      {compareWith ? (
+      {compareWith && versionsOn ? (
         <Link
           href={`/history/compare?unitId=${compareWith.unitId}&reportTypeId=${compareWith.reportTypeId}&periodB=${compareWith.windowId}`}
           className="inline-flex items-center gap-2 self-start text-sm font-semibold text-green-700 underline-offset-2 hover:underline"

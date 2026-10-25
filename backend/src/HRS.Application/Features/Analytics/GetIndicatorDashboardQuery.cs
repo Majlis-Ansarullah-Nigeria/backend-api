@@ -1,6 +1,7 @@
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Features.Templates.TemplateVersions;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
@@ -42,7 +43,10 @@ public sealed record IndicatorDashboard(
 /// DashboardScope — a Zone or Dila head can only open nodes inside their own subtree.
 /// </summary>
 public sealed record GetIndicatorDashboardQuery(Guid UserId, Guid? ReportTypeId, string? FieldKey, Guid? UnitId, int? PeriodCount)
-    : IRequest<Result<IndicatorDashboard>>;
+    : IRequest<Result<IndicatorDashboard>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.Dashboards;
+}
 
 public sealed class GetIndicatorDashboardQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetIndicatorDashboardQuery, Result<IndicatorDashboard>>

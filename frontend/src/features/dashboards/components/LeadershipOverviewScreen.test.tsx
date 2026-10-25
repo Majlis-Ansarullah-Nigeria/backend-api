@@ -7,6 +7,17 @@ import messages from "../../../../messages/en.json";
 import { LEADERSHIP_PERIOD, LeadershipOverviewScreen } from "./LeadershipOverviewScreen";
 
 const useGetLeadershipOverview = vi.fn();
+const useGetFeatureFlags = vi.fn();
+vi.mock("@/lib/api/generated/settings/settings", () => ({
+  useGetFeatureFlags: (...args: unknown[]) => useGetFeatureFlags(...args),
+}));
+
+/** FR-ADM-004 flags as the API returns them; modules 0–3 are Dashboards, CompiledReports,
+ * ComparisonAndVersions and WebPush. */
+function flags(off: number[] = []) {
+  return { data: { canEdit: false, flags: [0, 1, 2, 3].map((module) => ({ module, enabled: !off.includes(module) })) } };
+}
+
 
 vi.mock("@/lib/api/generated/dashboards/dashboards", () => ({
   useGetLeadershipOverview: (...args: unknown[]) => useGetLeadershipOverview(...args),
@@ -46,6 +57,7 @@ const OVERVIEW = {
 
 beforeEach(() => {
   useGetLeadershipOverview.mockReset();
+  useGetFeatureFlags.mockReturnValue(flags());
 });
 
 describe("LeadershipOverviewScreen", () => {
@@ -65,6 +77,16 @@ describe("LeadershipOverviewScreen", () => {
     const zones = screen.getByRole("heading", { name: "Zones, September received" }).closest("section")!;
     expect(within(zones).getByText("74%")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open compiled report" })).toHaveAttribute("href", "/compiled/w9");
+  });
+
+  it("hides the compiled report link when compiled reports are switched off", () => {
+    useGetLeadershipOverview.mockReturnValue({ isPending: false, isError: false, data: OVERVIEW });
+    useGetFeatureFlags.mockReturnValue(flags([1]));
+
+    renderWithIntl(<LeadershipOverviewScreen />);
+
+    expect(screen.getByText("140 of 267")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open compiled report" })).not.toBeInTheDocument();
   });
 
   it("switches between the current period, the previous one and the year", async () => {

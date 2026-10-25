@@ -3,6 +3,7 @@ using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
 using HRS.Application.Features.Notifications;
 using HRS.Domain.Access;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Notifications;
 using HRS.Domain.Organization;
@@ -24,7 +25,10 @@ public sealed record SendRemindersResult(int UnitsReminded, int UnitsWithoutHead
 /// Leadership's dashboard access is read-only.
 /// </summary>
 public sealed record SendComplianceRemindersCommand(Guid UserId, Guid WindowId, UnitLevelCode Level, Guid? GroupUnitId)
-    : IRequest<Result<SendRemindersResult>>;
+    : IRequest<Result<SendRemindersResult>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.Dashboards;
+}
 
 public sealed class SendComplianceRemindersCommandHandler(
     IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IOptions<AppOptions> appOptions, IOrganizationBrandingProvider brandingProvider)

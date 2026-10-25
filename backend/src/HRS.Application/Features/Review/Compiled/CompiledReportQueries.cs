@@ -1,6 +1,7 @@
 using FluentValidation;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Features.Audit;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Review;
 using Mediator;
@@ -9,7 +10,10 @@ using Microsoft.EntityFrameworkCore;
 namespace HRS.Application.Features.Review.Compiled;
 
 /// <summary>Every window that has opened, newest first — each can be compiled.</summary>
-public sealed record GetCompiledReportsQuery(Guid UserId) : IRequest<Result<IReadOnlyList<CompiledReportListItem>>>;
+public sealed record GetCompiledReportsQuery(Guid UserId) : IRequest<Result<IReadOnlyList<CompiledReportListItem>>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.CompiledReports;
+}
 
 public sealed class GetCompiledReportsQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetCompiledReportsQuery, Result<IReadOnlyList<CompiledReportListItem>>>
@@ -38,7 +42,10 @@ public sealed class GetCompiledReportsQueryHandler(IAppDbContext db, IAccessPoli
 }
 
 /// <summary>FR-REV-006: the compiled national report for one window, built live.</summary>
-public sealed record GetCompiledReportQuery(Guid UserId, Guid WindowId) : IRequest<Result<CompiledReportView>>;
+public sealed record GetCompiledReportQuery(Guid UserId, Guid WindowId) : IRequest<Result<CompiledReportView>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.CompiledReports;
+}
 
 public sealed class GetCompiledReportQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetCompiledReportQuery, Result<CompiledReportView>>
@@ -70,7 +77,10 @@ public enum CompiledReportFormat
 public sealed record CompiledReportFile(byte[] Content, string ContentType, string FileName);
 
 /// <summary>FR-REV-006's "exportable to Word and PDF" — the same live report, rendered.</summary>
-public sealed record ExportCompiledReportQuery(Guid UserId, Guid WindowId, CompiledReportFormat Format) : IRequest<Result<CompiledReportFile>>;
+public sealed record ExportCompiledReportQuery(Guid UserId, Guid WindowId, CompiledReportFormat Format) : IRequest<Result<CompiledReportFile>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.CompiledReports;
+}
 
 public sealed class ExportCompiledReportQueryHandler(
     IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, ICompiledReportRenderer renderer, IOrganizationBrandingProvider brandingProvider)
@@ -96,7 +106,10 @@ public sealed class ExportCompiledReportQueryHandler(
 
 /// <summary>FR-REV-006's narrative highlights: the Secretariat's own text for the report. Saving
 /// an empty narrative clears it.</summary>
-public sealed record UpdateCompiledNarrativeCommand(Guid UserId, Guid WindowId, string Narrative) : IRequest<Result>;
+public sealed record UpdateCompiledNarrativeCommand(Guid UserId, Guid WindowId, string Narrative) : IRequest<Result>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.CompiledReports;
+}
 
 public sealed class UpdateCompiledNarrativeCommandValidator : AbstractValidator<UpdateCompiledNarrativeCommand>
 {

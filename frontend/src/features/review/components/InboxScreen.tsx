@@ -56,12 +56,13 @@ interface FilterState {
 
 const EMPTY_FILTER: FilterState = {};
 
-export function InboxScreen() {
+/** `initialReportId` (from `?report=`, the search palette) opens that report's detail panel. */
+export function InboxScreen({ initialReportId }: { initialReportId?: string } = {}) {
   const fmt = useOrgFormat();
   const t = useTranslations("Inbox");
 
   const [filter, setFilter] = useState<FilterState>(EMPTY_FILTER);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialReportId ?? null);
   const [isSavingView, setIsSavingView] = useState(false);
   const [savedViewName, setSavedViewName] = useState("");
 

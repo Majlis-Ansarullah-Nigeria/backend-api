@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Admin.Webhooks;
 using HRS.Application.Features.Audit;
 using HRS.Application.Features.Notifications;
 using HRS.Application.Features.Submissions.ReportInstances;
@@ -10,6 +11,7 @@ using HRS.Domain.Common;
 using HRS.Domain.Notifications;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
+using HRS.Domain.Webhooks;
 using HRS.Domain.Windows;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +136,10 @@ public sealed class SubmitReportCommandHandler(
 
         instance.Submit(isLate, referenceNumber, request.IsNil, now, request.UserId);
         db.ReportRevisions.Add(instance.RecordSubmission(request.UserId, now));
+        await WebhookEnqueuer.EnqueueAsync(
+            db, WebhookEvent.ReportSubmitted,
+            () => WebhookPayloads.ReportAsync(db, instance, WebhookEvent.ReportSubmitted, appOptions.Value.PublicUrl, now, cancellationToken),
+            now, cancellationToken);
         auditLog.Add(new AuditEntry(
             AuditActions.ReportSubmitted, request.UserId, "report", instance.Id.ToString(),
             $"{reportType.Name} · {window.PeriodLabel} · {unitRow.Name}{(isLate ? " (late)" : string.Empty)}", request.UnitId,

@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { renderWithIntl } from "@/test/renderWithIntl";
 import { TopBar } from "./TopBar";
 
@@ -20,5 +21,12 @@ describe("TopBar", () => {
   it("omits the badge when there are no notifications", () => {
     renderWithIntl(<TopBar title="Home" user={user} notificationCount={0} />);
     expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+  });
+
+  it("opens the search palette from the search box", async () => {
+    const onOpenSearch = vi.fn();
+    renderWithIntl(<TopBar title="Home" user={user} onOpenSearch={onOpenSearch} />);
+    await userEvent.click(screen.getByRole("button", { name: /search units, reports, people/i }));
+    expect(onOpenSearch).toHaveBeenCalled();
   });
 });

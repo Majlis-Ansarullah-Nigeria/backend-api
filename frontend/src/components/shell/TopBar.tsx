@@ -9,9 +9,11 @@ export interface TopBarProps {
   title: string;
   user: { name: string; initials: string };
   notificationCount?: number;
+  /** Opens the search palette (FR-SRC-001); Ctrl/Cmd+K does the same from anywhere. */
+  onOpenSearch?: () => void;
 }
 
-export function TopBar({ title, user, notificationCount = 0 }: TopBarProps) {
+export function TopBar({ title, user, notificationCount = 0, onOpenSearch }: TopBarProps) {
   const t = useTranslations("Shell");
 
   return (
@@ -19,11 +21,16 @@ export function TopBar({ title, user, notificationCount = 0 }: TopBarProps) {
       {/* Not an <h1>: this is persistent chrome (hidden on mobile), not the page's content heading. */}
       <p className="text-base font-semibold text-ink">{title}</p>
       <div className="flex flex-1 items-center justify-end gap-3">
-        <div className="flex w-full max-w-sm items-center gap-2 rounded-md border border-line-strong bg-ground px-3 py-2 text-sm text-ink-muted">
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          aria-keyshortcuts="Control+K Meta+K"
+          className="flex w-full max-w-sm items-center gap-2 rounded-md border border-line-strong bg-ground px-3 py-2 text-left text-sm text-ink-muted transition-colors hover:border-green-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+        >
           <Search className="size-4 shrink-0" aria-hidden="true" />
           <span className="flex-1 truncate">{t("search")}</span>
           <kbd className="rounded border border-line-strong bg-surface px-1.5 py-0.5 text-xs">Ctrl K</kbd>
-        </div>
+        </button>
         <button
           type="button"
           aria-label={notificationCount > 0 ? t("notificationsUnread", { count: notificationCount }) : t("notifications")}

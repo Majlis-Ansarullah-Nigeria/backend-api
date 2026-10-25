@@ -13,6 +13,11 @@ const createBulkExport = vi.fn();
 const getHistoryReportPdf = vi.fn();
 const getHistoryReportExcel = vi.fn();
 const push = vi.fn();
+const useGetFeatureFlags = vi.fn();
+
+vi.mock("@/lib/api/generated/settings/settings", () => ({
+  useGetFeatureFlags: (...args: unknown[]) => useGetFeatureFlags(...args),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
@@ -75,6 +80,7 @@ beforeEach(() => {
   getHistoryReportPdf.mockReset();
   getHistoryReportExcel.mockReset();
   push.mockReset();
+  useGetFeatureFlags.mockReturnValue({ data: { canEdit: false, flags: [] } });
   useGetHistoryFilters.mockReturnValue({
     data: { reportTypes: [{ id: "t1", name: "General Monthly Report" }], periods: [{ windowId: "w1", periodLabel: "Oct 2026", opensAt: "2026-10-01T00:00:00Z" }] },
   });
@@ -91,6 +97,17 @@ describe("HistoryScreen", () => {
       "href",
       "/history/r1/versions",
     );
+  });
+
+  it("hides Compare periods and version history when that module is switched off", () => {
+    useGetFeatureFlags.mockReturnValue({ data: { canEdit: false, flags: [{ module: 2, enabled: false }] } });
+    useGetHistory.mockReturnValue({ isPending: false, isError: false, data: { rows: ROWS, totalCount: 2, page: 1, pageSize: 20 } });
+
+    renderWithProviders(<HistoryScreen />);
+
+    expect(screen.queryByRole("link", { name: /compare periods/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /version history of/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /view/i }).length).toBeGreaterThan(0);
   });
 
   it("shows a loading message while history loads", () => {

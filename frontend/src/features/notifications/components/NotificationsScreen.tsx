@@ -25,6 +25,7 @@ import {
 } from "@/features/notifications/utils/notification-event-type";
 import { formatNotificationTimestamp, notificationDayGroup } from "@/features/notifications/utils/format-notification-time";
 import { useOrgFormat } from "@/lib/org/OrgFormatContext";
+import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
 
 const ICONS: Record<NotificationIconName, typeof Bell> = {
   calendar: Calendar,
@@ -49,6 +50,7 @@ const FILTER_VALUES: Record<FilterKey, number> = {
 export function NotificationsScreen() {
   const fmt = useOrgFormat();
   const t = useTranslations("Notifications");
+  const { isEnabled } = useFeatureFlags();
   const queryClient = useQueryClient();
 
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -106,7 +108,7 @@ export function NotificationsScreen() {
           <FilterTab active={filter === "deadlines"} onClick={() => setFilter("deadlines")} label={t("tabDeadlines")} />
         </div>
 
-        {push.state === "unsubscribed" ? (
+        {push.state === "unsubscribed" && isEnabled(FEATURE_MODULE.WebPush) ? (
           <div className="flex items-center justify-between gap-3 rounded-md bg-mint px-3 py-2">
             <p className="text-sm text-green-700">{t("pushBannerText")}</p>
             <Button type="button" size="sm" disabled={push.isSubscribing} onClick={() => push.subscribe()}>

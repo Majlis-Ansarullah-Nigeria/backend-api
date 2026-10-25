@@ -12,6 +12,7 @@ export * from './notifications/notifications';
 export * from './observer/observer';
 export * from './organization/organization';
 export * from './review/review';
+export * from './search/search';
 export * from './settings/settings';
 export * from './submissions/submissions';
 export * from './templates/templates';

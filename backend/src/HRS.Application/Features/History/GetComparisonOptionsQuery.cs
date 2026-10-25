@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,10 @@ public sealed record ComparisonUnitOption(Guid UnitId, string UnitName, IReadOnl
 /// <summary>The unit and report type pickers on Compare periods (FR-HIS-005): every History-scope
 /// unit with the report types it has reports for, after the same observability gate as History.
 /// The Secretariat reaches the screen from a specific report instead, so isn't listed here.</summary>
-public sealed record GetComparisonOptionsQuery(Guid UserId) : IRequest<Result<IReadOnlyList<ComparisonUnitOption>>>;
+public sealed record GetComparisonOptionsQuery(Guid UserId) : IRequest<Result<IReadOnlyList<ComparisonUnitOption>>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.ComparisonAndVersions;
+}
 
 public sealed class GetComparisonOptionsQueryHandler(IAppDbContext db, IClock clock)
     : IRequestHandler<GetComparisonOptionsQuery, Result<IReadOnlyList<ComparisonUnitOption>>>

@@ -1,26 +1,33 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Check, Mail, RefreshCw, Smartphone, Upload, X } from "lucide-react";
+import { AlertTriangle, Check, Mail, RefreshCw, Smartphone, Upload, X, Zap } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { ApiError } from "@/lib/api/client";
-import type { OrganizationSettingsDto, SystemHealth, TimeZoneOption } from "@/lib/api/generated/hRSApiV1.schemas";
+import type { OrganizationSettingsDto, SystemHealth, TimeZoneOption, WebhookEndpointDto } from "@/lib/api/generated/hRSApiV1.schemas";
 import {
+  getGetFeatureFlagsQueryKey,
   getGetOrganizationSettingsQueryKey,
   getGetSystemHealthQueryKey,
   useGetOrganizationSettings,
   useGetSystemHealth,
   useGetTimeZoneOptions,
+  useGetWebhooks,
   useRemoveLogo,
   useRetryFailedNotifications,
+  useSetFeatureFlag,
   useUpdateOrganizationSettings,
   useUploadLogo,
 } from "@/lib/api/generated/settings/settings";
+import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
+import { webhookEventName } from "@/features/admin/webhooks/webhook-events";
 import { BRAND_COLORS, formatBytes, LOGO_MAX_BYTES } from "@/features/admin/settings/brand";
 import { createOrgFormatter, DATE_FORMAT_STYLE } from "@/lib/org/format";
 import { cn } from "@/lib/utils";
@@ -60,6 +67,7 @@ export function SettingsScreen() {
       <SettingsForm key={settings.data.updatedAt ?? "default"} settings={settings.data} />
       <div className="grid gap-6 lg:grid-cols-2">
         <HealthCards />
+        <ModulesCard />
       </div>
     </div>
   );
@@ -275,6 +283,7 @@ function HealthCards() {
           {t("integrationsTitle")}
         </h2>
         <IntegrationRow icon={Mail} title={t("emailProvider")} detail={data.emailTransport} badge={t("configured")} />
+        <WebhooksRow />
         <IntegrationRow icon={Smartphone} title={t("smsWhatsapp")} detail={t("smsDetail")} badge={t("later")} muted />
       </section>
 
@@ -327,6 +336,100 @@ function HealthCards() {
         </div>
       </section>
     </>
+  );
+}
+
+/** FR-ADM-003: the mockup's "Webhooks · report.submitted → 1 endpoint · Manage" row. Only the system
+ * administrator manages webhooks; anyone else sees the row without the details. */
+function WebhooksRow() {
+  const t = useTranslations("Settings");
+  const webhooks = useGetWebhooks<WebhookEndpointDto[], ApiError>({ query: { retry: false } });
+  const endpoints = webhooks.data ?? [];
+  const events = [...new Set(endpoints.filter((e) => e.isActive).flatMap((e) => e.events.map(Number)))].map(webhookEventName);
+  const active = endpoints.filter((e) => e.isActive).length;
+  const detail = webhooks.isError
+    ? t("webhooksAdminOnly")
+    : active === 0
+      ? t("webhooksNone")
+      : t("webhooksDetail", { events: events.join(", "), count: active });
+
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-line p-3">
+      <span className="flex size-10 items-center justify-center rounded-md bg-ground" aria-hidden="true">
+        <Zap className="size-5 text-green-700" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-ink">{t("webhooks")}</p>
+        <p className="truncate text-sm text-ink-muted">{webhooks.isPending ? t("loading") : detail}</p>
+      </div>
+      {webhooks.isSuccess ? (
+        <Link
+          href="/admin/webhooks"
+          className="inline-flex h-9 items-center rounded-sm border border-line-strong bg-surface px-3 text-sm font-semibold text-ink hover:bg-ground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+        >
+          {t("manage")}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+const MODULES = [
+  { module: FEATURE_MODULE.Dashboards, key: "moduleDashboards" },
+  { module: FEATURE_MODULE.CompiledReports, key: "moduleCompiledReports" },
+  { module: FEATURE_MODULE.ComparisonAndVersions, key: "moduleComparison" },
+  { module: FEATURE_MODULE.WebPush, key: "moduleWebPush" },
+] as const;
+
+/** FR-ADM-004: switch whole modules on or off for the organization. The system administrator
+ * edits; the API refuses a switched-off module on every request, the UI only hides its links. */
+function ModulesCard() {
+  const t = useTranslations("Settings");
+  const queryClient = useQueryClient();
+  const { isEnabled, canEdit, query } = useFeatureFlags();
+  const setFlag = useSetFeatureFlag();
+  const [error, setError] = useState(false);
+
+  return (
+    <section className="flex flex-col gap-1 rounded-lg border border-line bg-surface p-4 sm:p-6" aria-labelledby="settings-modules">
+      <h2 id="settings-modules" className="text-lg font-bold text-ink">
+        {t("modulesTitle")}
+      </h2>
+      <p className="mb-2 text-sm text-ink-muted">{canEdit ? t("modulesSubtitle") : t("modulesSubtitleReadOnly")}</p>
+      {MODULES.map(({ module, key }) => {
+        const id = `module-${module}`;
+        return (
+          <div key={module} className="flex items-center justify-between gap-3 border-b border-line py-3 last:border-0">
+            <div className="min-w-0">
+              <label htmlFor={id} className="font-medium text-ink">
+                {t(`${key}`)}
+              </label>
+              <p className="text-sm text-ink-muted">{t(`${key}Detail`)}</p>
+            </div>
+            <Switch
+              id={id}
+              checked={isEnabled(module)}
+              disabled={!canEdit || query.isPending || setFlag.isPending}
+              onCheckedChange={(enabled) => {
+                setError(false);
+                setFlag.mutate(
+                  { module, data: { enabled } },
+                  {
+                    onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetFeatureFlagsQueryKey() }),
+                    onError: () => setError(true),
+                  },
+                );
+              }}
+            />
+          </div>
+        );
+      })}
+      {error ? (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {t("moduleSaveError")}
+        </p>
+      ) : null}
+    </section>
   );
 }
 

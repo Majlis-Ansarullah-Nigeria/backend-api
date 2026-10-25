@@ -16,6 +16,7 @@ using HRS.Infrastructure.Notifications;
 using HRS.Infrastructure.Organization;
 using HRS.Infrastructure.Pdf;
 using HRS.Infrastructure.Persistence;
+using HRS.Infrastructure.Webhooks;
 using HRS.Infrastructure.Security;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -196,6 +197,13 @@ public static class DependencyInjection
         services.AddScoped<IRequestContext, NoRequestContext>();
         services.AddScoped<IJobQueueMonitor, HangfireJobQueueMonitor>();
         services.AddSingleton<IEmailTransportInfo, EmailTransportInfo>();
+
+        // FR-ADM-003: outgoing webhooks — 10 s timeout, no redirects, public addresses only.
+        services.AddOptions<WebhookOptions>().BindConfiguration("Webhooks");
+        services.AddHttpClient(HttpWebhookSender.ClientName, client => client.Timeout = TimeSpan.FromSeconds(10))
+            .ConfigurePrimaryHttpMessageHandler(sp =>
+                HttpWebhookSender.CreateHandler(sp.GetRequiredService<IOptions<WebhookOptions>>().Value.AllowPrivateNetworks));
+        services.AddScoped<IWebhookSender, HttpWebhookSender>();
 
         // FR-HIS-004: the API only ever enqueues (client-side); the Worker's own Program.cs adds
         // AddHangfireServer() on top of this same registration to actually process jobs

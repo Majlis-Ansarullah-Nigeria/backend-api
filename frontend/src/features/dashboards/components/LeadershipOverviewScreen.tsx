@@ -12,6 +12,7 @@ import { isOnTrack, percentOf } from "@/features/dashboards/utils/compliance";
 import { change, changeKind, formatIndicator, formatSigned } from "@/features/dashboards/utils/indicators";
 import { cn } from "@/lib/utils";
 import { useOrgFormat } from "@/lib/org/OrgFormatContext";
+import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
 
 // Matches backend/src/HRS.Application/Features/Analytics/GetLeadershipOverviewQuery.cs's enum.
 export const LEADERSHIP_PERIOD = {
@@ -27,6 +28,7 @@ const toNumber = (value: number | string | null | undefined): number | null => (
 export function LeadershipOverviewScreen() {
   const fmt = useOrgFormat();
   const t = useTranslations("Leadership");
+  const { isEnabled } = useFeatureFlags();
   const [period, setPeriod] = useState<number>(LEADERSHIP_PERIOD.Current);
   const query = useGetLeadershipOverview<LeadershipOverview, ApiError>({ period });
 
@@ -150,7 +152,7 @@ export function LeadershipOverviewScreen() {
           </ul>
         </section>
       ) : null}
-      {data.currentWindowId ? (
+      {data.currentWindowId && isEnabled(FEATURE_MODULE.CompiledReports) ? (
         <Link
           href={`/compiled/${data.currentWindowId}`}
           className="inline-flex h-14 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-base font-semibold text-white hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"

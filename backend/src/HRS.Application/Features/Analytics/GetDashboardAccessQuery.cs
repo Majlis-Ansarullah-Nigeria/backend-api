@@ -13,13 +13,16 @@ public sealed record DashboardAccess(bool HasIndicators, bool HasCompliance, boo
 /// themselves still check access on every request.</summary>
 public sealed record GetDashboardAccessQuery(Guid UserId) : IRequest<Result<DashboardAccess>>;
 
-public sealed class GetDashboardAccessQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
+public sealed class GetDashboardAccessQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock, IFeatureFlags featureFlags)
     : IRequestHandler<GetDashboardAccessQuery, Result<DashboardAccess>>
 {
     public async ValueTask<Result<DashboardAccess>> Handle(GetDashboardAccessQuery request, CancellationToken cancellationToken)
     {
         var units = await DashboardScope.LoadUnitsAsync(db, cancellationToken);
         var scope = await DashboardScope.ResolveAsync(db, accessPolicy, request.UserId, units, clock.UtcNow, cancellationToken);
-        return Result.Success(new DashboardAccess(scope.HasAccess, scope.IsNational, scope.IsNational));
+        // FR-ADM-004: a switched-off module isn't offered to anyone.
+        var dashboards = await featureFlags.IsEnabledAsync(Domain.Admin.FeatureModule.Dashboards, cancellationToken);
+        var compiled = await featureFlags.IsEnabledAsync(Domain.Admin.FeatureModule.CompiledReports, cancellationToken);
+        return Result.Success(new DashboardAccess(dashboards && scope.HasAccess, dashboards && scope.IsNational, compiled && scope.IsNational));
     }
 }

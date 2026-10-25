@@ -21,13 +21,14 @@ const STATUS_BADGE_STYLES: Record<number, string> = {
   [USER_STATUS.Deactivated]: "bg-status-missed-bg text-status-missed-fg",
 };
 
-export function UsersScreen() {
+/** `initialSearch` (from `?q=`, the search palette) pre-fills the search box. */
+export function UsersScreen({ initialSearch }: { initialSearch?: string } = {}) {
   const fmt = useOrgFormat();
   const t = useTranslations("AdminUsers");
   const users = useGetUsers<UserListItem[], ApiError>();
   const tree = useGetOrganizationTree<UnitTreeNode[], ApiError>({ includeArchived: true });
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const [tab, setTab] = useState<UserStatusTab>("all");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 

@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { ErrorState } from "@/components/shared/ErrorState";
+import { FeatureAwareErrorState } from "@/components/shared/FeatureAwareErrorState";
 import { ApiError } from "@/lib/api/client";
 import type { CompiledReportListItem } from "@/lib/api/generated/hRSApiV1.schemas";
 import { useGetCompiledReports } from "@/lib/api/generated/compiled-reports/compiled-reports";
@@ -23,7 +23,7 @@ export function CompiledReportsListScreen({ basePath }: { basePath: string }) {
       {query.isPending ? (
         <p className="text-sm text-ink-muted">{t("loading")}</p>
       ) : query.isError ? (
-        <ErrorState title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
+        <FeatureAwareErrorState error={query.error} title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
       ) : query.data.length === 0 ? (
         <EmptyState icon={FileText} title={t("listEmptyTitle")} description={t("listEmptyDescription")} />
       ) : (

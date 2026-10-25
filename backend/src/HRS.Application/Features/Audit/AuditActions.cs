@@ -49,6 +49,8 @@ public static class AuditActions
 
     public const string SettingsUpdated = "settings.updated";
     public const string NotificationsRetried = "notifications.retried";
+    public const string FeatureToggled = "feature.toggled";
+    public const string WebhookChanged = "webhook.changed";
 
     public static readonly IReadOnlyList<string> All =
     [
@@ -56,6 +58,6 @@ public static class AuditActions
         InvitationSent, InvitationAccepted, RoleAssigned, UnitCreated, UnitUpdated, UnitArchived, UnitRestored, UnitMoved,
         UnitsImported, TemplatePublished, WindowCreated, WindowUpdated, WindowExtended, WindowReopened, ReportSubmitted,
         ReportWithdrawn, ReportAcknowledged, ReportReturned, ReportFlagged, ReportAssigned, ExportRequested, ExportDownloaded,
-        ReportDownloaded, CompiledReportDownloaded, CompiledReportEdited, AuditExported, SettingsUpdated, NotificationsRetried,
+        ReportDownloaded, CompiledReportDownloaded, CompiledReportEdited, AuditExported, SettingsUpdated, NotificationsRetried, FeatureToggled, WebhookChanged,
     ];
 }

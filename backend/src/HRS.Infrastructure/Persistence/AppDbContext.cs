@@ -12,6 +12,7 @@ using HRS.Domain.Organization;
 using HRS.Domain.Review;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
+using HRS.Domain.Webhooks;
 using HRS.Domain.Windows;
 using HRS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -62,6 +63,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     public DbSet<OrganizationSettings> OrganizationSettings => Set<OrganizationSettings>();
+
+    public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
+
+    public DbSet<WebhookEndpoint> WebhookEndpoints => Set<WebhookEndpoint>();
+
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
 
     public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
 
@@ -380,6 +387,38 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             settings.Property(s => s.TimeZone).IsRequired().HasMaxLength(64);
             settings.Property(s => s.LogoStorageKey).HasMaxLength(200);
             settings.Property(s => s.LogoContentType).HasMaxLength(64);
+        });
+
+        builder.Entity<FeatureFlag>(flag =>
+        {
+            flag.ToTable("feature_flags");
+            flag.HasKey(f => f.Module);
+            flag.Property(f => f.Module).HasConversion<string>().HasMaxLength(64);
+        });
+
+        builder.Entity<WebhookEndpoint>(endpoint =>
+        {
+            endpoint.ToTable("webhook_endpoints");
+            endpoint.HasKey(e => e.Id);
+            endpoint.Property(e => e.Url).IsRequired().HasMaxLength(WebhookEndpoint.MaxUrlLength);
+            endpoint.Property(e => e.Secret).IsRequired().HasMaxLength(100);
+            endpoint.PrimitiveCollection(e => e.Events).HasField("_events").UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<WebhookDelivery>(delivery =>
+        {
+            delivery.ToTable("webhook_deliveries");
+            delivery.HasKey(d => d.Id);
+            delivery.Property(d => d.PayloadJson).HasColumnType("jsonb").IsRequired();
+            delivery.Property(d => d.LastError).HasMaxLength(500);
+            // The dispatcher's own query: pending deliveries that are due, oldest first.
+            delivery.HasIndex(d => new { d.Status, d.NextAttemptAt });
+            delivery.HasIndex(d => new { d.EndpointId, d.CreatedAt });
+            delivery
+                .HasOne<WebhookEndpoint>()
+                .WithMany()
+                .HasForeignKey(d => d.EndpointId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<AuditEvent>(audit =>

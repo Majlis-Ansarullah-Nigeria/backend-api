@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { ErrorState } from "@/components/shared/ErrorState";
+import { FeatureAwareErrorState } from "@/components/shared/FeatureAwareErrorState";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api/client";
 import type { ComparisonUnitOption, PeriodComparison } from "@/lib/api/generated/hRSApiV1.schemas";
@@ -195,7 +195,8 @@ export function CompareScreen({ initial }: { initial: CompareSelection }) {
       </div>
 
       {options.isError || comparison.isError ? (
-        <ErrorState
+        <FeatureAwareErrorState
+          error={options.error ?? comparison.error}
           title={t("loadErrorTitle")}
           onRetry={() => (options.isError ? options.refetch() : comparison.refetch())}
         />

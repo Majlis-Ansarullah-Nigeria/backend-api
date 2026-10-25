@@ -32,7 +32,8 @@ function toggleSet(set: Set<string>, id: string): Set<string> {
   return next;
 }
 
-export function OrganizationScreen() {
+/** `initialUnitId` (from `?unit=`, the search palette's "Go to …") opens that unit with its ancestors expanded. */
+export function OrganizationScreen({ initialUnitId }: { initialUnitId?: string } = {}) {
   const t = useTranslations("Organization");
   const tree = useGetOrganizationTree<UnitTreeNode[], ApiError>({ includeArchived: true });
   const levels = useGetUnitLevels<UnitLevelSummary[], ApiError>();
@@ -40,7 +41,7 @@ export function OrganizationScreen() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<OrgFilterTab>("all");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialUnitId ?? null);
   const [isAdding, setIsAdding] = useState(false);
   const didAutoExpand = useRef(false);
 
@@ -62,9 +63,10 @@ export function OrganizationScreen() {
   useEffect(() => {
     if (!didAutoExpand.current && roots.length > 0) {
       didAutoExpand.current = true;
-      setExpandedIds(new Set(roots.map((root) => root.id)));
+      const ancestors = initialUnitId ? ancestorChain(initialUnitId, nodes).map((node) => node.id) : [];
+      setExpandedIds(new Set([...roots.map((root) => root.id), ...ancestors]));
     }
-  }, [roots]);
+  }, [roots, nodes, initialUnitId]);
 
   const levelNameByCode = useMemo(() => {
     const map: Record<number, string> = {};

@@ -1,4 +1,5 @@
 using HRS.Application.Common.Interfaces;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
@@ -31,7 +32,10 @@ public sealed record MapView(
 /// indicator dashboard (FR-DSH-005).
 /// </summary>
 public sealed record GetMapViewQuery(Guid UserId, Guid? ReportTypeId, string? FieldKey, Guid? UnitId, MapMeasure Measure)
-    : IRequest<Result<MapView>>;
+    : IRequest<Result<MapView>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.Dashboards;
+}
 
 public sealed class GetMapViewQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetMapViewQuery, Result<MapView>>

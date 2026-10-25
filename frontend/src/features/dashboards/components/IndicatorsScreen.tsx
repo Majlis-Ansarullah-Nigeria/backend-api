@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { ErrorState } from "@/components/shared/ErrorState";
+import { FeatureAwareErrorState } from "@/components/shared/FeatureAwareErrorState";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api/client";
 import type { IndicatorDashboard, IndicatorField } from "@/lib/api/generated/hRSApiV1.schemas";
@@ -78,7 +78,7 @@ export function IndicatorsScreen({ basePath, initial }: { basePath: string; init
   if (query.isError) {
     return (
       <div className="p-4 sm:p-6">
-        <ErrorState title={query.error.status === 403 ? t("forbiddenTitle") : t("loadErrorTitle")} onRetry={() => query.refetch()} />
+        <FeatureAwareErrorState error={query.error} title={query.error.status === 403 ? t("forbiddenTitle") : t("loadErrorTitle")} onRetry={() => query.refetch()} />
       </div>
     );
   }

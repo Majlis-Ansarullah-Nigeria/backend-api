@@ -13,6 +13,9 @@ const useGetSystemHealth = vi.fn();
 const updateMutate = vi.fn();
 const uploadMutate = vi.fn();
 const retryMutate = vi.fn();
+const useGetFeatureFlags = vi.fn();
+const setFlagMutate = vi.fn();
+const useGetWebhooks = vi.fn();
 
 vi.mock("@/lib/api/generated/settings/settings", () => ({
   useGetOrganizationSettings: (...args: unknown[]) => useGetOrganizationSettings(...args),
@@ -29,7 +32,29 @@ vi.mock("@/lib/api/generated/settings/settings", () => ({
   useRetryFailedNotifications: () => ({ mutate: retryMutate, isPending: false }),
   getGetOrganizationSettingsQueryKey: () => ["settings"],
   getGetSystemHealthQueryKey: () => ["health"],
+  useGetFeatureFlags: (...args: unknown[]) => useGetFeatureFlags(...args),
+  useSetFeatureFlag: () => ({ mutate: setFlagMutate, isPending: false }),
+  getGetFeatureFlagsQueryKey: () => ["flags"],
+  useGetWebhooks: (...args: unknown[]) => useGetWebhooks(...args),
 }));
+
+function flags(canEdit: boolean, off: number[] = []) {
+  return { isPending: false, data: { canEdit, flags: [0, 1, 2, 3].map((module) => ({ module, enabled: !off.includes(module) })) } };
+}
+
+const WEBHOOK = {
+  id: "h1",
+  url: "https://hooks.example.org/hrs",
+  events: [0],
+  isActive: true,
+  secretHint: "…ab12",
+  createdAt: "2026-10-20T09:00:00Z",
+  deliveredLast24Hours: 3,
+  pending: 0,
+  failed: 0,
+  lastDeliveryAt: null,
+  lastDeliveryStatus: null,
+};
 
 function renderWithProviders(ui: ReactElement) {
   return render(
@@ -65,6 +90,9 @@ beforeEach(() => {
   updateMutate.mockReset();
   uploadMutate.mockReset();
   retryMutate.mockReset();
+  setFlagMutate.mockReset();
+  useGetFeatureFlags.mockReturnValue(flags(true));
+  useGetWebhooks.mockReturnValue({ isPending: false, isError: false, isSuccess: true, data: [WEBHOOK] });
   useGetOrganizationSettings.mockReturnValue({ isPending: false, isError: false, data: SETTINGS });
   useGetSystemHealth.mockReturnValue({ isPending: false, isError: false, data: HEALTH });
 });
@@ -132,6 +160,46 @@ describe("SettingsScreen", () => {
     renderWithProviders(<SettingsScreen />);
 
     expect(screen.getByText("Worker not running")).toBeInTheDocument();
+  });
+});
+
+describe("SettingsScreen modules and webhooks", () => {
+  it("lets the system administrator switch a module off", async () => {
+    useGetFeatureFlags.mockReturnValue(flags(true, [3]));
+    renderWithProviders(<SettingsScreen />);
+
+    const modules = screen.getByRole("heading", { name: "Modules" }).closest("section")!;
+    expect(within(modules).getByRole("switch", { name: "Web push" })).not.toBeChecked();
+    const compiled = within(modules).getByRole("switch", { name: "Compiled reports" });
+    expect(compiled).toBeChecked();
+
+    await userEvent.click(compiled);
+    expect(setFlagMutate).toHaveBeenCalledWith({ module: 1, data: { enabled: false } }, expect.anything());
+  });
+
+  it("shows the modules read-only to anyone else", () => {
+    useGetFeatureFlags.mockReturnValue(flags(false));
+    renderWithProviders(<SettingsScreen />);
+
+    const modules = screen.getByRole("heading", { name: "Modules" }).closest("section")!;
+    for (const toggle of within(modules).getAllByRole("switch")) {
+      expect(toggle).toBeDisabled();
+    }
+  });
+
+  it("summarises webhooks with a Manage link for the system administrator", () => {
+    renderWithProviders(<SettingsScreen />);
+
+    expect(screen.getByText("report.submitted → 1 endpoint")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Manage" })).toHaveAttribute("href", "/admin/webhooks");
+  });
+
+  it("hides webhook details from the Secretariat, whom the API refuses", () => {
+    useGetWebhooks.mockReturnValue({ isPending: false, isError: true, isSuccess: false, error: { status: 403 } });
+    renderWithProviders(<SettingsScreen />);
+
+    expect(screen.getByText("Managed by the system administrator")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Manage" })).not.toBeInTheDocument();
   });
 });
 

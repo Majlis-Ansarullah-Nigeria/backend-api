@@ -763,6 +763,18 @@ export interface ExportSummary {
   completedAt: string | null;
 }
 
+export type FeatureModule = number;
+
+export interface FeatureFlagDto {
+  module: FeatureModule;
+  enabled: boolean;
+}
+
+export interface FeatureFlagsView {
+  flags: FeatureFlagDto[];
+  canEdit: boolean;
+}
+
 export interface FieldTargetDto {
   fieldKey: string;
   level: UnitLevelCode;
@@ -781,6 +793,46 @@ export interface FieldTargetLevelValue {
 
 export interface ForgotPasswordRequest {
   identifier: string;
+}
+
+export interface SearchUnitHit {
+  id: string;
+  name: string;
+  code: string;
+  levelName: string;
+  isObserved: boolean;
+}
+
+export interface SearchUserHit {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export type SearchReportAccess = number;
+
+export interface SearchReportHit {
+  instanceId: string;
+  unitId: string;
+  unitName: string;
+  reportTypeName: string;
+  periodLabel: string;
+  /** @nullable */
+  referenceNumber: string | null;
+  status: ReportInstanceStatus;
+  access: SearchReportAccess;
+}
+
+export interface SearchReportTypeHit {
+  id: string;
+  name: string;
+}
+
+export interface GlobalSearchResults {
+  units: SearchUnitHit[];
+  users: SearchUserHit[];
+  reports: SearchReportHit[];
+  reportTypes: SearchReportTypeHit[];
 }
 
 export interface GrantWindowExtensionRequest {
@@ -1533,6 +1585,14 @@ export interface SaveReportDraftResult {
   rowVersion: string;
 }
 
+export type WebhookEvent = number;
+
+export interface SaveWebhookRequest {
+  url: string;
+  events: WebhookEvent[];
+  isActive?: boolean;
+}
+
 export interface SecretariatOverview {
   userName: string;
   currentWindow: null | OverviewWindow;
@@ -1595,6 +1655,10 @@ export interface SessionSummary {
 
 export interface SetActiveAssignmentRequest {
   roleAssignmentId: string;
+}
+
+export interface SetFeatureFlagRequest {
+  enabled: boolean;
 }
 
 export interface SetFieldTargetsRequest {
@@ -1847,6 +1911,50 @@ export interface UserListItem {
   roleAssignments: UserRoleAssignmentItem[];
 }
 
+export type WebhookDeliveryStatus = number;
+
+export interface WebhookDeliveryDto {
+  id: string;
+  event: WebhookEvent;
+  status: WebhookDeliveryStatus;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  attempts: number | string;
+  /**
+     * @nullable
+     * @pattern ^-?(?:0|[1-9]\d*)$
+     */
+  lastStatusCode: number | string | null;
+  /** @nullable */
+  lastError: string | null;
+  createdAt: string;
+  /** @nullable */
+  deliveredAt: string | null;
+  nextAttemptAt: string;
+}
+
+export interface WebhookEndpointDto {
+  id: string;
+  url: string;
+  events: WebhookEvent[];
+  isActive: boolean;
+  secretHint: string;
+  createdAt: string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  deliveredLast24Hours: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  pending: number | string;
+  /** @pattern ^-?(?:0|[1-9]\d*)$ */
+  failed: number | string;
+  /** @nullable */
+  lastDeliveryAt: string | null;
+  lastDeliveryStatus: null | WebhookDeliveryStatus;
+}
+
+export interface WebhookSecretResult {
+  endpoint: WebhookEndpointDto;
+  secret: string;
+}
+
 export interface WorkloadView {
   staff: StaffWorkload[];
   /** @pattern ^-?(?:0|[1-9]\d*)$ */
@@ -1855,6 +1963,10 @@ export interface WorkloadView {
 
 export type GetLeadershipOverviewParams = {
 period?: LeadershipPeriod;
+};
+
+export type GlobalSearchParams = {
+q?: string;
 };
 
 export type GetOrganizationTreeParams = {

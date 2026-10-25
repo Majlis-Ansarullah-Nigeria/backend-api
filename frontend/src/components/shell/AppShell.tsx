@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
 import { useNotificationBadge } from "@/features/notifications/hooks/useNotificationBadge";
 import type { CSSProperties } from "react";
 import type { DashboardAccess, OrganizationSettingsDto } from "@/lib/api/generated/hRSApiV1.schemas";
@@ -10,6 +11,7 @@ import { useGetDashboardAccess } from "@/lib/api/generated/dashboards/dashboards
 import { useGetOrganizationSettings } from "@/lib/api/generated/settings/settings";
 import { OrgFormatProvider } from "@/lib/org/OrgFormatContext";
 import { BottomTabs } from "./BottomTabs";
+import { CommandPalette } from "./CommandPalette";
 import { COMPILED_NAV_ITEM, DASHBOARD_NAV_ITEM, isNavItemActive, PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS, type NavItem } from "./nav-items";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -26,6 +28,19 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
   const pathname = usePathname();
   const t = useTranslations("Shell.nav");
   const notificationCount = useNotificationBadge();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // FR-SRC-001: Ctrl/Cmd+K opens the search palette from anywhere in the app.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   // /admin (settings) sits with the Secretariat's screens.
   const isSecretariat = (pathname?.startsWith("/secretariat") || pathname?.startsWith("/admin")) ?? false;
@@ -42,8 +57,11 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
     ...(dashboardAccess.data?.hasIndicators ? [DASHBOARD_NAV_ITEM] : []),
     ...(dashboardAccess.data?.hasCompiledReports ? [COMPILED_NAV_ITEM] : []),
   ];
+  // FR-ADM-004: a switched-off Dashboards module drops its link (the head-side links above already
+  // follow it, since dashboard access is ANDed with the flags server-side).
+  const { isEnabled } = useFeatureFlags();
   const navItems = isSecretariat
-    ? SECRETARIAT_NAV_ITEMS
+    ? SECRETARIAT_NAV_ITEMS.filter((item) => item.key !== "dashboards" || isEnabled(FEATURE_MODULE.Dashboards))
     : [...PRIMARY_NAV_ITEMS.slice(0, 4), ...extraItems, ...PRIMARY_NAV_ITEMS.slice(4)];
 
   const activeItem = navItems.find((item) => isNavItemActive(item, pathname));
@@ -62,12 +80,14 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
           title={activeItem ? t(activeItem.key) : "HRS"}
           user={user}
           notificationCount={notificationCount}
+          onOpenSearch={() => setSearchOpen(true)}
         />
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           <OrgFormatProvider settings={brand ? { timeZone: brand.timeZone, dateFormat: Number(brand.dateFormat) } : null}>{children}</OrgFormatProvider>
         </main>
       </div>
       {isSecretariat ? null : <BottomTabs />}
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

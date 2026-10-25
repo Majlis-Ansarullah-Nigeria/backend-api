@@ -11,6 +11,7 @@ using HRS.Domain.Organization;
 using HRS.Domain.Review;
 using HRS.Domain.Submissions;
 using HRS.Domain.Templates;
+using HRS.Domain.Webhooks;
 using HRS.Domain.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -56,6 +57,12 @@ public interface IAppDbContext
     DbSet<AuditEvent> AuditEvents { get; }
 
     DbSet<OrganizationSettings> OrganizationSettings { get; }
+
+    DbSet<FeatureFlag> FeatureFlags { get; }
+
+    DbSet<WebhookEndpoint> WebhookEndpoints { get; }
+
+    DbSet<WebhookDelivery> WebhookDeliveries { get; }
 
     DbSet<ReportInstance> ReportInstances { get; }
 

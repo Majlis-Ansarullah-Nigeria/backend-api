@@ -1,6 +1,7 @@
 using System.Text.Json;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Features.Templates.TemplateVersions;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Submissions;
 using Mediator;
@@ -26,7 +27,10 @@ public sealed record ReportRevisionHistory(
 
 /// <summary>FR-HIS-006: every submission, withdrawal and resubmission of one report, newest
 /// first, each with a diff against the one before it.</summary>
-public sealed record GetReportRevisionsQuery(Guid UserId, Guid ReportId) : IRequest<Result<ReportRevisionHistory>>;
+public sealed record GetReportRevisionsQuery(Guid UserId, Guid ReportId) : IRequest<Result<ReportRevisionHistory>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.ComparisonAndVersions;
+}
 
 public sealed class GetReportRevisionsQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IIdentityService identityService, IClock clock)
     : IRequestHandler<GetReportRevisionsQuery, Result<ReportRevisionHistory>>

@@ -5,7 +5,7 @@ import { Check, ChevronRight, Download, FileText, RefreshCw } from "lucide-react
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
-import { ErrorState } from "@/components/shared/ErrorState";
+import { FeatureAwareErrorState } from "@/components/shared/FeatureAwareErrorState";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api/client";
@@ -42,7 +42,7 @@ export function CompiledReportScreen({ windowId, basePath }: { windowId: string;
   if (query.isError) {
     return (
       <div className="p-4 sm:p-6">
-        <ErrorState title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
+        <FeatureAwareErrorState error={query.error} title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
       </div>
     );
   }

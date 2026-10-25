@@ -25,6 +25,7 @@ import { HISTORY_STATUS_ORDER, historyStatusOptionLabel } from "@/features/histo
 import { BULK_EXPORT_FORMAT } from "@/features/exports/utils/export-status";
 import { reportStatusChipVariant } from "@/features/submissions/utils/report-status";
 import { useOrgFormat } from "@/lib/org/OrgFormatContext";
+import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
 
 
 interface Filters {
@@ -36,6 +37,7 @@ interface Filters {
 
 export function HistoryScreen() {
   const t = useTranslations("History");
+  const { isEnabled } = useFeatureFlags();
   const router = useRouter();
 
   const [filters, setFilters] = useState<Filters>({});
@@ -109,13 +111,15 @@ export function HistoryScreen() {
           <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
           <p className="mt-1 text-sm text-ink-muted">{t("subtitle")}</p>
         </div>
-        <Link
-          href="/history/compare"
-          className="inline-flex h-11 items-center gap-2 rounded-sm border border-line-strong bg-surface px-4 text-sm font-semibold text-ink hover:bg-ground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
-        >
-          <BarChart3 className="size-4" aria-hidden="true" />
-          {t("comparePeriodsAction")}
-        </Link>
+        {isEnabled(FEATURE_MODULE.ComparisonAndVersions) ? (
+          <Link
+            href="/history/compare"
+            className="inline-flex h-11 items-center gap-2 rounded-sm border border-line-strong bg-surface px-4 text-sm font-semibold text-ink hover:bg-ground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+          >
+            <BarChart3 className="size-4" aria-hidden="true" />
+            {t("comparePeriodsAction")}
+          </Link>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
@@ -299,6 +303,7 @@ function HistoryTableRow({
 }) {
   const fmt = useOrgFormat();
   const t = useTranslations("History");
+  const { isEnabled } = useFeatureFlags();
   const href = row.isObserved ? `/units/${row.unitId}/reports/${row.instanceId}` : `/reports/${row.instanceId}/edit?unit=${row.unitId}`;
   const [downloading, setDownloading] = useState<"pdf" | "excel" | null>(null);
 
@@ -339,13 +344,15 @@ function HistoryTableRow({
           <Link href={href} className="text-sm font-medium text-green-700 underline-offset-2 hover:underline">
             {t("viewAction")}
           </Link>
-          <Link
-            href={`/history/${row.instanceId}/versions`}
-            aria-label={t("versionsActionLabel", { report: row.reportTypeName, period: row.periodLabel })}
-            className="text-sm font-medium text-green-700 underline-offset-2 hover:underline"
-          >
-            {t("versionsAction")}
-          </Link>
+          {isEnabled(FEATURE_MODULE.ComparisonAndVersions) ? (
+            <Link
+              href={`/history/${row.instanceId}/versions`}
+              aria-label={t("versionsActionLabel", { report: row.reportTypeName, period: row.periodLabel })}
+              className="text-sm font-medium text-green-700 underline-offset-2 hover:underline"
+            >
+              {t("versionsAction")}
+            </Link>
+          ) : null}
           <button
             type="button"
             disabled={downloading !== null}

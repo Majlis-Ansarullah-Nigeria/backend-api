@@ -33,6 +33,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public CapturingNotificationBroadcaster Broadcaster { get; } = new();
 
+    public CapturingWebhookSender WebhookSender { get; } = new();
+
     public FakeFileStorage FileStorage { get; } = new();
 
     public FakeVirusScanner VirusScanner { get; } = new();
@@ -87,6 +89,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             .AddSingleton<IEmailSender>(EmailSender)
             .AddSingleton<IPushNotificationSender>(PushSender)
             .AddSingleton<INotificationBroadcaster>(Broadcaster)
+            .AddSingleton<IWebhookSender>(WebhookSender)
             .AddSingleton<IFileStorage>(FileStorage)
             .AddSingleton<IVirusScanner>(VirusScanner)
             .AddSingleton<IBackgroundJobScheduler>(JobScheduler));

@@ -7,6 +7,17 @@ import messages from "../../../../messages/en.json";
 import { greetingKey, relativeDueDay, SecretariatOverviewScreen } from "./SecretariatOverviewScreen";
 
 const useGetSecretariatOverview = vi.fn();
+const useGetFeatureFlags = vi.fn();
+vi.mock("@/lib/api/generated/settings/settings", () => ({
+  useGetFeatureFlags: (...args: unknown[]) => useGetFeatureFlags(...args),
+}));
+
+/** FR-ADM-004 flags as the API returns them; modules 0–3 are Dashboards, CompiledReports,
+ * ComparisonAndVersions and WebPush. */
+function flags(off: number[] = []) {
+  return { data: { canEdit: false, flags: [0, 1, 2, 3].map((module) => ({ module, enabled: !off.includes(module) })) } };
+}
+
 
 vi.mock("@/lib/api/generated/dashboards/dashboards", () => ({
   useGetSecretariatOverview: (...args: unknown[]) => useGetSecretariatOverview(...args),
@@ -77,6 +88,7 @@ const OVERVIEW = {
 
 beforeEach(() => {
   useGetSecretariatOverview.mockReset();
+  useGetFeatureFlags.mockReturnValue(flags());
 });
 
 describe("SecretariatOverviewScreen", () => {
@@ -121,6 +133,17 @@ describe("SecretariatOverviewScreen", () => {
     expect(screen.getByText("5 units with no head")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Edit General Monthly Report template" })).toHaveAttribute("href", "/secretariat/report-types");
     expect(screen.getByRole("link", { name: "Compile September 2026 report" })).toHaveAttribute("href", "/secretariat/compiled/w9");
+  });
+
+  it("drops the dashboard and compile links when those modules are switched off", () => {
+    useGetSecretariatOverview.mockReturnValue({ isPending: false, isError: false, data: OVERVIEW });
+    useGetFeatureFlags.mockReturnValue(flags([0, 1]));
+
+    renderWithIntl(<SecretariatOverviewScreen />);
+
+    expect(screen.queryByRole("link", { name: "Details" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Compile September 2026 report" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Edit General Monthly Report template" })).toBeInTheDocument();
   });
 
   it("shows an empty state when no window has opened, and an error state with retry", async () => {

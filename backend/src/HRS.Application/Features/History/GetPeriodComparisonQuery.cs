@@ -2,6 +2,7 @@ using System.Text.Json;
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Features.Submissions.Review;
 using HRS.Application.Features.Templates.TemplateVersions;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using HRS.Domain.Submissions;
@@ -41,7 +42,10 @@ public sealed record PeriodComparison(
 /// comparing across template versions works; labels come from period B's version first.
 /// </summary>
 public sealed record GetPeriodComparisonQuery(Guid UserId, Guid UnitId, Guid ReportTypeId, Guid? PeriodAWindowId, Guid? PeriodBWindowId)
-    : IRequest<Result<PeriodComparison>>;
+    : IRequest<Result<PeriodComparison>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.ComparisonAndVersions;
+}
 
 public sealed class GetPeriodComparisonQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetPeriodComparisonQuery, Result<PeriodComparison>>

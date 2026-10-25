@@ -24,13 +24,21 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  FeatureFlagDto,
+  FeatureFlagsView,
+  FeatureModule,
   OrganizationSettingsDto,
   ProblemDetails,
   RetryNotificationsResponse,
+  SaveWebhookRequest,
+  SetFeatureFlagRequest,
   SystemHealth,
   TimeZoneOption,
   UpdateOrganizationSettingsRequest,
-  UploadLogoBody
+  UploadLogoBody,
+  WebhookDeliveryDto,
+  WebhookEndpointDto,
+  WebhookSecretResult
 } from '../hRSApiV1.schemas';
 
 import { customFetch } from '../../client';
@@ -715,3 +723,731 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getRetryFailedNotificationsMutationOptions(options), queryClient);
     }
+    export const getGetFeatureFlagsUrl = () => {
+
+
+
+
+  return `/api/v1/feature-flags`
+}
+
+export const getFeatureFlags = async ( options?: Parameters<typeof customFetch>[1]): Promise<FeatureFlagsView> => {
+
+  return customFetch<FeatureFlagsView>(getGetFeatureFlagsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFeatureFlagsQueryKey = () => {
+    return [
+    `/api/v1/feature-flags`
+    ] as const;
+    }
+
+
+export const getGetFeatureFlagsQueryOptions = <TData = Awaited<ReturnType<typeof getFeatureFlags>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeatureFlags>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFeatureFlagsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFeatureFlags>>> = ({ signal }) => getFeatureFlags({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFeatureFlags>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFeatureFlagsQueryResult = NonNullable<Awaited<ReturnType<typeof getFeatureFlags>>>
+export type GetFeatureFlagsQueryError = unknown
+
+
+export function useGetFeatureFlags<TData = Awaited<ReturnType<typeof getFeatureFlags>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeatureFlags>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFeatureFlags>>,
+          TError,
+          Awaited<ReturnType<typeof getFeatureFlags>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFeatureFlags<TData = Awaited<ReturnType<typeof getFeatureFlags>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeatureFlags>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFeatureFlags>>,
+          TError,
+          Awaited<ReturnType<typeof getFeatureFlags>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFeatureFlags<TData = Awaited<ReturnType<typeof getFeatureFlags>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeatureFlags>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetFeatureFlags<TData = Awaited<ReturnType<typeof getFeatureFlags>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFeatureFlags>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFeatureFlagsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSetFeatureFlagUrl = (module: FeatureModule,) => {
+
+
+
+
+  return `/api/v1/feature-flags/${module}`
+}
+
+export const setFeatureFlag = async (module: FeatureModule,
+    setFeatureFlagRequest: SetFeatureFlagRequest, options?: Parameters<typeof customFetch>[1]): Promise<FeatureFlagDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FeatureFlagDto>(getSetFeatureFlagUrl(module),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setFeatureFlagRequest)
+  }
+);}
+
+
+
+
+
+export const getSetFeatureFlagMutationKey = () => ['setFeatureFlag'] as const;
+
+export const getSetFeatureFlagMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setFeatureFlag>>, TError,SetFeatureFlagMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setFeatureFlag>>, TError,SetFeatureFlagMutationVariables, TContext> => {
+
+const mutationKey = getSetFeatureFlagMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setFeatureFlag>>, SetFeatureFlagMutationVariables> = (props) => {
+          const {module,data} = props ?? {};
+
+          return  setFeatureFlag(module,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetFeatureFlagMutationResult = NonNullable<Awaited<ReturnType<typeof setFeatureFlag>>>
+    export type SetFeatureFlagMutationBody = SetFeatureFlagRequest
+    export type SetFeatureFlagMutationError = ProblemDetails
+    export type SetFeatureFlagMutationVariables = {module: FeatureModule;data: SetFeatureFlagRequest}
+
+    export const useSetFeatureFlag = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setFeatureFlag>>, TError,SetFeatureFlagMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setFeatureFlag>>,
+        TError,
+        SetFeatureFlagMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetFeatureFlagMutationOptions(options), queryClient);
+    }
+    export const getGetWebhooksUrl = () => {
+
+
+
+
+  return `/api/v1/webhooks`
+}
+
+export const getWebhooks = async ( options?: Parameters<typeof customFetch>[1]): Promise<WebhookEndpointDto[]> => {
+
+  return customFetch<WebhookEndpointDto[]>(getGetWebhooksUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWebhooksQueryKey = () => {
+    return [
+    `/api/v1/webhooks`
+    ] as const;
+    }
+
+
+export const getGetWebhooksQueryOptions = <TData = Awaited<ReturnType<typeof getWebhooks>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhooks>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWebhooksQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWebhooks>>> = ({ signal }) => getWebhooks({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWebhooks>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWebhooksQueryResult = NonNullable<Awaited<ReturnType<typeof getWebhooks>>>
+export type GetWebhooksQueryError = ProblemDetails
+
+
+export function useGetWebhooks<TData = Awaited<ReturnType<typeof getWebhooks>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhooks>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWebhooks>>,
+          TError,
+          Awaited<ReturnType<typeof getWebhooks>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWebhooks<TData = Awaited<ReturnType<typeof getWebhooks>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhooks>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWebhooks>>,
+          TError,
+          Awaited<ReturnType<typeof getWebhooks>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWebhooks<TData = Awaited<ReturnType<typeof getWebhooks>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhooks>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetWebhooks<TData = Awaited<ReturnType<typeof getWebhooks>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhooks>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWebhooksQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getCreateWebhookUrl = () => {
+
+
+
+
+  return `/api/v1/webhooks`
+}
+
+export const createWebhook = async (saveWebhookRequest: SaveWebhookRequest, options?: Parameters<typeof customFetch>[1]): Promise<WebhookSecretResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<WebhookSecretResult>(getCreateWebhookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveWebhookRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateWebhookMutationKey = () => ['createWebhook'] as const;
+
+export const getCreateWebhookMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWebhook>>, TError,CreateWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createWebhook>>, TError,CreateWebhookMutationVariables, TContext> => {
+
+const mutationKey = getCreateWebhookMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createWebhook>>, CreateWebhookMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createWebhook(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof createWebhook>>>
+    export type CreateWebhookMutationBody = SaveWebhookRequest
+    export type CreateWebhookMutationError = ProblemDetails
+    export type CreateWebhookMutationVariables = {data: SaveWebhookRequest}
+
+    export const useCreateWebhook = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWebhook>>, TError,CreateWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createWebhook>>,
+        TError,
+        CreateWebhookMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateWebhookMutationOptions(options), queryClient);
+    }
+    export const getUpdateWebhookUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/webhooks/${id}`
+}
+
+export const updateWebhook = async (id: string,
+    saveWebhookRequest: SaveWebhookRequest, options?: Parameters<typeof customFetch>[1]): Promise<WebhookEndpointDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<WebhookEndpointDto>(getUpdateWebhookUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(saveWebhookRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateWebhookMutationKey = () => ['updateWebhook'] as const;
+
+export const getUpdateWebhookMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWebhook>>, TError,UpdateWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateWebhook>>, TError,UpdateWebhookMutationVariables, TContext> => {
+
+const mutationKey = getUpdateWebhookMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateWebhook>>, UpdateWebhookMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateWebhook(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof updateWebhook>>>
+    export type UpdateWebhookMutationBody = SaveWebhookRequest
+    export type UpdateWebhookMutationError = ProblemDetails
+    export type UpdateWebhookMutationVariables = {id: string;data: SaveWebhookRequest}
+
+    export const useUpdateWebhook = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWebhook>>, TError,UpdateWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateWebhook>>,
+        TError,
+        UpdateWebhookMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateWebhookMutationOptions(options), queryClient);
+    }
+    export const getDeleteWebhookUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/webhooks/${id}`
+}
+
+export const deleteWebhook = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteWebhookUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteWebhookMutationKey = () => ['deleteWebhook'] as const;
+
+export const getDeleteWebhookMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWebhook>>, TError,DeleteWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteWebhook>>, TError,DeleteWebhookMutationVariables, TContext> => {
+
+const mutationKey = getDeleteWebhookMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteWebhook>>, DeleteWebhookMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteWebhook(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof deleteWebhook>>>
+
+    export type DeleteWebhookMutationError = ProblemDetails
+    export type DeleteWebhookMutationVariables = {id: string}
+
+    export const useDeleteWebhook = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWebhook>>, TError,DeleteWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteWebhook>>,
+        TError,
+        DeleteWebhookMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteWebhookMutationOptions(options), queryClient);
+    }
+    export const getRotateWebhookSecretUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/webhooks/${id}/rotate-secret`
+}
+
+export const rotateWebhookSecret = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<WebhookSecretResult> => {
+
+  return customFetch<WebhookSecretResult>(getRotateWebhookSecretUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRotateWebhookSecretMutationKey = () => ['rotateWebhookSecret'] as const;
+
+export const getRotateWebhookSecretMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateWebhookSecret>>, TError,RotateWebhookSecretMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rotateWebhookSecret>>, TError,RotateWebhookSecretMutationVariables, TContext> => {
+
+const mutationKey = getRotateWebhookSecretMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rotateWebhookSecret>>, RotateWebhookSecretMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  rotateWebhookSecret(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RotateWebhookSecretMutationResult = NonNullable<Awaited<ReturnType<typeof rotateWebhookSecret>>>
+
+    export type RotateWebhookSecretMutationError = ProblemDetails
+    export type RotateWebhookSecretMutationVariables = {id: string}
+
+    export const useRotateWebhookSecret = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateWebhookSecret>>, TError,RotateWebhookSecretMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rotateWebhookSecret>>,
+        TError,
+        RotateWebhookSecretMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRotateWebhookSecretMutationOptions(options), queryClient);
+    }
+    export const getSendTestWebhookUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/webhooks/${id}/test`
+}
+
+export const sendTestWebhook = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getSendTestWebhookUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSendTestWebhookMutationKey = () => ['sendTestWebhook'] as const;
+
+export const getSendTestWebhookMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendTestWebhook>>, TError,SendTestWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendTestWebhook>>, TError,SendTestWebhookMutationVariables, TContext> => {
+
+const mutationKey = getSendTestWebhookMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendTestWebhook>>, SendTestWebhookMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  sendTestWebhook(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendTestWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof sendTestWebhook>>>
+
+    export type SendTestWebhookMutationError = ProblemDetails
+    export type SendTestWebhookMutationVariables = {id: string}
+
+    export const useSendTestWebhook = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendTestWebhook>>, TError,SendTestWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sendTestWebhook>>,
+        TError,
+        SendTestWebhookMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendTestWebhookMutationOptions(options), queryClient);
+    }
+    export const getGetWebhookDeliveriesUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/webhooks/${id}/deliveries`
+}
+
+export const getWebhookDeliveries = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<WebhookDeliveryDto[]> => {
+
+  return customFetch<WebhookDeliveryDto[]>(getGetWebhookDeliveriesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWebhookDeliveriesQueryKey = (id: string,) => {
+    return [
+    `/api/v1/webhooks/${id}/deliveries`
+    ] as const;
+    }
+
+
+export const getGetWebhookDeliveriesQueryOptions = <TData = Awaited<ReturnType<typeof getWebhookDeliveries>>, TError = ProblemDetails>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhookDeliveries>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWebhookDeliveriesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWebhookDeliveries>>> = ({ signal }) => getWebhookDeliveries(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWebhookDeliveries>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWebhookDeliveriesQueryResult = NonNullable<Awaited<ReturnType<typeof getWebhookDeliveries>>>
+export type GetWebhookDeliveriesQueryError = ProblemDetails
+
+
+export function useGetWebhookDeliveries<TData = Awaited<ReturnType<typeof getWebhookDeliveries>>, TError = ProblemDetails>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhookDeliveries>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWebhookDeliveries>>,
+          TError,
+          Awaited<ReturnType<typeof getWebhookDeliveries>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWebhookDeliveries<TData = Awaited<ReturnType<typeof getWebhookDeliveries>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhookDeliveries>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWebhookDeliveries>>,
+          TError,
+          Awaited<ReturnType<typeof getWebhookDeliveries>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWebhookDeliveries<TData = Awaited<ReturnType<typeof getWebhookDeliveries>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhookDeliveries>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetWebhookDeliveries<TData = Awaited<ReturnType<typeof getWebhookDeliveries>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWebhookDeliveries>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWebhookDeliveriesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+

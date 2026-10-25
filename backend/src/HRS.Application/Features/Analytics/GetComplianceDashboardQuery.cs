@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
@@ -56,7 +57,10 @@ public sealed record ComplianceDashboard(
 /// them. Zone/Dila-scoped views are FR-DSH-005 (M10.2).
 /// </summary>
 public sealed record GetComplianceDashboardQuery(Guid UserId, Guid? ReportTypeId, UnitLevelCode? Level)
-    : IRequest<Result<ComplianceDashboard>>;
+    : IRequest<Result<ComplianceDashboard>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.Dashboards;
+}
 
 public sealed class GetComplianceDashboardQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetComplianceDashboardQuery, Result<ComplianceDashboard>>

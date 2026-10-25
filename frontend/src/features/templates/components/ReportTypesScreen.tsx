@@ -16,13 +16,14 @@ import { ReportTypeDetailPanel } from "./ReportTypeDetailPanel";
 
 type Tab = "active" | "archived";
 
-export function ReportTypesScreen() {
+/** `startCreating` (from `?new=1`, the search palette's "Create report type") opens the create panel. */
+export function ReportTypesScreen({ startCreating = false }: { startCreating?: boolean } = {}) {
   const t = useTranslations("ReportTypes");
   const reportTypes = useGetReportTypes<ReportTypeSummary[], ApiError>({ includeArchived: true });
 
   const [tab, setTab] = useState<Tab>("active");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreating, setIsCreating] = useState(startCreating);
 
   if (reportTypes.isPending) {
     return <p className="p-6 text-sm text-ink-muted">{t("loading")}</p>;

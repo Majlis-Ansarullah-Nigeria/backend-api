@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { ErrorState } from "@/components/shared/ErrorState";
+import { FeatureAwareErrorState } from "@/components/shared/FeatureAwareErrorState";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api/client";
@@ -58,7 +58,7 @@ export function ComplianceDashboardScreen({ initial }: { initial: ComplianceSele
   if (query.isError) {
     return (
       <div className="p-4 sm:p-6">
-        <ErrorState title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
+        <FeatureAwareErrorState error={query.error} title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
       </div>
     );
   }

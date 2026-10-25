@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
+using HRS.Domain.Admin;
 using HRS.Domain.Common;
 using HRS.Domain.Organization;
 using HRS.Domain.Templates;
@@ -42,7 +43,10 @@ public sealed record LeadershipOverview(
 /// rate of the last closed period; and how each zone's lowest level is doing. Leadership and the
 /// Secretariat only.
 /// </summary>
-public sealed record GetLeadershipOverviewQuery(Guid UserId, LeadershipPeriod Period) : IRequest<Result<LeadershipOverview>>;
+public sealed record GetLeadershipOverviewQuery(Guid UserId, LeadershipPeriod Period) : IRequest<Result<LeadershipOverview>>, IRequiresFeature
+{
+    public FeatureModule Feature => FeatureModule.Dashboards;
+}
 
 public sealed class GetLeadershipOverviewQueryHandler(IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetLeadershipOverviewQuery, Result<LeadershipOverview>>

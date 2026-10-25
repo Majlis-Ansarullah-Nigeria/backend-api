@@ -47,6 +47,9 @@ public static class OutboxDispatcher
         // FR-ADM-001: every template can say {{organizationName}}.
         var organizationName = await db.OrganizationSettings.AsNoTracking().Select(s => s.Name).FirstOrDefaultAsync(cancellationToken)
             ?? OrganizationBranding.DefaultName;
+        // FR-ADM-004: with web push switched off, notifications still reach the in-app centre and email.
+        var webPushEnabled = await db.FeatureFlags.AsNoTracking()
+            .Where(f => f.Module == Domain.Admin.FeatureModule.WebPush).Select(f => (bool?)f.Enabled).FirstOrDefaultAsync(cancellationToken) ?? true;
 
         var templatesByEventType = await db.NotificationTemplates.AsNoTracking()
             .ToDictionaryAsync(t => t.EventType, cancellationToken);
@@ -134,9 +137,9 @@ public static class OutboxDispatcher
                     unreadCountsByUser[message.RecipientUserId] = unreadCount;
                     await broadcaster.NotifyUnreadCountChangedAsync(message.RecipientUserId, unreadCount, cancellationToken);
 
-                    var subscriptions = await db.PushSubscriptions
-                        .Where(s => s.UserId == message.RecipientUserId)
-                        .ToListAsync(cancellationToken);
+                    var subscriptions = webPushEnabled
+                        ? await db.PushSubscriptions.Where(s => s.UserId == message.RecipientUserId).ToListAsync(cancellationToken)
+                        : [];
 
                     foreach (var subscription in subscriptions)
                     {

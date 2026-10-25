@@ -30,6 +30,7 @@ try
     builder.Services.AddScoped<WindowJobsRecurringJob>();
     builder.Services.AddScoped<OutboxDispatcherRecurringJob>();
     builder.Services.AddScoped<DigestRecurringJob>();
+    builder.Services.AddScoped<WebhookDispatcherRecurringJob>();
 
     var host = builder.Build();
 
@@ -47,6 +48,12 @@ try
         // 15-minute cadence, since these fire right after a user action (acknowledge, comment).
         recurringJobs.AddOrUpdate<OutboxDispatcherRecurringJob>(
             "outbox-dispatcher",
+            job => job.RunAsync(CancellationToken.None),
+            "* * * * *");
+
+        // FR-ADM-003: send queued webhook deliveries every minute; retries back off per delivery.
+        recurringJobs.AddOrUpdate<WebhookDispatcherRecurringJob>(
+            "webhook-dispatcher",
             job => job.RunAsync(CancellationToken.None),
             "* * * * *");
 

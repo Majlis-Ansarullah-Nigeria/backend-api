@@ -31,6 +31,7 @@ try
 
     builder.Services.AddOpenApi();
     builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+    builder.Services.AddExceptionHandler<FeatureDisabledExceptionHandler>();
     builder.Services.AddProblemDetails();
 
     builder.Services.AddApplication();
@@ -153,6 +154,8 @@ try
     app.MapCompiledReportsEndpoints();
     app.MapAuditEndpoints();
     app.MapSettingsEndpoints();
+    app.MapIntegrationsEndpoints();
+    app.MapSearchEndpoints();
     app.MapExportsEndpoints();
 
     // architecture.md: Traefik routes "/hubs/*" to this process only — the Worker publishes

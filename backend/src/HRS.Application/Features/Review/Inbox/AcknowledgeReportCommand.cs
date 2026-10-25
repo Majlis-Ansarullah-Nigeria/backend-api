@@ -1,5 +1,6 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Application.Common.Options;
+using HRS.Application.Features.Admin.Webhooks;
 using HRS.Application.Features.Analytics;
 using HRS.Application.Features.Audit;
 using HRS.Application.Features.Notifications;
@@ -7,6 +8,7 @@ using HRS.Domain.Access;
 using HRS.Domain.Common;
 using HRS.Domain.Notifications;
 using HRS.Domain.Submissions;
+using HRS.Domain.Webhooks;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -52,6 +54,10 @@ public sealed class AcknowledgeReportCommandHandler(
         var now = clock.UtcNow;
         instance.Acknowledge(now);
         await ReportMetricWriter.ReplaceAsync(db, instance, window, cancellationToken);
+        await WebhookEnqueuer.EnqueueAsync(
+            db, WebhookEvent.ReportAcknowledged,
+            () => WebhookPayloads.ReportAsync(db, instance, WebhookEvent.ReportAcknowledged, appOptions.Value.PublicUrl, now, cancellationToken),
+            now, cancellationToken);
         auditLog.Add(new AuditEntry(
             AuditActions.ReportAcknowledged, request.UserId, "report", instance.Id.ToString(),
             $"{reportType.Name} · {window.PeriodLabel} · {unitName}", instance.UnitId));

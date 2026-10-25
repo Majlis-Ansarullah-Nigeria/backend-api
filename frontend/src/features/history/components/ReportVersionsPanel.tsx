@@ -3,7 +3,7 @@
 import { ArrowRight, History as HistoryIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { ErrorState } from "@/components/shared/ErrorState";
+import { FeatureAwareErrorState } from "@/components/shared/FeatureAwareErrorState";
 import { ApiError } from "@/lib/api/client";
 import type { ReportRevisionEntry, ReportRevisionHistory } from "@/lib/api/generated/hRSApiV1.schemas";
 import { useGetReportRevisions } from "@/lib/api/generated/history/history";
@@ -37,7 +37,7 @@ export function ReportVersionsPanel({ reportId }: { reportId: string }) {
       {query.isPending ? (
         <p className="mt-3 text-sm text-ink-muted">{t("loading")}</p>
       ) : query.isError ? (
-        <ErrorState title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
+        <FeatureAwareErrorState error={query.error} title={t("loadErrorTitle")} onRetry={() => query.refetch()} />
       ) : query.data.revisions.length === 0 ? (
         <EmptyState icon={HistoryIcon} title={t("emptyTitle")} description={t("emptyDescription")} className="mt-3" />
       ) : (
