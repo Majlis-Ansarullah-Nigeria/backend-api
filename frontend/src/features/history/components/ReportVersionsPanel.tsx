@@ -19,15 +19,17 @@ const ACTION_KEYS: Record<number, "actionSubmitted" | "actionWithdrawn" | "actio
 /** FR-HIS-006: every submission, withdrawal and resubmission of one report, newest first, each
  * with what changed since the entry before it. Used on its own page from History and inline in
  * the Secretariat's review pane. */
-export function ReportVersionsPanel({ reportId }: { reportId: string }) {
+export function ReportVersionsPanel({ reportId, headingLevel = 2 }: { reportId: string; headingLevel?: 1 | 2 }) {
   const t = useTranslations("Versions");
+  // The page's own heading on its standalone screen; a section heading inside the review pane.
+  const Heading = headingLevel === 1 ? "h1" : "h2";
   const query = useGetReportRevisions<ReportRevisionHistory, ApiError>(reportId);
 
   return (
     <section className="rounded-lg border border-line bg-surface p-4 sm:p-6" aria-labelledby={`versions-${reportId}`}>
-      <h2 id={`versions-${reportId}`} className="text-lg font-bold text-ink">
+      <Heading id={`versions-${reportId}`} className="text-lg font-bold text-ink">
         {t("title")}
-      </h2>
+      </Heading>
       {query.data ? (
         <p className="mt-1 text-sm text-ink-muted">
           {query.data.unitName} · {query.data.reportTypeName} · {query.data.periodLabel}

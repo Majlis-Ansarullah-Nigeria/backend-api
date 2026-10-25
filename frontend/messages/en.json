@@ -182,7 +182,8 @@
       "settingsShort": "Settings"
     },
     "featureDisabledTitle": "This module is switched off",
-    "featureDisabledDescription": "The system administrator has turned this part of the service off for the organization."
+    "featureDisabledDescription": "The system administrator has turned this part of the service off for the organization.",
+    "skipToContent": "Skip to main content"
   },
   "HeadHome": {
     "loading": "Loading…",
@@ -710,7 +711,8 @@
     "pulledTag": "Pulled · {rule}",
     "overriddenTag": "Overridden · pulled {value}",
     "returnedBannerTitle": "Returned for revision",
-    "revisionDeadline": "Resubmit by {date}"
+    "revisionDeadline": "Resubmit by {date}",
+    "sectionComplete": ", completed"
   },
   "ReportReview": {
     "loading": "Loading…",

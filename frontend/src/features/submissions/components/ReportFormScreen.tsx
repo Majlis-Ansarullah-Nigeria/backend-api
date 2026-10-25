@@ -68,6 +68,16 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
   const pullContextQuery = useGetPullContext<PullContextView, ApiError>(id, { unit: unitId });
 
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+  // NFR-ACC-01: after moving to another section, focus its heading so screen readers announce it
+  // and keyboard users start at its top — but not on first load, which keeps the page's own focus.
+  const sectionHeadingRef = useRef<HTMLHeadingElement>(null);
+  const focusSectionHeading = useRef(false);
+  useEffect(() => {
+    if (focusSectionHeading.current) {
+      focusSectionHeading.current = false;
+      sectionHeadingRef.current?.focus();
+    }
+  }, [activeSectionIndex]);
   const [saveStatus, setSaveStatus] = useState<SaveStatus | null>(null);
   const [rowVersion, setRowVersion] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -290,8 +300,12 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
   const progress = sectionProgress(sections, Number(data.unitLevel), (answers as Record<string, unknown>) ?? {});
   const pulledFieldsByKey = Object.fromEntries((pullContextQuery.data?.summary?.fields ?? []).map((field) => [field.fieldKey, field]));
 
-  const goNext = () => setActiveSectionIndex((index) => Math.min(index + 1, sections.length - 1));
-  const goBack = () => setActiveSectionIndex((index) => Math.max(index - 1, 0));
+  const selectSection = (index: number) => {
+    focusSectionHeading.current = true;
+    setActiveSectionIndex(Math.min(Math.max(index, 0), sections.length - 1));
+  };
+  const goNext = () => selectSection(activeSectionIndex + 1);
+  const goBack = () => selectSection(activeSectionIndex - 1);
 
   // FR-SUB-008: prefills text/settings fields (not figures — see COPYABLE_FIELD_TYPES) from the
   // unit's last submission of the same report type, then saves immediately rather than waiting
@@ -431,7 +445,7 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
                 style={{ width: `${progress.total === 0 ? 0 : (progress.completed / progress.total) * 100}%` }}
               />
             </div>
-            <nav className="mt-4 flex flex-col gap-1">
+            <nav className="mt-4 flex flex-col gap-1" aria-label={t("sectionsLabel")}>
               {sections.map((section, index) => {
                 const complete =
                   index < progress.total && isComplete(sections, index, Number(data.unitLevel), (answers as Record<string, unknown>) ?? {});
@@ -439,7 +453,8 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
                   <button
                     key={section.key}
                     type="button"
-                    onClick={() => setActiveSectionIndex(index)}
+                    onClick={() => selectSection(index)}
+                    aria-current={index === activeSectionIndex ? "step" : undefined}
                     className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium ${
                       index === activeSectionIndex ? "bg-mint text-green-700" : "text-ink hover:bg-ground"
                     }`}
@@ -452,6 +467,7 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
                       </span>
                     )}
                     {section.title}
+                    {complete ? <span className="sr-only">{t("sectionComplete")}</span> : null}
                   </button>
                 );
               })}
@@ -474,7 +490,9 @@ export function ReportFormScreen({ id, unitId }: { id: string; unitId: string })
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
                 {t("sectionOf", { number: activeSectionIndex + 1, total: sections.length })}
               </p>
-              <h2 className="mt-1 text-lg font-bold text-ink">{activeSection.title}</h2>
+              <h2 ref={sectionHeadingRef} tabIndex={-1} className="mt-1 text-lg font-bold text-ink outline-none">
+                {activeSection.title}
+              </h2>
 
               <fieldset disabled={!canSave} className="mt-4">
                 <SectionForm

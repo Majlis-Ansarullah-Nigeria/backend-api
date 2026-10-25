@@ -66,6 +66,17 @@ describe("ReportVersionsPanel", () => {
     expect(within(items[2]).queryByText(/no answers changed/i)).not.toBeInTheDocument();
   });
 
+  it("is a section heading in the review pane and the page heading on its own screen (NFR-ACC-01)", () => {
+    useGetReportRevisions.mockReturnValue({ isPending: false, isError: false, data: HISTORY });
+
+    const { unmount } = renderWithIntl(<ReportVersionsPanel reportId="r1" />);
+    expect(screen.getByRole("heading", { level: 2, name: "Version history" })).toBeInTheDocument();
+    unmount();
+
+    renderWithIntl(<ReportVersionsPanel reportId="r1" headingLevel={1} />);
+    expect(screen.getByRole("heading", { level: 1, name: "Version history" })).toBeInTheDocument();
+  });
+
   it("shows an empty state when nothing was recorded", () => {
     useGetReportRevisions.mockReturnValue({ isPending: false, isError: false, data: { ...HISTORY, revisions: [] } });
 

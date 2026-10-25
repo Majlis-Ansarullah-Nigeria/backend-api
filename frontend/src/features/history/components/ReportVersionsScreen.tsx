@@ -19,7 +19,7 @@ export function ReportVersionsScreen({ reportId }: { reportId: string }) {
           {t("title")}
         </span>
       </nav>
-      <ReportVersionsPanel reportId={reportId} />
+      <ReportVersionsPanel reportId={reportId} headingLevel={1} />
     </div>
   );
 }

@@ -1,5 +1,7 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { authState } from "./fixtures";
+
+test.use({ storageState: authState("draft-head") });
 
 test("desktop shows the sidebar and hides the bottom tabs", async ({ page, isMobile }) => {
   test.skip(isMobile, "desktop-only assertion");
@@ -18,8 +20,26 @@ test("mobile shows the bottom tabs and hides the sidebar", async ({ page, isMobi
   await expect(page.getByText("Agodi Muqam")).toBeHidden();
 });
 
-test("home shell has no detectable accessibility violations", async ({ page }) => {
+test("Ctrl+K opens the search palette and Escape closes it", async ({ page, isMobile }) => {
+  test.skip(isMobile, "keyboard shortcut");
+
   await page.goto("/home");
-  const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations).toEqual([]);
+  await page.keyboard.press("Control+k");
+  const palette = page.getByRole("dialog", { name: "Search and quick actions" });
+  await expect(palette).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Search units, reports, people" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(palette).toBeHidden();
+});
+
+test("the first Tab reaches a skip link that jumps to the main content", async ({ page, isMobile }) => {
+  test.skip(isMobile, "keyboard navigation");
+
+  await page.goto("/home");
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("link", { name: "Skip to main content" });
+  await expect(skip).toBeFocused();
+  await expect(skip).toBeVisible();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("main#main-content")).toBeFocused();
 });

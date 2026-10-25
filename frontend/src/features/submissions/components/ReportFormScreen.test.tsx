@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -95,5 +96,36 @@ describe("ReportFormScreen", () => {
     renderWithProviders(<ReportFormScreen id="report-1" unitId="unit-1" />);
 
     expect(screen.queryByText("Returned for revision")).not.toBeInTheDocument();
+  });
+
+  it("moves focus to the next section's heading and marks the current step without relying on colour (NFR-ACC-01)", async () => {
+    useGetReportInstanceForEditing.mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: {
+        ...BASE_DATA,
+        status: 1,
+        answers: { members: 12 },
+        schema: {
+          sections: [
+            { key: "activity", title: "Activity", fields: [{ key: "members", type: 2, label: "Total members", helpText: null, required: false, min: null, max: null, regex: null, defaultValue: null, unitLabel: null, confidential: false, owningDepartmentId: null, visibleForLevels: null, showIf: null, aggregation: 0, computedExpression: null, options: null, columns: null }] },
+            { key: "finance", title: "Finance", fields: [{ key: "funds", type: 2, label: "Funds collected", helpText: null, required: false, min: null, max: null, regex: null, defaultValue: null, unitLabel: null, confidential: false, owningDepartmentId: null, visibleForLevels: null, showIf: null, aggregation: 0, computedExpression: null, options: null, columns: null }] },
+          ],
+        },
+      },
+    });
+
+    renderWithProviders(<ReportFormScreen id="report-1" unitId="unit-1" />);
+
+    const sections = screen.getByRole("navigation", { name: "Sections" });
+    expect(within(sections).getByRole("button", { name: /^Activity/ })).toHaveAttribute("aria-current", "step");
+    expect(within(sections).getByRole("button", { name: "Activity, completed" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Activity" })).not.toHaveFocus();
+
+    await userEvent.click(screen.getByRole("button", { name: /Next: Finance/ }));
+
+    expect(screen.getByRole("heading", { level: 2, name: "Finance" })).toHaveFocus();
+    expect(within(sections).getByRole("button", { name: /^Finance/ })).toHaveAttribute("aria-current", "step");
+    expect(within(sections).getByRole("button", { name: /^Activity/ })).not.toHaveAttribute("aria-current");
   });
 });

@@ -27,6 +27,7 @@ export interface AppShellProps {
 export function AppShell({ children, user, unit, orgName }: AppShellProps) {
   const pathname = usePathname();
   const t = useTranslations("Shell.nav");
+  const tShell = useTranslations("Shell");
   const notificationCount = useNotificationBadge();
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -68,6 +69,13 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
 
   return (
     <div className="flex min-h-dvh" style={brandStyle}>
+      {/* WCAG 2.4.1: lets keyboard users jump past the sidebar's navigation on every page. */}
+      <a
+        href="#main-content"
+        className="sr-only z-50 rounded-md bg-surface px-4 py-2 text-sm font-semibold text-green-700 shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-green-600"
+      >
+        {tShell("skipToContent")}
+      </a>
       <Sidebar
         orgName={brand?.name ?? orgName}
         logoUrl={brand?.hasLogo ? `/api/v1/settings/logo?v=${brand.logoVersion ?? ""}` : null}
@@ -82,7 +90,7 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
           notificationCount={notificationCount}
           onOpenSearch={() => setSearchOpen(true)}
         />
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto pb-20 outline-none md:pb-0">
           <OrgFormatProvider settings={brand ? { timeZone: brand.timeZone, dateFormat: Number(brand.dateFormat) } : null}>{children}</OrgFormatProvider>
         </main>
       </div>
