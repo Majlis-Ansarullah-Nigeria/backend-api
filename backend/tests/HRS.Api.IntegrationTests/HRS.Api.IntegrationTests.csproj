@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\HRS.Api\HRS.Api.csproj" />
     <ProjectReference Include="..\..\src\HRS.Infrastructure\HRS.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\tools\LoadTestSeeder\LoadTestSeeder.csproj" />
   </ItemGroup>
 
 </Project>

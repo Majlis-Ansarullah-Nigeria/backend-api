@@ -1,0 +1,4 @@
+# Seeded by backend/tools/LoadTestSeeder; holds throwaway accounts for one local run.
+k6/data/
+# k6 summaries from local runs; copy the numbers you keep into results/.
+k6/out/

@@ -13,18 +13,22 @@ const nextConfig: NextConfig = {
     tsconfigPath: "./tsconfig.build.json",
   },
   async rewrites() {
-    if (process.env.NODE_ENV !== "development") {
+    // In production Traefik routes /api and /hubs to the API. `pnpm dev` proxies them here; a
+    // production build only does when API_PROXY_URL is set at build time — the Lighthouse run
+    // (M12.1, lighthouserc.cjs) uses that to measure a real build without Traefik.
+    const apiUrl = process.env.NODE_ENV === "development" ? "http://localhost:8080" : process.env.API_PROXY_URL;
+    if (!apiUrl) {
       return [];
     }
 
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8080/api/:path*",
+        destination: `${apiUrl}/api/:path*`,
       },
       {
         source: "/hubs/:path*",
-        destination: "http://localhost:8080/hubs/:path*",
+        destination: `${apiUrl}/hubs/:path*`,
       },
     ];
   },
