@@ -1112,6 +1112,9 @@ export interface RoleAssignmentSummary {
   startsAt: string;
   /** @nullable */
   endsAt: string | null;
+  unitName: string;
+  unitLevel: UnitLevelCode;
+  unitLevelName: string;
 }
 
 export interface MeProfile {

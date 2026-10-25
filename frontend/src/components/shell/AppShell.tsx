@@ -2,16 +2,20 @@
 
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { FEATURE_MODULE, useFeatureFlags } from "@/features/admin/hooks/useFeatureFlags";
 import { useNotificationBadge } from "@/features/notifications/hooks/useNotificationBadge";
 import type { CSSProperties } from "react";
-import type { DashboardAccess, OrganizationSettingsDto } from "@/lib/api/generated/hRSApiV1.schemas";
+import type { DashboardAccess, MeProfile, OrganizationSettingsDto, RoleAssignmentSummary } from "@/lib/api/generated/hRSApiV1.schemas";
 import { useGetDashboardAccess } from "@/lib/api/generated/dashboards/dashboards";
+import { useGetMe, useLogout, useSetActiveAssignment } from "@/lib/api/generated/identity/identity";
 import { useGetOrganizationSettings } from "@/lib/api/generated/settings/settings";
 import { OrgFormatProvider } from "@/lib/org/OrgFormatContext";
 import { BottomTabs } from "./BottomTabs";
 import { CommandPalette } from "./CommandPalette";
+import { activeAssignment, initials, roleLabelKey } from "./current-user";
 import { COMPILED_NAV_ITEM, DASHBOARD_NAV_ITEM, isNavItemActive, PRIMARY_NAV_ITEMS, SECRETARIAT_NAV_ITEMS, type NavItem } from "./nav-items";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -19,15 +23,43 @@ import type { UnitOption } from "./UnitSwitcher";
 
 export interface AppShellProps {
   children: ReactNode;
-  user: { name: string; initials: string };
-  unit: UnitOption;
   orgName?: string;
 }
 
-export function AppShell({ children, user, unit, orgName }: AppShellProps) {
+export function AppShell({ children, orgName }: AppShellProps) {
   const pathname = usePathname();
   const t = useTranslations("Shell.nav");
   const tShell = useTranslations("Shell");
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // The signed-in user and the unit they're acting as (FR-AC-002), from GET /me.
+  const me = useGetMe<MeProfile>({ query: { staleTime: 5 * 60 * 1000 } });
+  const setActive = useSetActiveAssignment();
+  const logout = useLogout();
+  const toOption = (assignment: RoleAssignmentSummary): UnitOption => ({
+    id: assignment.id,
+    name: assignment.unitName,
+    role: tShell(`roles.${roleLabelKey(assignment)}`, { level: assignment.unitLevelName }),
+  });
+  const current = activeAssignment(me.data);
+  const user = { name: me.data?.name ?? "", initials: initials(me.data?.name ?? "") };
+  const unit: UnitOption = current ? toOption(current) : { id: "", name: me.data ? tShell("noUnit") : "", role: "" };
+  const unitOptions = (me.data?.roleAssignments ?? []).map(toOption);
+  const selectUnit = (option: UnitOption) => {
+    if (option.id === current?.id) {
+      return;
+    }
+    // Everything on screen may depend on the unit acted as, so refetch it all.
+    setActive.mutate({ data: { roleAssignmentId: option.id } }, { onSuccess: () => queryClient.invalidateQueries() });
+  };
+  const signOut = () =>
+    logout.mutate(undefined, {
+      onSettled: () => {
+        queryClient.clear();
+        router.replace("/login");
+      },
+    });
   const notificationCount = useNotificationBadge();
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -81,6 +113,9 @@ export function AppShell({ children, user, unit, orgName }: AppShellProps) {
         logoUrl={brand?.hasLogo ? `/api/v1/settings/logo?v=${brand.logoVersion ?? ""}` : null}
         user={user}
         unit={unit}
+        unitOptions={unitOptions}
+        onSelectUnit={selectUnit}
+        onSignOut={signOut}
         navItems={navItems}
       />
       <div className="flex min-w-0 flex-1 flex-col">

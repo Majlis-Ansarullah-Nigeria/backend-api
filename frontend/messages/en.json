@@ -183,7 +183,16 @@
     },
     "featureDisabledTitle": "This module is switched off",
     "featureDisabledDescription": "The system administrator has turned this part of the service off for the organization.",
-    "skipToContent": "Skip to main content"
+    "skipToContent": "Skip to main content",
+    "roles": {
+      "unitHead": "{level} Head",
+      "delegate": "{level} Delegate",
+      "secretariat": "Secretariat",
+      "leadership": "Leadership",
+      "deptOfficer": "Department officer",
+      "sysAdmin": "System administrator"
+    },
+    "noUnit": "No unit assigned"
   },
   "HeadHome": {
     "loading": "Loading…",

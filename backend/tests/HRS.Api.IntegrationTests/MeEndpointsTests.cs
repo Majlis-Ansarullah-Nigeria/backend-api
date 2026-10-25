@@ -57,6 +57,19 @@ public class MeEndpointsTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task GetMeNamesEachAssignmentsUnitAndLevelForTheAppShell()
+    {
+        var (client, userId) = await CreateLoggedInClientAsync();
+        await factory.CreateRoleAssignmentAsync(userId, OrganizationSeedIds.NationalUnitId, RoleName.Secretariat);
+
+        var profile = await client.GetFromJsonAsync<MeProfile>("/api/v1/me");
+
+        var assignment = Assert.Single(profile!.RoleAssignments);
+        Assert.Equal(("National", UnitLevelCode.National, "National"),
+            (assignment.UnitName, assignment.UnitLevel, assignment.UnitLevelName));
+    }
+
+    [Fact]
     public async Task SetActiveAssignmentToOwnActiveAssignmentSucceedsAndPersists()
     {
         var (client, userId) = await CreateLoggedInClientAsync();

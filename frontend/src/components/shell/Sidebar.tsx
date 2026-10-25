@@ -16,10 +16,23 @@ export interface SidebarProps {
   logoUrl?: string | null;
   user: { name: string; initials: string };
   unit: UnitOption;
+  /** Every unit/role the user can act as (FR-AC-002); defaults to just the current one. */
+  unitOptions?: UnitOption[];
+  onSelectUnit?: (unit: UnitOption) => void;
+  onSignOut?: () => void;
   navItems?: NavItem[];
 }
 
-export function Sidebar({ orgName, logoUrl, user, unit, navItems = PRIMARY_NAV_ITEMS }: SidebarProps) {
+export function Sidebar({
+  orgName,
+  logoUrl,
+  user,
+  unit,
+  unitOptions,
+  onSelectUnit,
+  onSignOut,
+  navItems = PRIMARY_NAV_ITEMS,
+}: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("Shell");
 
@@ -41,7 +54,7 @@ export function Sidebar({ orgName, logoUrl, user, unit, navItems = PRIMARY_NAV_I
       </div>
 
       <div className="px-4 pb-4">
-        <UnitSwitcher current={unit} />
+        <UnitSwitcher current={unit} options={unitOptions && unitOptions.length > 0 ? unitOptions : undefined} onSelect={onSelectUnit} />
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3" aria-label="Primary">
@@ -77,6 +90,7 @@ export function Sidebar({ orgName, logoUrl, user, unit, navItems = PRIMARY_NAV_I
         <button
           type="button"
           aria-label={t("signOut")}
+          onClick={onSignOut}
           className="rounded-md p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
         >
           <LogOut className="size-4" aria-hidden="true" />

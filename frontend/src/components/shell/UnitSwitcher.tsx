@@ -19,7 +19,7 @@ export interface UnitOption {
 
 export interface UnitSwitcherProps {
   current: UnitOption;
-  /** Other units/roles this user can act as. Defaults to just the current one until RoleAssignment (M1/M4) is wired up. */
+  /** Every unit/role this user can act as. Defaults to just the current one. */
   options?: UnitOption[];
   onSelect?: (unit: UnitOption) => void;
 }

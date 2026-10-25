@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithIntl } from "@/test/renderWithIntl";
 import { Sidebar } from "./Sidebar";
@@ -28,5 +29,25 @@ describe("Sidebar", () => {
   it("shows the signed-in user", () => {
     renderWithIntl(<Sidebar user={user} unit={unit} />);
     expect(screen.getByText("Abdulrahman Adeyemi")).toBeInTheDocument();
+  });
+
+  it("signs out from the sign-out button", async () => {
+    const onSignOut = vi.fn();
+    renderWithIntl(<Sidebar user={user} unit={unit} onSignOut={onSignOut} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    expect(onSignOut).toHaveBeenCalled();
+  });
+
+  it("switches to another unit the user can act as (FR-AC-002)", async () => {
+    const onSelectUnit = vi.fn();
+    const dila = { id: "ibafo-dila", name: "Ibafo Dila", role: "Dila Delegate" };
+    renderWithIntl(<Sidebar user={user} unit={unit} unitOptions={[unit, dila]} onSelectUnit={onSelectUnit} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /acting as/i }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /Ibafo Dila/ }));
+
+    expect(onSelectUnit).toHaveBeenCalledWith(dila);
   });
 });

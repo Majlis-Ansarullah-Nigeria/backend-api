@@ -2,7 +2,17 @@ import { describe, expect, it } from "vitest";
 import type { MeProfile } from "@/lib/api/generated/hRSApiV1.schemas";
 import { isLeadershipHome } from "./HomeScreen";
 
-const assignment = (id: string, role: number) => ({ id, unitId: "u", role, delegateScope: null, startsAt: "2026-01-01T00:00:00Z", endsAt: null });
+const assignment = (id: string, role: number) => ({
+  id,
+  unitId: "u",
+  role,
+  delegateScope: null,
+  startsAt: "2026-01-01T00:00:00Z",
+  endsAt: null,
+  unitName: "National",
+  unitLevel: 0,
+  unitLevelName: "National",
+});
 
 const me = (roles: number[], active: string | null): MeProfile => ({
   id: "me",

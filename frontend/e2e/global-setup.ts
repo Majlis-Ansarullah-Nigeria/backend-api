@@ -21,6 +21,8 @@ export interface E2eFixtures {
   submittedUnitId: string;
   submittedInstanceId: string;
   dilaUnitId: string;
+  /** A head whose session the sign-out test may end without affecting the others. */
+  signOutEmail: string;
 }
 
 interface HeadRow {
@@ -68,6 +70,7 @@ export default async function globalSetup() {
     submittedUnitId: submittedHead.unitId,
     submittedInstanceId,
     dilaUnitId: dilaHead.unitId,
+    signOutEmail: heads.find((h) => h.level === "Zone")!.email,
   };
   writeFileSync(path.join(AUTH_DIR, "fixtures.json"), JSON.stringify(fixtures, null, 2));
 }

@@ -1,6 +1,7 @@
 using HRS.Application.Common.Interfaces;
 using HRS.Domain.Access;
 using HRS.Domain.Common;
+using HRS.Domain.Organization;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,13 +18,19 @@ public sealed record MeProfile(
     bool MfaEnabled,
     bool MfaRequiredByRole);
 
+/// <summary>One active assignment, with the unit's name and level so the app shell's "Acting as"
+/// card and unit switcher can label it ("Agodi Muqam · Muqam Head") without another request.
+/// Level names are organization data (Dila/Muqam), never hard-coded.</summary>
 public sealed record RoleAssignmentSummary(
     Guid Id,
     Guid UnitId,
     RoleName Role,
     DelegateScope? DelegateScope,
     DateTimeOffset StartsAt,
-    DateTimeOffset? EndsAt);
+    DateTimeOffset? EndsAt,
+    string UnitName,
+    UnitLevelCode UnitLevel,
+    string UnitLevelName);
 
 public sealed class GetMeQueryHandler(IIdentityService identityService, IAppDbContext db, IAccessPolicy accessPolicy, IClock clock)
     : IRequestHandler<GetMeQuery, Result<MeProfile>>
@@ -45,7 +52,10 @@ public sealed class GetMeQueryHandler(IIdentityService identityService, IAppDbCo
             .AsNoTracking()
             .Where(a => a.UserId == request.UserId && a.StartsAt <= now && (a.EndsAt == null || a.EndsAt > now))
             .OrderBy(a => a.StartsAt)
-            .Select(a => new RoleAssignmentSummary(a.Id, a.UnitId, a.Role, a.DelegateScope, a.StartsAt, a.EndsAt))
+            .Join(db.Units.AsNoTracking(), a => a.UnitId, u => u.Id, (a, u) => new { Assignment = a, Unit = u })
+            .Join(db.UnitLevels.AsNoTracking(), x => x.Unit.LevelId, l => l.Id, (x, l) => new RoleAssignmentSummary(
+                x.Assignment.Id, x.Assignment.UnitId, x.Assignment.Role, x.Assignment.DelegateScope,
+                x.Assignment.StartsAt, x.Assignment.EndsAt, x.Unit.Name, l.Code, l.Name))
             .ToListAsync(cancellationToken);
 
         // FR-IAM-003: mandatory for Secretariat/Admin. A user who hasn't enrolled yet still
