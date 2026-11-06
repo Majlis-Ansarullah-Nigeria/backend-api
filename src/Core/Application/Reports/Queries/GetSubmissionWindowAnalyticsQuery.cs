@@ -1,3 +1,4 @@
+using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -12,10 +13,12 @@ public record GetSubmissionWindowAnalyticsQuery(Guid WindowId) : IRequest<Result
 public class GetSubmissionWindowAnalyticsQueryHandler : IRequestHandler<GetSubmissionWindowAnalyticsQuery, Result<SubmissionWindowAnalyticsDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetSubmissionWindowAnalyticsQueryHandler(IApplicationDbContext context)
+    public GetSubmissionWindowAnalyticsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<SubmissionWindowAnalyticsDto>> Handle(GetSubmissionWindowAnalyticsQuery request, CancellationToken cancellationToken)
@@ -31,24 +34,25 @@ public class GetSubmissionWindowAnalyticsQueryHandler : IRequestHandler<GetSubmi
 
         // Get submissions for this window with approvals
         var submissions = await _context.ReportSubmissions
+            .VisibleTo(_currentUser)
             .Where(rs => rs.SubmissionWindowId == request.WindowId)
             .Include(rs => rs.Approvals)
             .ToListAsync(cancellationToken);
 
         // Calculate analytics
         var totalSubmissions = submissions.Count;
-        var approvedSubmissions = submissions.Count(s => s.Status == Domain.Enums.SubmissionStatus.Approved);
-        var rejectedSubmissions = submissions.Count(s => s.Status == Domain.Enums.SubmissionStatus.Rejected);
-        var submittedSubmissions = submissions.Count(s => s.Status == Domain.Enums.SubmissionStatus.Submitted);
+        var acknowledgedSubmissions = submissions.Count(s => s.Status == Domain.Enums.SubmissionStatus.Acknowledged);
+        var returnedSubmissions = submissions.Count(s => s.Status == Domain.Enums.SubmissionStatus.Returned);
+        var submittedSubmissions = submissions.Count(s => s.Status is Domain.Enums.SubmissionStatus.Submitted or Domain.Enums.SubmissionStatus.InReview);
         var draftSubmissions = submissions.Count(s => s.Status == Domain.Enums.SubmissionStatus.Draft);
 
-        var approvalRate = totalSubmissions > 0 ? (double)approvedSubmissions / totalSubmissions * 100 : 0;
+        var acknowledgementRate = totalSubmissions > 0 ? (double)acknowledgedSubmissions / totalSubmissions * 100 : 0;
 
         // US-24: Calculate average processing time (time from submission to approval/rejection)
         double averageProcessingTime = 0;
         var processedSubmissions = submissions
-            .Where(s => s.Status == Domain.Enums.SubmissionStatus.Approved ||
-                       s.Status == Domain.Enums.SubmissionStatus.Rejected)
+            .Where(s => s.Status == Domain.Enums.SubmissionStatus.Acknowledged ||
+                       s.Status == Domain.Enums.SubmissionStatus.Returned)
             .Where(s => s.Approvals != null && s.Approvals.Any())
             .ToList();
 
@@ -135,11 +139,11 @@ public class GetSubmissionWindowAnalyticsQueryHandler : IRequestHandler<GetSubmi
         var analyticsDto = new SubmissionWindowAnalyticsDto
         {
             TotalSubmissions = totalSubmissions,
-            ApprovedSubmissions = approvedSubmissions,
-            RejectedSubmissions = rejectedSubmissions,
+            AcknowledgedSubmissions = acknowledgedSubmissions,
+            ReturnedSubmissions = returnedSubmissions,
             SubmittedSubmissions = submittedSubmissions,
             DraftSubmissions = draftSubmissions,
-            ApprovalRate = approvalRate,
+            AcknowledgementRate = acknowledgementRate,
             DailyTrend = dailyTrend,
             OrganizationParticipation = organizationParticipation,
             AverageProcessingTime = averageProcessingTime // US-24: Calculated average time from submission to approval/rejection (in days)
@@ -152,11 +156,11 @@ public class GetSubmissionWindowAnalyticsQueryHandler : IRequestHandler<GetSubmi
 public class SubmissionWindowAnalyticsDto
 {
     public int TotalSubmissions { get; set; }
-    public int ApprovedSubmissions { get; set; }
-    public int RejectedSubmissions { get; set; }
+    public int AcknowledgedSubmissions { get; set; }
+    public int ReturnedSubmissions { get; set; }
     public int SubmittedSubmissions { get; set; }
     public int DraftSubmissions { get; set; }
-    public double ApprovalRate { get; set; }
+    public double AcknowledgementRate { get; set; }
     public double AverageProcessingTime { get; set; } // in days
     public List<DailyTrendDto> DailyTrend { get; set; } = new();
     public List<OrganizationParticipationDto> OrganizationParticipation { get; set; } = new();

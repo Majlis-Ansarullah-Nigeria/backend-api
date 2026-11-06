@@ -49,11 +49,8 @@ public class SubmissionWindow : AuditableEntity, IAggregateRoot
         Description = description;
     }
 
-    public bool IsOpen()
-    {
-        var now = DateTime.UtcNow;
-        return IsActive && now >= StartDate && now <= EndDate;
-    }
+    /// <summary>The server clock decides whether a window is open (BR-WIN-07).</summary>
+    public bool IsOpen(DateTime nowUtc) => IsActive && nowUtc >= StartDate && nowUtc <= EndDate;
 
     public void Activate()
     {

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+using ManagementApi.Application.Reports.Common;
+using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Shared;
@@ -42,16 +43,15 @@ public class DeleteFileCommandHandler : IRequestHandler<DeleteFileCommand, Resul
         }
 
         // Verify user has permission to delete this file
-        var userId = _currentUser.UserId;
-        if (attachment.ReportSubmission.SubmitterId != userId)
+        if (!ReportingScope.OwnsReport(_currentUser, attachment.ReportSubmission))
         {
             return Result.Failure("You do not have permission to delete this file");
         }
 
-        // Verify submission is in Draft status (can only delete from draft submissions)
-        if (attachment.ReportSubmission.Status != Domain.Enums.SubmissionStatus.Draft)
+        // Only Draft and Returned reports are editable
+        if (!attachment.ReportSubmission.IsEditable)
         {
-            return Result.Failure("Files can only be deleted from draft submissions");
+            return Result.Failure("Files can only be deleted from draft or returned reports");
         }
 
         // Remove the file attachment

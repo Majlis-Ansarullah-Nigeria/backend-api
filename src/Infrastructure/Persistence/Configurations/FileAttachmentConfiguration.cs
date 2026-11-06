@@ -12,6 +12,9 @@ public class FileAttachmentConfiguration : IEntityTypeConfiguration<FileAttachme
 
         builder.HasKey(f => f.Id);
 
+        // Ids are assigned in the domain; see SubmissionApprovalConfiguration.
+        builder.Property(f => f.Id).ValueGeneratedNever();
+
         builder.Property(f => f.FileName)
             .IsRequired()
             .HasMaxLength(255);

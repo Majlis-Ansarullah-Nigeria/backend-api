@@ -1,4 +1,4 @@
-﻿using ManagementApi.Application.Common.Interfaces;
+using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
 using ManagementApi.Shared;
@@ -38,6 +38,7 @@ public class GetOverdueSubmissionsQueryHandler : IRequestHandler<GetOverdueSubmi
             // Get all submissions for this window
             var submittedSubmissions = await _context.ReportSubmissions
                 .Where(s => s.SubmissionWindowId == window.Id)
+                .Where(s => s.Status != Domain.Enums.SubmissionStatus.Draft && s.Status != Domain.Enums.SubmissionStatus.Missed)
                 .Select(s => new
                 {
                     s.MuqamId,

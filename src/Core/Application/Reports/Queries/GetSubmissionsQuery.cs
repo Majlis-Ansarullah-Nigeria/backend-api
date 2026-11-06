@@ -1,5 +1,6 @@
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
+using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Reports.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -21,124 +22,80 @@ public class GetSubmissionsQueryHandler : IRequestHandler<GetSubmissionsQuery, R
 
     public async Task<Result<PaginationResponse<ReportSubmissionDto>>> Handle(GetSubmissionsQuery request, CancellationToken cancellationToken)
     {
+        // SECURITY: scope first, so request filters can only narrow what the user may see.
         var query = _context.ReportSubmissions
             .Include(s => s.ReportTemplate)
             .Include(s => s.Approvals)
-            .AsQueryable();
+            .AsNoTracking()
+            .VisibleTo(_currentUser);
 
-        // SECURITY: First apply automatic filtering based on current user's organization level
-        // This ensures users can only see submissions within their organizational scope
-        var orgLevel = _currentUser.OrganizationLevel;
+        var filter = request.Request;
 
-        switch (orgLevel)
+        if (filter.ReportTemplateId.HasValue)
         {
-            case ManagementApi.Domain.Enums.OrganizationLevel.Muqam:
-                if (_currentUser.MuqamId.HasValue)
-                {
-                    query = query.Where(s => s.MuqamId == _currentUser.MuqamId.Value);
-                }
-                break;
-
-            case ManagementApi.Domain.Enums.OrganizationLevel.Dila:
-                if (_currentUser.DilaId.HasValue)
-                {
-                    query = query.Where(s => s.DilaId == _currentUser.DilaId.Value);
-                }
-                break;
-
-            case ManagementApi.Domain.Enums.OrganizationLevel.Zone:
-                if (_currentUser.ZoneId.HasValue)
-                {
-                    query = query.Where(s => s.ZoneId == _currentUser.ZoneId.Value);
-                }
-                break;
-
-            case ManagementApi.Domain.Enums.OrganizationLevel.National:
-                // National level - no automatic filtering
-                break;
+            query = query.Where(s => s.ReportTemplateId == filter.ReportTemplateId.Value);
         }
 
-        // Then apply additional filters from request (within user's scope)
-        if (request.Request.ReportTemplateId.HasValue)
+        if (filter.SubmissionWindowId.HasValue)
         {
-            query = query.Where(s => s.ReportTemplateId == request.Request.ReportTemplateId.Value);
+            query = query.Where(s => s.SubmissionWindowId == filter.SubmissionWindowId.Value);
         }
 
-        if (request.Request.Status.HasValue)
+        if (filter.Status.HasValue)
         {
-            query = query.Where(s => s.Status == request.Request.Status.Value);
+            query = query.Where(s => s.Status == filter.Status.Value);
         }
 
-        if (request.Request.MuqamId.HasValue)
+        if (filter.IsLate.HasValue)
         {
-            query = query.Where(s => s.MuqamId == request.Request.MuqamId.Value);
+            query = query.Where(s => s.IsLate == filter.IsLate.Value);
         }
 
-        if (request.Request.DilaId.HasValue)
+        if (filter.MuqamId.HasValue)
         {
-            query = query.Where(s => s.DilaId == request.Request.DilaId.Value);
+            query = query.Where(s => s.MuqamId == filter.MuqamId.Value);
         }
 
-        if (request.Request.ZoneId.HasValue)
+        if (filter.DilaId.HasValue)
         {
-            query = query.Where(s => s.ZoneId == request.Request.ZoneId.Value);
+            query = query.Where(s => s.DilaId == filter.DilaId.Value);
         }
 
-        if (request.Request.OrganizationLevel.HasValue)
+        if (filter.ZoneId.HasValue)
         {
-            query = query.Where(s => s.OrganizationLevel == request.Request.OrganizationLevel.Value);
+            query = query.Where(s => s.ZoneId == filter.ZoneId.Value);
         }
 
-        if (request.Request.StartDate.HasValue)
+        if (filter.OrganizationLevel.HasValue)
         {
-            query = query.Where(s => s.SubmittedAt >= request.Request.StartDate.Value);
+            query = query.Where(s => s.OrganizationLevel == filter.OrganizationLevel.Value);
         }
 
-        if (request.Request.EndDate.HasValue)
+        if (filter.StartDate.HasValue)
         {
-            query = query.Where(s => s.SubmittedAt <= request.Request.EndDate.Value);
+            query = query.Where(s => s.SubmittedAt >= filter.StartDate.Value);
         }
 
-        // Get total count
+        if (filter.EndDate.HasValue)
+        {
+            query = query.Where(s => s.SubmittedAt <= filter.EndDate.Value);
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
 
-        // Apply pagination
         var submissions = await query
-            .OrderByDescending(s => s.CreatedOn)
-            .Skip((request.Request.PageNumber - 1) * request.Request.PageSize)
-            .Take(request.Request.PageSize)
+            .OrderByDescending(s => s.SubmittedAt ?? s.CreatedOn)
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
             .ToListAsync(cancellationToken);
 
-        var submissionDtos = submissions.Select(s => new ReportSubmissionDto
-        {
-            Id = s.Id,
-            ReportTemplateId = s.ReportTemplateId,
-            ReportTemplateName = s.ReportTemplate.Name,
-            SubmitterChandaNo = s.SubmitterChandaNo,
-            SubmitterName = s.SubmitterName,
-            SubmitterEmail = s.SubmitterEmail,
-            OrganizationLevel = s.OrganizationLevel.ToString(),
-            ResponseData = s.ResponseData,
-            Status = s.Status.ToString(),
-            SubmittedAt = s.SubmittedAt,
-            RejectionReason = s.RejectionReason,
-            CreatedOn = s.CreatedOn,
-            Approvals = s.Approvals.Select(a => new SubmissionApprovalDto
-            {
-                Id = a.Id,
-                ApproverName = a.ApproverName,
-                Status = a.Status.ToString(),
-                Comments = a.Comments,
-                ActionDate = a.ActionDate
-            }).ToList()
-        }).ToList();
+        var names = await UnitNames.LoadAsync(_context, submissions, cancellationToken);
 
-        var response = new PaginationResponse<ReportSubmissionDto>(
-            submissionDtos,
-            totalCount,
-            request.Request.PageNumber,
-            request.Request.PageSize);
+        var dtos = submissions
+            .Select(s => names.Apply(ReportSubmissionDto.From(s, _currentUser), s))
+            .ToList();
 
-        return Result<PaginationResponse<ReportSubmissionDto>>.Success(response);
+        return Result<PaginationResponse<ReportSubmissionDto>>.Success(
+            new PaginationResponse<ReportSubmissionDto>(dtos, totalCount, filter.PageNumber, filter.PageSize));
     }
 }

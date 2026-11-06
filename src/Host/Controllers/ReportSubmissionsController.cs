@@ -19,6 +19,29 @@ public record FileUploadRequest
 [Authorize]
 public class ReportSubmissionsController : BaseApiController
 {
+    // Only the National Secretariat reviews reports (acknowledge, return, reopen).
+    private const string SecretariatRoles = Roles.NationalAdmin + "," + Roles.SuperAdmin;
+
+    private IActionResult ToActionResult(Result result)
+    {
+        if (result.Succeeded)
+        {
+            return Ok(new { message = result.Messages.FirstOrDefault() });
+        }
+
+        if (result.Messages.Any(m => m.StartsWith("FORBIDDEN")))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { errors = result.Messages });
+        }
+
+        if (result.Messages.Any(m => m == "Submission not found"))
+        {
+            return NotFound(new { errors = result.Messages });
+        }
+
+        return BadRequest(new { errors = result.Messages });
+    }
+
     /// <summary>
     /// Get report submissions with filtering
     /// </summary>
@@ -144,51 +167,67 @@ public class ReportSubmissionsController : BaseApiController
     }
 
     /// <summary>
-    /// Approve a report submission
+    /// Withdraw the current unit's submitted report back to draft (only before the Secretariat opens it, while the window is open)
     /// </summary>
-    [HttpPost("{submissionId}/approve")]
-    [MustHavePermission(Permissions.ReportsApprove)]
+    [HttpPost("{submissionId}/withdraw")]
+    [MustHavePermission(Permissions.ReportsSubmit)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ApproveSubmission(Guid submissionId, [FromBody] ApproveSubmissionRequest request)
+    public async Task<IActionResult> WithdrawSubmission(Guid submissionId)
     {
-        if (submissionId != request.SubmissionId)
-        {
-            return BadRequest(new { errors = new[] { "Submission ID mismatch" } });
-        }
-
-        var result = await Mediator.Send(new ApproveSubmissionCommand(request));
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new { errors = result.Messages });
-        }
-
-        return Ok(new { message = result.Messages.FirstOrDefault() });
+        var result = await Mediator.Send(new WithdrawSubmissionCommand(submissionId));
+        return ToActionResult(result);
     }
 
     /// <summary>
-    /// Reject a report submission
+    /// Mark a submitted report as In Review (National Secretariat opened it)
     /// </summary>
-    [HttpPost("{submissionId}/reject")]
-    [MustHavePermission(Permissions.ReportsReject)]
+    [HttpPost("{submissionId}/start-review")]
+    [Authorize(Roles = SecretariatRoles)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> StartReview(Guid submissionId)
+    {
+        var result = await Mediator.Send(new StartReviewCommand(submissionId));
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Acknowledge a report (final). National Secretariat only.
+    /// </summary>
+    [HttpPost("{submissionId}/acknowledge")]
+    [Authorize(Roles = SecretariatRoles)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RejectSubmission(Guid submissionId, [FromBody] RejectSubmissionRequest request)
+    public async Task<IActionResult> AcknowledgeSubmission(Guid submissionId, [FromBody] AcknowledgeSubmissionRequest request)
     {
-        if (submissionId != request.SubmissionId)
-        {
-            return BadRequest(new { errors = new[] { "Submission ID mismatch" } });
-        }
+        var result = await Mediator.Send(new AcknowledgeSubmissionCommand(request with { SubmissionId = submissionId }));
+        return ToActionResult(result);
+    }
 
-        var result = await Mediator.Send(new RejectSubmissionCommand(request));
+    /// <summary>
+    /// Return a report to the unit for correction, with a reason. National Secretariat only.
+    /// </summary>
+    [HttpPost("{submissionId}/return")]
+    [Authorize(Roles = SecretariatRoles)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ReturnSubmission(Guid submissionId, [FromBody] ReturnSubmissionRequest request)
+    {
+        var result = await Mediator.Send(new ReturnSubmissionCommand(request with { SubmissionId = submissionId }));
+        return ToActionResult(result);
+    }
 
-        if (!result.Succeeded)
-        {
-            return BadRequest(new { errors = result.Messages });
-        }
-
-        return Ok(new { message = result.Messages.FirstOrDefault() });
+    /// <summary>
+    /// Reopen an acknowledged report for further review, with a reason. National Secretariat only.
+    /// </summary>
+    [HttpPost("{submissionId}/reopen")]
+    [Authorize(Roles = SecretariatRoles)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ReopenSubmission(Guid submissionId, [FromBody] ReopenSubmissionRequest request)
+    {
+        var result = await Mediator.Send(new ReopenSubmissionCommand(request with { SubmissionId = submissionId }));
+        return ToActionResult(result);
     }
 
     /// <summary>
@@ -290,47 +329,41 @@ public class ReportSubmissionsController : BaseApiController
     }
 
     /// <summary>
-    /// Bulk approve multiple submissions
+    /// Acknowledge several reports at once. National Secretariat only.
     /// </summary>
-    [HttpPost("bulk/approve")]
-    [MustHavePermission(Permissions.ReportsApprove)]
-    [ProducesResponseType(typeof(BulkApprovalResultDto), StatusCodes.Status200OK)]
+    [HttpPost("bulk/acknowledge")]
+    [Authorize(Roles = SecretariatRoles)]
+    [ProducesResponseType(typeof(BulkReviewResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> BulkApprove([FromBody] BulkApproveRequest request)
+    public async Task<IActionResult> BulkAcknowledge([FromBody] BulkAcknowledgeRequest request)
     {
-        var result = await Mediator.Send(new BulkApproveCommand(request));
+        var result = await Mediator.Send(new BulkAcknowledgeCommand(request));
 
         if (!result.Succeeded)
         {
             return BadRequest(new { errors = result.Messages });
         }
 
-        return Ok(new {
-            data = result.Data,
-            message = result.Messages.FirstOrDefault()
-        });
+        return Ok(new { data = result.Data, message = result.Messages.FirstOrDefault() });
     }
 
     /// <summary>
-    /// Bulk reject multiple submissions
+    /// Return several reports for correction at once, with one reason. National Secretariat only.
     /// </summary>
-    [HttpPost("bulk/reject")]
-    [MustHavePermission(Permissions.ReportsReject)]
-    [ProducesResponseType(typeof(BulkApprovalResultDto), StatusCodes.Status200OK)]
+    [HttpPost("bulk/return")]
+    [Authorize(Roles = SecretariatRoles)]
+    [ProducesResponseType(typeof(BulkReviewResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> BulkReject([FromBody] BulkRejectRequest request)
+    public async Task<IActionResult> BulkReturn([FromBody] BulkReturnRequest request)
     {
-        var result = await Mediator.Send(new BulkRejectCommand(request));
+        var result = await Mediator.Send(new BulkReturnCommand(request));
 
         if (!result.Succeeded)
         {
             return BadRequest(new { errors = result.Messages });
         }
 
-        return Ok(new {
-            data = result.Data,
-            message = result.Messages.FirstOrDefault()
-        });
+        return Ok(new { data = result.Data, message = result.Messages.FirstOrDefault() });
     }
 
     /// <summary>

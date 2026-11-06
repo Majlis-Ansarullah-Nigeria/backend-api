@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+using ManagementApi.Application.Reports.Common;
+using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -61,16 +62,15 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Resul
         }
 
         // Verify user has permission to upload files to this submission
-        var userId = _currentUser.UserId;
-        if (submission.SubmitterId != userId)
+        if (!ReportingScope.OwnsReport(_currentUser, submission))
         {
             return Result<Guid>.Failure("You do not have permission to upload files to this submission");
         }
 
-        // Verify submission is in Draft or Rejected status (can only upload to editable submissions)
-        if (submission.Status != Domain.Enums.SubmissionStatus.Draft)
+        // Only Draft and Returned reports are editable
+        if (!submission.IsEditable)
         {
-            return Result<Guid>.Failure("Files can only be uploaded to draft submissions");
+            return Result<Guid>.Failure("Files can only be uploaded to draft or returned reports");
         }
 
         // Add the file attachment

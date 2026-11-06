@@ -333,7 +333,6 @@ namespace ManagementApi.Infrastructure.Migrations
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.FileAttachment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ContentType")
@@ -608,6 +607,9 @@ namespace ManagementApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
@@ -616,6 +618,9 @@ namespace ManagementApi.Infrastructure.Migrations
 
                     b.Property<Guid?>("DilaId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("LastModifiedBy")
                         .HasColumnType("uuid");
@@ -629,15 +634,25 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<int>("OrganizationLevel")
                         .HasColumnType("integer");
 
-                    b.Property<string>("RejectionReason")
-                        .HasColumnType("text");
-
                     b.Property<Guid>("ReportTemplateId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ResponseData")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("ReturnReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ReviewStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RevisionDueAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -662,14 +677,26 @@ namespace ManagementApi.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ZoneId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DilaId");
+
                     b.HasIndex("ReportTemplateId");
 
-                    b.HasIndex("SubmissionWindowId");
+                    b.HasIndex("ZoneId");
+
+                    b.HasIndex("Status", "SubmittedAt");
+
+                    b.HasIndex("SubmissionWindowId", "OrganizationLevel", "UnitId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ReportSubmissions_Window_Unit")
+                        .HasFilter("\"SubmissionWindowId\" IS NOT NULL");
 
                     b.ToTable("ReportSubmissions");
                 });
@@ -723,7 +750,6 @@ namespace ManagementApi.Infrastructure.Migrations
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionApproval", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("ActionDate")

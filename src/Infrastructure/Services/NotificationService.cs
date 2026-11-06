@@ -210,8 +210,8 @@ public class NotificationService : INotificationService
         string? comments = null,
         CancellationToken cancellationToken = default)
     {
-        var title = "Report Submission Approved";
-        var message = $"Your submission for '{templateName}' has been approved.";
+        var title = "Report Acknowledged";
+        var message = $"Your report for '{templateName}' has been acknowledged by the National Secretariat.";
 
         if (!string.IsNullOrEmpty(comments))
         {
@@ -238,8 +238,8 @@ public class NotificationService : INotificationService
         string reason,
         CancellationToken cancellationToken = default)
     {
-        var title = "Report Submission Rejected";
-        var message = $"Your submission for '{templateName}' has been rejected. Reason: {reason}";
+        var title = "Report Returned for Correction";
+        var message = $"Your report for '{templateName}' was returned for correction. Reason: {reason}. Please update and resubmit it within 7 days.";
 
         await SendNotificationAsync(
             NotificationType.SubmissionRejected,
@@ -281,8 +281,8 @@ public class NotificationService : INotificationService
         string? comments = null,
         CancellationToken cancellationToken = default)
     {
-        var title = "Report Submission Approved";
-        var message = $"Your report submission has been approved.";
+        var title = "Report Acknowledged";
+        var message = $"Your report has been acknowledged by the National Secretariat.";
 
         if (!string.IsNullOrEmpty(comments))
         {
@@ -306,8 +306,8 @@ public class NotificationService : INotificationService
         string reason,
         CancellationToken cancellationToken = default)
     {
-        var title = "Report Submission Rejected";
-        var message = $"Your report submission has been rejected. Reason: {reason}";
+        var title = "Report Returned for Correction";
+        var message = $"Your report was returned for correction. Reason: {reason}. Please update and resubmit it within 7 days.";
 
         await SendBulkNotificationsAsync(
             NotificationType.BulkRejected,

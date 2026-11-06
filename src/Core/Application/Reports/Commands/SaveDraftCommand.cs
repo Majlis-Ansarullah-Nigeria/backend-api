@@ -1,10 +1,9 @@
 using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
+using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Reports.DTOs;
-using ManagementApi.Domain.Entities.Reports;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace ManagementApi.Application.Reports.Commands;
 
@@ -17,75 +16,65 @@ public class SaveDraftCommandValidator : AbstractValidator<SaveDraftCommand>
         RuleFor(x => x.Request.ReportTemplateId)
             .NotEmpty().WithMessage("Report template ID is required");
 
+        RuleFor(x => x.Request.SubmissionWindowId)
+            .NotEmpty().WithMessage("Submission window is required");
+
         RuleFor(x => x.Request.ResponseData)
             .NotEmpty().WithMessage("Response data is required");
     }
 }
 
+/// <summary>
+/// Saves the current user's own unit report for a window as a draft. Draft and Returned reports are editable.
+/// </summary>
 public class SaveDraftCommandHandler : IRequestHandler<SaveDraftCommand, Result<Guid>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly TimeProvider _clock;
 
-    public SaveDraftCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+    public SaveDraftCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService, TimeProvider clock)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _clock = clock;
     }
 
     public async Task<Result<Guid>> Handle(SaveDraftCommand request, CancellationToken cancellationToken)
     {
-        // Validate template exists
-        var template = await _context.ReportTemplates
-            .FirstOrDefaultAsync(t => t.Id == request.Request.ReportTemplateId, cancellationToken);
-
-        if (template == null)
-        {
-            return Result<Guid>.Failure("Report template not found");
-        }
-
-        // Get current user info
-        var userId = _currentUserService.UserId;
-        var chandaNo = _currentUserService.ChandaNo ?? "UNKNOWN";
-        var userName = _currentUserService.UserName ?? "Unknown User";
-        var email = _currentUserService.Email;
-        var muqamId = _currentUserService.MuqamId;
-        var dilaId = _currentUserService.DilaId;
-        var zoneId = _currentUserService.ZoneId;
-        var orgLevel = _currentUserService.OrganizationLevel;
-
-        // Check if user already has a draft for this template
-        var existingDraft = await _context.ReportSubmissions
-            .FirstOrDefaultAsync(s =>
-                s.ReportTemplateId == request.Request.ReportTemplateId &&
-                s.SubmitterId == userId &&
-                s.Status == Domain.Enums.SubmissionStatus.Draft,
-                cancellationToken);
-
-        if (existingDraft != null)
-        {
-            // Update existing draft
-            existingDraft.UpdateResponseData(request.Request.ResponseData);
-            await _context.SaveChangesAsync(cancellationToken);
-            return Result<Guid>.Success(existingDraft.Id, "Draft updated successfully");
-        }
-
-        // Create new draft
-        var draft = new ReportSubmission(
+        var (loaded, error) = await OwnReport.LoadOrCreateAsync(
+            _context,
+            _currentUserService,
             request.Request.ReportTemplateId,
-            userId,
-            chandaNo,
-            userName,
-            orgLevel,
+            request.Request.SubmissionWindowId!.Value,
             request.Request.ResponseData,
-            email,
-            muqamId,
-            dilaId,
-            zoneId);
+            _clock.GetUtcNow().UtcDateTime,
+            cancellationToken);
 
-        _context.ReportSubmissions.Add(draft);
+        if (loaded is null)
+        {
+            return Result<Guid>.Failure(error!);
+        }
+
+        if (!loaded.IsNew)
+        {
+            try
+            {
+                loaded.Report.SaveDraft(
+                    request.Request.ResponseData,
+                    _currentUserService.UserId,
+                    _currentUserService.ChandaNo ?? "UNKNOWN",
+                    _currentUserService.UserName ?? "Unknown User",
+                    _currentUserService.Email);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Result<Guid>.Failure(ex.Message);
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result<Guid>.Success(draft.Id, "Draft saved successfully");
+        return Result<Guid>.Success(loaded.Report.Id, loaded.IsNew ? "Draft saved successfully" : "Draft updated successfully");
     }
 }

@@ -28,6 +28,9 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>());
 
+        // Server clock: decides whether submission windows are open (BR-WIN-07)
+        services.AddSingleton(TimeProvider.System);
+
         // Repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped(typeof(IReadRepository<>), typeof(ReadRepository<>));
