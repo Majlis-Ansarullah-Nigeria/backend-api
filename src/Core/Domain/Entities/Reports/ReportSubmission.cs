@@ -35,6 +35,9 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
     public DateTime? SubmittedAt { get; private set; }
     public bool IsLate { get; private set; }
 
+    /// <summary>Issued on first submission and kept for good, e.g. GMR-2026-11-Z03D12M04.</summary>
+    public string? ReferenceNumber { get; private set; }
+
     // Review
     public DateTime? ReviewStartedAt { get; private set; }
     public DateTime? AcknowledgedAt { get; private set; }
@@ -119,6 +122,12 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
         Status = SubmissionStatus.Submitted;
         SubmittedAt = nowUtc;
         ReviewStartedAt = null;
+    }
+
+    /// <summary>The reference is issued once; resubmissions keep it.</summary>
+    public void AssignReferenceNumber(string referenceNumber)
+    {
+        ReferenceNumber ??= referenceNumber;
     }
 
     /// <summary>Pull a submitted report back to draft, only while the Secretariat has not opened it.</summary>

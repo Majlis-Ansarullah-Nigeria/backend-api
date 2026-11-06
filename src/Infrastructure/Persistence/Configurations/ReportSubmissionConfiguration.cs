@@ -17,6 +17,11 @@ public class ReportSubmissionConfiguration : IEntityTypeConfiguration<ReportSubm
             .HasFilter("\"SubmissionWindowId\" IS NOT NULL")
             .HasDatabaseName("IX_ReportSubmissions_Window_Unit");
 
+        builder.Property(s => s.ReferenceNumber).HasMaxLength(80);
+        builder.HasIndex(s => s.ReferenceNumber)
+            .IsUnique()
+            .HasFilter("\"ReferenceNumber\" IS NOT NULL");
+
         builder.HasIndex(s => new { s.Status, s.SubmittedAt });
         builder.HasIndex(s => s.ZoneId);
         builder.HasIndex(s => s.DilaId);
@@ -48,5 +53,28 @@ public class WindowExtensionConfiguration : IEntityTypeConfiguration<WindowExten
 
         // One extension per unit per window
         builder.HasIndex(e => new { e.SubmissionWindowId, e.OrganizationLevel, e.UnitId }).IsUnique();
+    }
+}
+
+public class ReportTypeConfiguration : IEntityTypeConfiguration<ReportType>
+{
+    public void Configure(EntityTypeBuilder<ReportType> builder)
+    {
+        builder.ToTable("ReportTypes");
+        builder.Property(t => t.Name).HasMaxLength(150).IsRequired();
+        builder.Property(t => t.Code).HasMaxLength(6).IsRequired();
+        builder.Property(t => t.Description).HasMaxLength(500);
+        builder.HasIndex(t => t.Code).IsUnique();
+    }
+}
+
+public class ReportTemplateReportTypeConfiguration : IEntityTypeConfiguration<ReportTemplate>
+{
+    public void Configure(EntityTypeBuilder<ReportTemplate> builder)
+    {
+        builder.HasOne(t => t.ReportTypeEntity)
+            .WithMany()
+            .HasForeignKey(t => t.ReportTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

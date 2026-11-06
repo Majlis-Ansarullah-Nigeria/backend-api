@@ -634,6 +634,10 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<int>("OrganizationLevel")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<Guid>("ReportTemplateId")
                         .HasColumnType("uuid");
 
@@ -686,6 +690,10 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DilaId");
+
+                    b.HasIndex("ReferenceNumber")
+                        .IsUnique()
+                        .HasFilter("\"ReferenceNumber\" IS NOT NULL");
 
                     b.HasIndex("ReportTemplateId");
 
@@ -742,9 +750,60 @@ namespace ManagementApi.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ReportTypeId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("ReportTypeId");
+
                     b.ToTable("ReportTemplates");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ReportTypes", (string)null);
                 });
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionApproval", b =>
@@ -1460,6 +1519,16 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Navigation("ReportTemplate");
 
                     b.Navigation("SubmissionWindow");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportTemplate", b =>
+                {
+                    b.HasOne("ManagementApi.Domain.Entities.Reports.ReportType", "ReportTypeEntity")
+                        .WithMany()
+                        .HasForeignKey("ReportTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ReportTypeEntity");
                 });
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionApproval", b =>

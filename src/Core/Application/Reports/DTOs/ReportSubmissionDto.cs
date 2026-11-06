@@ -23,6 +23,7 @@ public record ReportSubmissionDto
     public string Status { get; init; } = default!;
     public DateTime? SubmittedAt { get; init; }
     public bool IsLate { get; init; }
+    public string? ReferenceNumber { get; init; }
     public DateTime? ReviewStartedAt { get; init; }
     public DateTime? AcknowledgedAt { get; init; }
     public DateTime? ReturnedAt { get; init; }
@@ -52,6 +53,7 @@ public record ReportSubmissionDto
         Status = s.Status.ToString(),
         SubmittedAt = s.SubmittedAt,
         IsLate = s.IsLate,
+        ReferenceNumber = s.ReferenceNumber,
         ReviewStartedAt = s.ReviewStartedAt,
         AcknowledgedAt = s.AcknowledgedAt,
         ReturnedAt = s.ReturnedAt,

@@ -20,6 +20,7 @@ public class GetReportTemplatesQueryHandler : IRequestHandler<GetReportTemplates
     public async Task<Result<List<ReportTemplateDto>>> Handle(GetReportTemplatesQuery request, CancellationToken cancellationToken)
     {
         var query = _context.ReportTemplates
+            .Include(t => t.ReportTypeEntity)
             .Include(t => t.Sections.OrderBy(s => s.DisplayOrder))
             .ThenInclude(s => s.Questions.OrderBy(q => q.DisplayOrder))
             .AsQueryable();
@@ -37,6 +38,8 @@ public class GetReportTemplatesQueryHandler : IRequestHandler<GetReportTemplates
         var templateDtos = templates.Select(t => new ReportTemplateDto
         {
             Id = t.Id,
+            ReportTypeId = t.ReportTypeId,
+            ReportTypeCode = t.ReportTypeEntity != null ? t.ReportTypeEntity.Code : null,
             Name = t.Name,
             Description = t.Description,
             ReportType = t.ReportType,

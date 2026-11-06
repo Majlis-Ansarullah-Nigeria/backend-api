@@ -136,4 +136,23 @@ public class ReportTemplatesController : BaseApiController
 
         return Ok(new { message = result.Messages.FirstOrDefault() });
     }
+
+    /// <summary>
+    /// Link a template to a report type, so its reports use the type's code. National Secretariat only.
+    /// </summary>
+    [HttpPut("{templateId}/report-type/{reportTypeId}")]
+    [Authorize(Roles = Roles.NationalAdmin + "," + Roles.SuperAdmin)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AssignReportType(Guid templateId, Guid reportTypeId)
+    {
+        var result = await Mediator.Send(new Application.Reports.ReportTypes.AssignTemplateReportTypeCommand(templateId, reportTypeId));
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Messages });
+        }
+
+        return Ok(new { message = result.Messages.FirstOrDefault() });
+    }
 }

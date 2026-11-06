@@ -178,6 +178,46 @@ public class ReportCommandsTests
     }
 
     [Fact]
+    public async Task Submission_gets_a_reference_number_that_is_kept_on_resubmission()
+    {
+        var type = new ReportType("General Monthly Report", "GMR", ReportFrequency.Monthly);
+        _db.ReportTypes.Add(type);
+        _template.AssignReportType(type);
+        await _db.SaveChangesAsync();
+        var head = MuqamHead(_muqam);
+
+        var id = (await Submit(head)).Data;
+        var report = await _db.ReportSubmissions.SingleAsync();
+        report.ReferenceNumber.Should().Be("GMR-2026-11-Z01D01M01");
+
+        await Review(User(OrganizationLevel.National, role: Roles.NationalAdmin)).Handle(
+            new ReturnSubmissionCommand(new ReturnSubmissionRequest { SubmissionId = id, Reason = "Fix" }), default);
+        await Submit(head);
+
+        (await _db.ReportSubmissions.SingleAsync()).ReferenceNumber.Should().Be("GMR-2026-11-Z01D01M01");
+    }
+
+    [Fact]
+    public async Task Same_unit_and_period_in_a_second_window_gets_a_suffix()
+    {
+        var second = new SubmissionWindow(_template.Id, "November catch-up", _window.StartDate, _window.EndDate);
+        _db.SubmissionWindows.Add(second);
+        await _db.SaveChangesAsync();
+        var head = MuqamHead(_muqam);
+
+        await Submit(head);
+        await Handlers.Submit(_db, head, _clock).Handle(new SubmitReportCommand(new SubmitReportRequest
+        {
+            ReportTemplateId = _template.Id,
+            SubmissionWindowId = second.Id,
+            ResponseData = "{}"
+        }), default);
+
+        var references = await _db.ReportSubmissions.Select(s => s.ReferenceNumber).ToListAsync();
+        references.Should().BeEquivalentTo(new[] { "MON-2026-11-Z01D01M01", "MON-2026-11-Z01D01M01-2" });
+    }
+
+    [Fact]
     public async Task Observer_cannot_withdraw_a_child_report()
     {
         var id = (await Submit(MuqamHead(_muqam))).Data;

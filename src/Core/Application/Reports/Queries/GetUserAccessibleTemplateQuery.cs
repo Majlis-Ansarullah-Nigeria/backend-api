@@ -28,6 +28,7 @@ public class GetUserAccessibleTemplateQueryHandler : IRequestHandler<GetUserAcce
     public async Task<Result<ReportTemplateDto>> Handle(GetUserAccessibleTemplateQuery request, CancellationToken cancellationToken)
     {
         var template = await _context.ReportTemplates
+            .Include(t => t.ReportTypeEntity)
             .Include(rt => rt.Sections)
                 .ThenInclude(rs => rs.Questions)
             .FirstOrDefaultAsync(rt => rt.Id == request.TemplateId, cancellationToken);
@@ -63,6 +64,8 @@ public class GetUserAccessibleTemplateQueryHandler : IRequestHandler<GetUserAcce
         var templateDto = new ReportTemplateDto
         {
             Id = template.Id,
+            ReportTypeId = template.ReportTypeId,
+            ReportTypeCode = template.ReportTypeEntity != null ? template.ReportTypeEntity.Code : null,
             Name = template.Name,
             Description = template.Description,
             ReportType = template.ReportType,

@@ -77,10 +77,16 @@ public class SubmitReportCommandHandler : IRequestHandler<SubmitReportCommand, R
             return Result<Guid>.Failure(ex.Message);
         }
 
+        if (loaded.Report.ReferenceNumber is null)
+        {
+            loaded.Report.AssignReferenceNumber(
+                await ReferenceNumbers.NextAsync(_context, loaded.Report, loaded.Window, cancellationToken));
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(loaded.Report.Id, loaded.IsLate
-            ? "Report submitted after the due date and marked late"
-            : "Report submitted successfully");
+            ? $"Report {loaded.Report.ReferenceNumber} submitted after the due date and marked late"
+            : $"Report {loaded.Report.ReferenceNumber} submitted successfully");
     }
 }

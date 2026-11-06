@@ -16,6 +16,10 @@ public class ReportTemplate : AuditableEntity, IAggregateRoot
     public bool IsActive { get; private set; } = true;
     public int DisplayOrder { get; private set; }
 
+    // The report type this template belongs to (its code starts reference numbers)
+    public Guid? ReportTypeId { get; private set; }
+    public ReportType? ReportTypeEntity { get; private set; }
+
     private readonly List<ReportSection> _sections = new();
     public IReadOnlyCollection<ReportSection> Sections => _sections.AsReadOnly();
 
@@ -65,6 +69,12 @@ public class ReportTemplate : AuditableEntity, IAggregateRoot
         {
             _sections.Remove(section);
         }
+    }
+
+    public void AssignReportType(ReportType reportType)
+    {
+        ReportTypeId = reportType.Id;
+        ReportType = reportType.Name;
     }
 
     public void Activate()

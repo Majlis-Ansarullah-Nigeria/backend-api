@@ -18,6 +18,7 @@ public interface IApplicationDbContext
     DbSet<ApplicationRolePermission> RolePermissions { get; }
 
     // Reports
+    DbSet<ReportType> ReportTypes { get; }
     DbSet<ReportTemplate> ReportTemplates { get; }
     DbSet<ReportSection> ReportSections { get; }
     DbSet<ReportQuestion> ReportQuestions { get; }
