@@ -7,6 +7,14 @@ import { z } from "zod";
 
 export const reportTypeFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200, "Name is too long"),
+  // FR-SUB-010: starts every reference number. Optional — left blank, the server assigns the next
+  // free code for the category (GMR, GMR2…). Upper-cased on submit, like the server does.
+  code: z
+    .string()
+    .trim()
+    .regex(/^([A-Za-z][A-Za-z0-9]{1,5})?$/, "Use 2–6 letters or digits, starting with a letter")
+    .optional()
+    .or(z.literal("")),
   description: z.string().trim().max(2000, "Description is too long").optional().or(z.literal("")),
   category: z.string().trim().min(1, "Choose a category"),
   frequency: z.string().trim().min(1, "Choose a frequency"),

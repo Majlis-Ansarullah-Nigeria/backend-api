@@ -26,9 +26,11 @@ public sealed class ReportType
         int observerDepth,
         bool allowAttachments,
         bool allowNilReport,
+        string code,
         DateTimeOffset createdAt)
     {
         Id = id;
+        Code = NormalizeCode(code);
         Name = name;
         Description = description;
         Category = category;
@@ -41,7 +43,16 @@ public sealed class ReportType
         CreatedAt = createdAt;
     }
 
+    public const int MaxCodeLength = 6;
+
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// The short code that starts this type's reference numbers (FR-SUB-010:
+    /// <c>{TYPECODE}-{period}-{unit}</c>), e.g. GMR. Unique across report types, so two monthly
+    /// types reporting for the same unit in the same month never share a reference.
+    /// </summary>
+    public string Code { get; private set; } = string.Empty;
 
     public string Name { get; private set; } = string.Empty;
 
@@ -85,8 +96,28 @@ public sealed class ReportType
         int observerDepth,
         bool allowAttachments,
         bool allowNilReport,
+        string code,
         DateTimeOffset now) =>
-        new(id, name, description, category, frequency, applicableLevels, recipientLevel, observerDepth, allowAttachments, allowNilReport, now);
+        new(id, name, description, category, frequency, applicableLevels, recipientLevel, observerDepth, allowAttachments, allowNilReport, code, now);
+
+    /// <summary>2–6 capital letters or digits, starting with a letter.</summary>
+    public static bool IsValidCode(string? code) =>
+        code is not null && code.Length is >= 2 and <= MaxCodeLength && char.IsAsciiLetterUpper(code[0]) && code.All(c => char.IsAsciiLetterUpper(c) || char.IsAsciiDigit(c));
+
+    /// <summary>Changes the reference-number code. Callers must only allow this before any report
+    /// of this type has been submitted, so references already issued keep one format.</summary>
+    public void ChangeCode(string code) => Code = NormalizeCode(code);
+
+    private static string NormalizeCode(string code)
+    {
+        var normalized = code.Trim().ToUpperInvariant();
+        if (!IsValidCode(normalized))
+        {
+            throw new ArgumentException("A report type code is 2–6 capital letters or digits, starting with a letter.", nameof(code));
+        }
+
+        return normalized;
+    }
 
     public void Update(
         string name,

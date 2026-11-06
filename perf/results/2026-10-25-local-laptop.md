@@ -20,12 +20,15 @@ around 11–15 heads/s. NFR-PRF-01/03 are **not yet shown to pass**.
 
 ## Findings to act on
 
-1. **Connection pool vs `max_connections`.** Npgsql's default pool (100 per process) equals
+1. **Fixed 2026-10-26 — connection pool vs `max_connections`.** Each process now caps its pool
+   (`Database:MaxPoolSize`: API 40, Worker 15). Originally: Npgsql's default pool (100 per process) equals
    Postgres's default `max_connections` (100). Under load the API alone took all 100, locking out
    the Worker, migrator and admin sessions ("sorry, too many clients already"). Production shares
    one `DB_CONNECTION` between API and Worker. Needs a per-process `Maximum Pool Size` (or a higher
    `max_connections`) before launch.
-2. **Reference-number collisions return 500.** References are `{category code}-{period}-{unit}`
+2. **Fixed 2026-10-26 — reference-number collisions returned 500.** Report types now have their
+   own code (`ReportType.Code`, unique), references start with it, and a repeated reference gets
+   a `-2` suffix. Originally: References are `{category code}-{period}-{unit}`
    (e.g. `GMR-2026-10-Z03D12M04`), so two General-Monthly report types — or two windows of one
    type in the same month — give the same reference for a unit, and the second submit fails with
    a unique-index 500. Needs a decision on the type code (SRS says `{TYPECODE}` per report type).

@@ -61,6 +61,7 @@ function ReportTypeDetailForm({ reportType }: { reportType: ReportTypeSummary })
         id: reportType.id,
         data: {
           name: values.name,
+          code: values.code ? values.code.toUpperCase() : null,
           description: values.description ? values.description : null,
           category: Number(values.category),
           frequency: Number(values.frequency),
@@ -94,6 +95,7 @@ function ReportTypeDetailForm({ reportType }: { reportType: ReportTypeSummary })
         key={resetKey}
         defaultValues={{
           name: reportType.name,
+          code: reportType.code,
           description: reportType.description ?? "",
           category: String(reportType.category),
           frequency: String(reportType.frequency),

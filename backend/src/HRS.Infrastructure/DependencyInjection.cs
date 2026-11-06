@@ -222,7 +222,15 @@ public static class DependencyInjection
         return services;
     }
 
-    private static string GetConnectionString(IServiceProvider services, string name) =>
-        services.GetRequiredService<IConfiguration>()[$"ConnectionStrings:{name}"]
+    private static string GetConnectionString(IServiceProvider services, string name)
+    {
+        var configuration = services.GetRequiredService<IConfiguration>();
+        var connectionString = configuration[$"ConnectionStrings:{name}"]
             ?? throw new InvalidOperationException($"Missing ConnectionStrings:{name}.");
+
+        // Only Postgres has a pool to cap; Redis multiplexes one connection.
+        return name == "Default"
+            ? PostgresConnectionString.WithPoolLimit(connectionString, configuration.GetValue<int?>("Database:MaxPoolSize"))
+            : connectionString;
+    }
 }

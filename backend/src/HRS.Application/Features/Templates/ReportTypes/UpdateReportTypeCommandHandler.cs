@@ -23,6 +23,23 @@ public sealed class UpdateReportTypeCommandHandler(IAppDbContext db, IAccessPoli
             return Result.Failure<ReportTypeSummary>(Error.NotFound("REPORT_TYPE_NOT_FOUND", "Report type not found."));
         }
 
+        if (!string.IsNullOrWhiteSpace(request.Code) && !string.Equals(request.Code.Trim(), reportType.Code, StringComparison.OrdinalIgnoreCase))
+        {
+            if (await ReportTypeCodes.IsTakenAsync(db, request.Code, reportType.Id, cancellationToken))
+            {
+                return Result.Failure<ReportTypeSummary>(ReportTypeCodes.Taken);
+            }
+
+            // References already issued keep one format: the code is fixed once any report of
+            // this type has been submitted.
+            if (await ReportTypeCodes.HasIssuedReferencesAsync(db, reportType.Id, cancellationToken))
+            {
+                return Result.Failure<ReportTypeSummary>(ReportTypeCodes.Locked);
+            }
+
+            reportType.ChangeCode(request.Code);
+        }
+
         reportType.Update(
             request.Name,
             request.Description,

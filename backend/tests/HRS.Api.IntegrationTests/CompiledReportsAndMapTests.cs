@@ -54,7 +54,8 @@ public class CompiledReportsAndMapTests(ApiFactory factory)
 
         var reportType = await (await secretariat.PostAsJsonAsync("/api/v1/report-types", new CreateReportTypeRequest(
                 $"Compiled Report {suffix}", null, ReportTypeCategory.GeneralMonthly, ReportTypeFrequency.Monthly,
-                [UnitLevelCode.Dila, UnitLevelCode.Muqam], UnitLevelCode.National, 1, AllowAttachments: false, AllowNilReport: false)))
+                [UnitLevelCode.Dila, UnitLevelCode.Muqam], UnitLevelCode.National, 1, AllowAttachments: false, AllowNilReport: false,
+                Code: $"CR{suffix}")))
             .Content.ReadFromJsonAsync<ReportTypeSummary>();
         var members = new TemplateField("members", TemplateFieldType.Number, "Total members", null, false, null, null, null, null, null, false,
             null, null, null, AggregationRule.Sum, null, null, null);
@@ -123,7 +124,7 @@ public class CompiledReportsAndMapTests(ApiFactory factory)
 
         var report = await secretariat.GetFromJsonAsync<CompiledReportView>($"/api/v1/compiled-reports/{setup.CurrentWindowId}");
 
-        Assert.Equal("NAT-GMR-2026-09", report!.ReferenceNumber);
+        Assert.Equal("NAT-CR01-2026-09", report!.ReferenceNumber);
         Assert.Equal("August 2026", report.PreviousPeriodLabel);
         Assert.True(report.CanEdit);
         Assert.Equal((3, 2, 0, 1, 1), (report.Overview.Expected, report.Overview.OnTime, report.Overview.Late, report.Overview.NotReported, report.Overview.Acknowledged));
@@ -176,7 +177,7 @@ public class CompiledReportsAndMapTests(ApiFactory factory)
         Assert.Equal("application/pdf", pdf.Content.Headers.ContentType?.MediaType);
         Assert.NotEmpty(await pdf.Content.ReadAsByteArrayAsync());
         Assert.Equal("application/vnd.openxmlformats-officedocument.wordprocessingml.document", word.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("NAT-GMR-2026-09.docx", word.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
+        Assert.Equal("NAT-CR03-2026-09.docx", word.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
 
         using var stream = new MemoryStream(await word.Content.ReadAsByteArrayAsync());
         using var document = WordprocessingDocument.Open(stream, false);

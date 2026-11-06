@@ -56,9 +56,9 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
         return (client, userId, email);
     }
 
-    private static async Task<Guid> CreateReportTypeAsync(HttpClient client, string name, bool allowNilReport = false)
+    private static async Task<Guid> CreateReportTypeAsync(HttpClient client, string name, bool allowNilReport = false, string? code = null)
     {
-        var created = await (await client.PostAsJsonAsync("/api/v1/report-types", MonthlyReport(name, allowNilReport)))
+        var created = await (await client.PostAsJsonAsync("/api/v1/report-types", MonthlyReport(name, allowNilReport) with { Code = code }))
             .Content.ReadFromJsonAsync<ReportTypeSummary>();
         return created!.Id;
     }
@@ -139,7 +139,7 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
     private async Task<(HttpClient Client, Guid ReportId, Guid UnitId, string Email)> SetUpReadyToSubmitAsync(string suffix)
     {
         using var secretariat = await CreateSecretariatClientAsync();
-        var reportTypeId = await CreateReportTypeAsync(secretariat, $"Report Submission Report {suffix}");
+        var reportTypeId = await CreateReportTypeAsync(secretariat, $"Report Submission Report {suffix}", code: $"RS{suffix}");
         await PublishTemplateAsync(secretariat, reportTypeId);
         var muqamId = await CreateMuqamUnitAsync(secretariat, suffix);
         var windowId = await CreateWindowAsync(secretariat, reportTypeId, Now.AddDays(-1), 3, Now.AddDays(30), Now.AddDays(10));
@@ -211,7 +211,8 @@ public class ReportSubmissionEndpointsTests(ApiFactory factory)
         var result = await response.Content.ReadFromJsonAsync<SubmitReportResult>();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.StartsWith("GMR-", result!.ReferenceNumber, StringComparison.Ordinal);
+        // FR-SUB-010: {type code}-{period}-{unit code}; the type was created with code RS04.
+        Assert.StartsWith("RS04-", result!.ReferenceNumber, StringComparison.Ordinal);
         Assert.False(result.IsLate);
 
         // CapturingEmailSender.QueueAsync completes synchronously (no real background channel in

@@ -56,7 +56,8 @@ public static class TemplatesEndpoints
                     request.RecipientLevel,
                     request.ObserverDepth,
                     request.AllowAttachments,
-                    request.AllowNilReport);
+                    request.AllowNilReport,
+                    request.Code);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -87,7 +88,8 @@ public static class TemplatesEndpoints
                     request.RecipientLevel,
                     request.ObserverDepth,
                     request.AllowAttachments,
-                    request.AllowNilReport);
+                    request.AllowNilReport,
+                    request.Code);
 
                 var result = await sender.Send(command, cancellationToken);
 
@@ -238,7 +240,8 @@ public sealed record CreateReportTypeRequest(
     UnitLevelCode RecipientLevel,
     int ObserverDepth,
     bool AllowAttachments,
-    bool AllowNilReport);
+    bool AllowNilReport,
+    string? Code = null);
 
 public sealed record UpdateReportTypeRequest(
     string Name,
@@ -249,7 +252,8 @@ public sealed record UpdateReportTypeRequest(
     UnitLevelCode RecipientLevel,
     int ObserverDepth,
     bool AllowAttachments,
-    bool AllowNilReport);
+    bool AllowNilReport,
+    string? Code = null);
 
 public sealed record UpdateTemplateSchemaRequest(TemplateSchema Schema);
 

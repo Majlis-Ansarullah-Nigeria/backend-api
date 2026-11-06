@@ -5,6 +5,7 @@ namespace HRS.Application.Features.Templates.ReportTypes;
 
 public sealed record ReportTypeSummary(
     Guid Id,
+    string Code,
     string Name,
     string? Description,
     ReportTypeCategory Category,
@@ -19,6 +20,7 @@ public sealed record ReportTypeSummary(
 {
     public static ReportTypeSummary FromEntity(ReportType reportType) => new(
         reportType.Id,
+        reportType.Code,
         reportType.Name,
         reportType.Description,
         reportType.Category,

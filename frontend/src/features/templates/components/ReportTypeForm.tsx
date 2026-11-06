@@ -66,6 +66,24 @@ export function ReportTypeForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
+        <Label htmlFor="report-type-code">{t("codeLabel")}</Label>
+        <Input
+          id="report-type-code"
+          {...form.register("code")}
+          className="max-w-40 uppercase"
+          maxLength={6}
+          autoCapitalize="characters"
+          aria-invalid={!!form.formState.errors.code}
+          aria-describedby="report-type-code-hint"
+          disabled={disabled}
+        />
+        <p id="report-type-code-hint" className="text-xs text-ink-muted">
+          {t("codeHint")}
+        </p>
+        {form.formState.errors.code ? <p className="text-xs text-danger">{form.formState.errors.code.message}</p> : null}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="report-type-description">{t("descriptionLabel")}</Label>
         <Input id="report-type-description" {...form.register("description")} disabled={disabled} />
       </div>

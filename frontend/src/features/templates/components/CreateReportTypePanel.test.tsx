@@ -61,9 +61,34 @@ describe("CreateReportTypePanel", () => {
           recipientLevel: 0,
           observerDepth: 1,
           allowAttachments: false,
+          code: null,
         }),
       },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
+
+  it("sends a chosen reference code in capitals and refuses a malformed one (FR-SUB-010)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CreateReportTypePanel onCancel={vi.fn()} onCreated={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/^name$/i), "Dila Monthly Report");
+    await user.selectOptions(screen.getByLabelText(/^category$/i), "0");
+    await user.selectOptions(screen.getByLabelText(/^frequency$/i), "0");
+    await user.click(screen.getByLabelText(/^dila$/i));
+    const code = screen.getByLabelText(/^reference code$/i);
+
+    await user.type(code, "d-m");
+    await user.click(screen.getByRole("button", { name: /create report type/i }));
+    expect(screen.getByText("Use 2–6 letters or digits, starting with a letter")).toBeInTheDocument();
+    expect(createReportTypeMutate).not.toHaveBeenCalled();
+
+    await user.clear(code);
+    await user.type(code, "dmr");
+    await user.click(screen.getByRole("button", { name: /create report type/i }));
+    expect(createReportTypeMutate).toHaveBeenCalledWith(
+      { data: expect.objectContaining({ name: "Dila Monthly Report", code: "DMR" }) },
+      expect.anything(),
     );
   });
 });

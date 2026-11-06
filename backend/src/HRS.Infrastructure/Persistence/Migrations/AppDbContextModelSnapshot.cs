@@ -1372,6 +1372,12 @@ namespace HRS.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("category");
 
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)")
+                        .HasColumnName("code");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -1399,6 +1405,10 @@ namespace HRS.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_report_types");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_report_types_code");
 
                     b.ToTable("report_types", (string)null);
                 });

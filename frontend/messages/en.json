@@ -1099,7 +1099,9 @@
     "archiving": "Archiving…",
     "restore": "Restore",
     "restoring": "Restoring…",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "codeLabel": "Reference code",
+    "codeHint": "Starts every reference number, e.g. GMR-2026-09-Z03D12. Leave blank to use the next free code for the category. It can't change once a report of this type has been submitted."
   },
   "TemplateBuilder": {
     "targetsTab": "Targets",

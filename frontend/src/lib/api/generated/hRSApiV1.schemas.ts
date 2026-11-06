@@ -541,6 +541,8 @@ export interface CreateReportTypeRequest {
   observerDepth: number | string;
   allowAttachments: boolean;
   allowNilReport: boolean;
+  /** @nullable */
+  code?: string | null;
 }
 
 export type RoleName = number;
@@ -1529,6 +1531,7 @@ export interface ReportRevisionHistory {
 
 export interface ReportTypeSummary {
   id: string;
+  code: string;
   name: string;
   /** @nullable */
   description: string | null;
@@ -1836,6 +1839,8 @@ export interface UpdateReportTypeRequest {
   observerDepth: number | string;
   allowAttachments: boolean;
   allowNilReport: boolean;
+  /** @nullable */
+  code?: string | null;
 }
 
 export interface UpdateSubmissionWindowRequest {

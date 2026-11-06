@@ -15,20 +15,29 @@ namespace HRS.Domain.Submissions;
 /// </summary>
 public static partial class ReportReferenceNumber
 {
-    public static string Generate(ReportTypeCategory category, string periodLabel, DateTimeOffset fallbackDate, string unitCode)
+    /// <param name="typeCode">The report type's own code (ReportType.Code), never derived from the
+    /// category: two types of one category would otherwise issue the same reference.</param>
+    public static string Generate(string typeCode, ReportTypeCategory category, string periodLabel, DateTimeOffset fallbackDate, string unitCode)
     {
         var period = ResolvePeriod(category, periodLabel, fallbackDate);
         var unitSegment = unitCode.Replace("-", "", StringComparison.Ordinal);
 
-        return $"{TypeCode(category)}-{period}-{unitSegment}";
+        return $"{typeCode}-{period}-{unitSegment}";
     }
+
+    /// <summary>A reference that's already taken (the same type, period and unit in a second
+    /// window) gets the next free suffix: <c>…-Z03D12M04-2</c>, <c>-3</c>, … — never a failure.</summary>
+    public static string WithSuffix(string reference, int attempt) =>
+        attempt <= 1 ? reference : string.Create(CultureInfo.InvariantCulture, $"{reference}-{attempt}");
 
     /// <summary>FR-REV-006's compiled national report: <c>NAT-{TYPECODE}-{period}</c>, e.g.
     /// <c>NAT-GMR-2026-09</c> (the "Compiled national report" mockup).</summary>
-    public static string GenerateNational(ReportTypeCategory category, string periodLabel, DateTimeOffset fallbackDate) =>
-        $"NAT-{TypeCode(category)}-{ResolvePeriod(category, periodLabel, fallbackDate)}";
+    public static string GenerateNational(string typeCode, ReportTypeCategory category, string periodLabel, DateTimeOffset fallbackDate) =>
+        $"NAT-{typeCode}-{ResolvePeriod(category, periodLabel, fallbackDate)}";
 
-    private static string TypeCode(ReportTypeCategory category) =>
+    /// <summary>The category's conventional code — the starting suggestion for a new report
+    /// type's own code (ReportType.Code).</summary>
+    public static string CategoryCode(ReportTypeCategory category) =>
         category switch
         {
             ReportTypeCategory.GeneralMonthly => "GMR",

@@ -1,4 +1,5 @@
 using FluentValidation;
+using HRS.Domain.Templates;
 
 namespace HRS.Application.Features.Templates.ReportTypes;
 
@@ -7,6 +8,10 @@ public sealed class CreateReportTypeCommandValidator : AbstractValidator<CreateR
     public CreateReportTypeCommandValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Code)
+            .Must(code => ReportType.IsValidCode(code!.Trim().ToUpperInvariant()))
+            .When(x => !string.IsNullOrWhiteSpace(x.Code))
+            .WithMessage("Use 2–6 capital letters or digits, starting with a letter (for example GMR).");
         RuleFor(x => x.Description).MaximumLength(2000);
         RuleFor(x => x.Category).IsInEnum();
         RuleFor(x => x.Frequency).IsInEnum();

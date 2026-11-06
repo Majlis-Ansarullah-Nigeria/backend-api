@@ -32,6 +32,6 @@ public class CompiledReportTests
     [InlineData(ReportTypeCategory.Quarterly, "Q3 2026", "NAT-QTR-2026-Q3")]
     public void TheNationalReferenceNumberFollowsTheMockup(ReportTypeCategory category, string periodLabel, string expected)
     {
-        Assert.Equal(expected, ReportReferenceNumber.GenerateNational(category, periodLabel, Now));
+        Assert.Equal(expected, ReportReferenceNumber.GenerateNational(ReportReferenceNumber.CategoryCode(category), category, periodLabel, Now));
     }
 }

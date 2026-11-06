@@ -9,6 +9,7 @@ import { ReportTypeForm } from "./ReportTypeForm";
 
 const EMPTY_DEFAULTS: ReportTypeFormValues = {
   name: "",
+  code: "",
   description: "",
   category: "",
   frequency: "",
@@ -29,6 +30,7 @@ export function CreateReportTypePanel({ onCancel, onCreated }: { onCancel: () =>
       {
         data: {
           name: values.name,
+          code: values.code ? values.code.toUpperCase() : null,
           description: values.description ? values.description : null,
           category: Number(values.category),
           frequency: Number(values.frequency),

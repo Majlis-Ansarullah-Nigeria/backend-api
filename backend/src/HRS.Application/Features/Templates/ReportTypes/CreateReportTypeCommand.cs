@@ -15,4 +15,5 @@ public sealed record CreateReportTypeCommand(
     UnitLevelCode RecipientLevel,
     int ObserverDepth,
     bool AllowAttachments,
-    bool AllowNilReport) : IRequest<Result<ReportTypeSummary>>;
+    bool AllowNilReport,
+    string? Code = null) : IRequest<Result<ReportTypeSummary>>;

@@ -65,6 +65,50 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
 
+  # M12.1 / NFR-PRF-02: LCP under 2.5 s on Lighthouse's mobile profile for the head screens,
+  # against a production build signed in as a seeded head (perf/README.md).
+  lighthouse:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_DB: hrs, POSTGRES_USER: hrs, POSTGRES_PASSWORD: hrs_dev_password }
+        ports: ['5433:5432']
+        options: --health-cmd "pg_isready -U hrs" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+      # No object storage in this job; nothing here uploads files.
+      Storage__AutoCreateBucket: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: frontend/package.json }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: frontend/pnpm-lock.yaml }
+      - run: dotnet tool install --global dotnet-ef --version 10.0.*
+      - run: dotnet build backend/HRS.sln -c Release
+      - run: dotnet ef database update -p backend/src/HRS.Infrastructure -s backend/src/HRS.Api --configuration Release --no-build
+      - run: dotnet run --project backend/tools/LoadTestSeeder -c Release --no-build -- seed --units 20 --out perf/k6/data/heads.csv
+      - name: Start API
+        run: |
+          nohup dotnet run --project backend/src/HRS.Api -c Release --no-build --no-launch-profile --urls http://localhost:8080 > api.log 2>&1 &
+          for _ in $(seq 1 60); do curl -fsS -o /dev/null http://localhost:8080/api/health && exit 0; sleep 2; done
+          cat api.log; exit 1
+      - run: pnpm -C frontend install --frozen-lockfile
+      - run: pnpm -C frontend build
+        env: { API_PROXY_URL: 'http://localhost:8080' }
+      - run: perf/lighthouse.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: lighthouse-report, path: frontend/lighthouse-report }
+
   docker:
     needs: [backend, frontend]
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')

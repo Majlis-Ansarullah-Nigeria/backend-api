@@ -92,7 +92,7 @@ public static class CompiledReportBuilder
             reportType.Name,
             window.PeriodLabel,
             previous?.PeriodLabel,
-            ReportReferenceNumber.GenerateNational(reportType.Category, window.PeriodLabel, window.OpensAt),
+            ReportReferenceNumber.GenerateNational(reportType.Code, reportType.Category, window.PeriodLabel, window.OpensAt),
             now,
             canEdit,
             narrative?.Narrative ?? string.Empty,

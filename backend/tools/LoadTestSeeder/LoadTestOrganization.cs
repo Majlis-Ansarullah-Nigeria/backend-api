@@ -328,7 +328,7 @@ public static class LoadTestOrganization
             Guid.CreateVersion7(), ReportTypeName, "Throwaway report type for the k6 deadline-spike test.",
             ReportTypeCategory.GeneralMonthly, ReportTypeFrequency.Monthly,
             [UnitLevelCode.Zone, UnitLevelCode.Dila, UnitLevelCode.Muqam], UnitLevelCode.National,
-            observerDepth: 1, allowAttachments: false, allowNilReport: false, now);
+            observerDepth: 1, allowAttachments: false, allowNilReport: false, code: "LTR", now: now);
         var version = TemplateVersion.CreateDraft(Guid.CreateVersion7(), reportType.Id, 1, JsonSerializer.Serialize(Schema, JsonSerializerOptions.Web), now);
         version.Publish(now);
 

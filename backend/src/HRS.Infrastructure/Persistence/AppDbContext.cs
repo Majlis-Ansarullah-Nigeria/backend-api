@@ -228,6 +228,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             reportType.ToTable("report_types");
             reportType.HasKey(r => r.Id);
             reportType.Property(r => r.Name).IsRequired();
+            reportType.Property(r => r.Code).IsRequired().HasMaxLength(ReportType.MaxCodeLength);
+            reportType.HasIndex(r => r.Code).IsUnique();
             // A plain list of enum values, not a relationship to another entity — mapped straight
             // to a Postgres integer[] column rather than a join table (EF Core primitive collections).
             reportType.PrimitiveCollection(r => r.ApplicableLevels)

@@ -132,7 +132,7 @@ public sealed class SubmitReportCommandHandler(
 
         var isLate = window.StatusFor(unitRow.LevelCode, now, request.UnitId) == WindowLevelStatus.Late;
         var referenceNumber = instance.ReferenceNumber
-            ?? ReportReferenceNumber.Generate(reportType.Category, window.PeriodLabel, now, unitRow.Code);
+            ?? await FreeReferenceAsync(ReportReferenceNumber.Generate(reportType.Code, reportType.Category, window.PeriodLabel, now, unitRow.Code), cancellationToken);
 
         instance.Submit(isLate, referenceNumber, request.IsNil, now, request.UserId);
         db.ReportRevisions.Add(instance.RecordSubmission(request.UserId, now));
@@ -203,5 +203,25 @@ public sealed class SubmitReportCommandHandler(
                 $"The National Secretariat has your {periodLabel} report.\n\nReference: {referenceNumber}\nSubmitted: {submittedAtText}\n\nA PDF copy is attached.",
                 new EmailAttachment($"{referenceNumber}.pdf", "application/pdf", pdfBytes)),
             cancellationToken);
+    }
+
+    /// <summary>The same type, period and unit can recur in a second window (a re-run period); the
+    /// unique reference then takes the next free suffix instead of failing the submission.</summary>
+    private async Task<string> FreeReferenceAsync(string reference, CancellationToken cancellationToken)
+    {
+        var taken = (await db.ReportInstances.AsNoTracking()
+                .Where(i => i.ReferenceNumber != null && (i.ReferenceNumber == reference || i.ReferenceNumber.StartsWith(reference + "-")))
+                .Select(i => i.ReferenceNumber!)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        for (var attempt = 1; ; attempt++)
+        {
+            var candidate = ReportReferenceNumber.WithSuffix(reference, attempt);
+            if (!taken.Contains(candidate))
+            {
+                return candidate;
+            }
+        }
     }
 }

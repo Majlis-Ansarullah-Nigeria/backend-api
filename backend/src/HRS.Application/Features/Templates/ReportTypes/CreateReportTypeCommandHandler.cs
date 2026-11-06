@@ -16,6 +16,28 @@ public sealed class CreateReportTypeCommandHandler(IAppDbContext db, IAccessPoli
                 Error.Forbidden("FORBIDDEN", "Only the Secretariat can manage report types."));
         }
 
+        // FR-SUB-010: the type's own reference code — the Secretariat's choice, or the next free
+        // one for its category.
+        string code;
+        if (string.IsNullOrWhiteSpace(request.Code))
+        {
+            var suggested = await ReportTypeCodes.SuggestAsync(db, request.Category, cancellationToken);
+            if (suggested is null)
+            {
+                return Result.Failure<ReportTypeSummary>(ReportTypeCodes.NoneFree);
+            }
+
+            code = suggested;
+        }
+        else if (await ReportTypeCodes.IsTakenAsync(db, request.Code, null, cancellationToken))
+        {
+            return Result.Failure<ReportTypeSummary>(ReportTypeCodes.Taken);
+        }
+        else
+        {
+            code = request.Code;
+        }
+
         var reportType = ReportType.Create(
             Guid.CreateVersion7(),
             request.Name,
@@ -27,6 +49,7 @@ public sealed class CreateReportTypeCommandHandler(IAppDbContext db, IAccessPoli
             request.ObserverDepth,
             request.AllowAttachments,
             request.AllowNilReport,
+            code,
             clock.UtcNow);
 
         db.ReportTypes.Add(reportType);
