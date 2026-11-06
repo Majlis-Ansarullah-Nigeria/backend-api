@@ -58,8 +58,24 @@ public class CreateReportTemplateCommandHandler : IRequestHandler<CreateReportTe
 
         _context.ReportTemplates.Add(template);
 
-        // Create sections
-        foreach (var sectionRequest in request.Request.Sections)
+        var error = TemplateStructure.Add(_context, template, request.Request.Sections);
+        if (error is not null)
+        {
+            return Result<Guid>.Failure(error);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Result<Guid>.Success(template.Id, "Report template created successfully");
+    }
+}
+
+/// <summary>Adds sections and questions to a new template (or a new version of one).</summary>
+public static class TemplateStructure
+{
+    public static string? Add(IApplicationDbContext context, ReportTemplate template, IEnumerable<CreateReportSectionRequest> sections)
+    {
+        foreach (var sectionRequest in sections)
         {
             var section = new ReportSection(
                 template.Id,
@@ -69,14 +85,13 @@ public class CreateReportTemplateCommandHandler : IRequestHandler<CreateReportTe
                 sectionRequest.IsRequired);
 
             template.AddSection(section);
-            _context.ReportSections.Add(section);
+            context.ReportSections.Add(section);
 
-            // Create questions
             foreach (var questionRequest in sectionRequest.Questions)
             {
                 if (!Enum.TryParse<QuestionType>(questionRequest.QuestionType, true, out var questionType))
                 {
-                    return Result<Guid>.Failure($"Invalid question type: {questionRequest.QuestionType}");
+                    return $"Invalid question type: {questionRequest.QuestionType}";
                 }
 
                 var question = new ReportQuestion(
@@ -90,12 +105,10 @@ public class CreateReportTemplateCommandHandler : IRequestHandler<CreateReportTe
                     questionRequest.ValidationRules);
 
                 section.AddQuestion(question);
-                _context.ReportQuestions.Add(question);
+                context.ReportQuestions.Add(question);
             }
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return Result<Guid>.Success(template.Id, "Report template created successfully");
+        return null;
     }
 }

@@ -20,6 +20,13 @@ public class ReportTemplate : AuditableEntity, IAggregateRoot
     public Guid? ReportTypeId { get; private set; }
     public ReportType? ReportTypeEntity { get; private set; }
 
+    // Versions: a published version is never edited. A change is a new version that retires the
+    // earlier ones; reports keep pointing at the version they were filled against.
+    public int Version { get; private set; } = 1;
+    public Guid? RootTemplateId { get; private set; } // the first version; null on the first version itself
+
+    public Guid VersionGroupId => RootTemplateId ?? Id;
+
     private readonly List<ReportSection> _sections = new();
     public IReadOnlyCollection<ReportSection> Sections => _sections.AsReadOnly();
 
@@ -69,6 +76,16 @@ public class ReportTemplate : AuditableEntity, IAggregateRoot
         {
             _sections.Remove(section);
         }
+    }
+
+    /// <summary>Makes this template the next version after <paramref name="previous"/> and retires the earlier one.</summary>
+    public void BecomeNextVersionOf(ReportTemplate previous, int version)
+    {
+        RootTemplateId = previous.VersionGroupId;
+        Version = version;
+        ReportTypeId = previous.ReportTypeId;
+        ReportType = previous.ReportType;
+        Activate();
     }
 
     public void AssignReportType(ReportType reportType)

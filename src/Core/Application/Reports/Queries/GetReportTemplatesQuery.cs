@@ -39,6 +39,8 @@ public class GetReportTemplatesQueryHandler : IRequestHandler<GetReportTemplates
         {
             Id = t.Id,
             ReportTypeId = t.ReportTypeId,
+            Version = t.Version,
+            VersionGroupId = t.RootTemplateId ?? t.Id,
             ReportTypeCode = t.ReportTypeEntity != null ? t.ReportTypeEntity.Code : null,
             Name = t.Name,
             Description = t.Description,

@@ -74,11 +74,6 @@ public static class OwnReport
             return (new Loaded(report, window, false, isLate), null);
         }
 
-        if (!template.IsActive)
-        {
-            return (null, "Report template is not active");
-        }
-
         report = new ReportSubmission(
             reportTemplateId,
             window.Id,

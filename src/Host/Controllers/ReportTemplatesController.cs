@@ -155,4 +155,23 @@ public class ReportTemplatesController : BaseApiController
 
         return Ok(new { message = result.Messages.FirstOrDefault() });
     }
+
+    /// <summary>
+    /// Publish a changed template as the next version; earlier versions are retired. National Secretariat only.
+    /// </summary>
+    [HttpPost("{templateId}/versions")]
+    [Authorize(Roles = Roles.NationalAdmin + "," + Roles.SuperAdmin)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateTemplateVersion(Guid templateId, [FromBody] CreateReportTemplateRequest request)
+    {
+        var result = await Mediator.Send(new CreateTemplateVersionCommand(templateId, request));
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Messages });
+        }
+
+        return Ok(new { id = result.Data, message = result.Messages.FirstOrDefault() });
+    }
 }

@@ -65,6 +65,8 @@ public class GetUserAccessibleTemplateQueryHandler : IRequestHandler<GetUserAcce
         {
             Id = template.Id,
             ReportTypeId = template.ReportTypeId,
+            Version = template.Version,
+            VersionGroupId = template.RootTemplateId ?? template.Id,
             ReportTypeCode = template.ReportTypeEntity != null ? template.ReportTypeEntity.Code : null,
             Name = template.Name,
             Description = template.Description,

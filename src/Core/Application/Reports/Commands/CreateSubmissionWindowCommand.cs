@@ -54,6 +54,12 @@ public class CreateSubmissionWindowCommandHandler : IRequestHandler<CreateSubmis
             return Result<Guid>.Failure("Report template not found");
         }
 
+        // A window is locked to the version it is opened with; only the current version can get new windows.
+        if (!template.IsActive)
+        {
+            return Result<Guid>.Failure("This template version is retired or inactive. Open the window on the current version.");
+        }
+
         // US-4: VALIDATION - Prevent overlapping windows for the same template
         var hasOverlap = await _context.SubmissionWindows
             .Where(w => w.ReportTemplateId == request.Request.ReportTemplateId && w.IsActive)

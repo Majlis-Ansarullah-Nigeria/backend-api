@@ -753,6 +753,12 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<Guid?>("ReportTypeId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("RootTemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ReportTypeId");

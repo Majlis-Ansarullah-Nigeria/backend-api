@@ -10,6 +10,8 @@ public record ReportTemplateDto
     public string ReportType { get; init; } = default!;
     public Guid? ReportTypeId { get; init; }
     public string? ReportTypeCode { get; init; }
+    public int Version { get; init; } = 1;
+    public Guid VersionGroupId { get; init; }
     public OrganizationLevel OrganizationLevel { get; init; }
     public bool IsForAllMembers { get; init; }
     public bool IsActive { get; init; }

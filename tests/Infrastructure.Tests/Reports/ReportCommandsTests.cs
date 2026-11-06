@@ -286,6 +286,44 @@ public class ReportCommandsTests
         (await new GetFileAttachmentsQueryHandler(_db, otherHead).Handle(new GetFileAttachmentsQuery(id), default)).Succeeded.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task New_template_version_retires_the_old_one_and_existing_reports_keep_their_version()
+    {
+        var id = (await Submit(MuqamHead(_muqam))).Data;
+        var secretariat = User(OrganizationLevel.National, role: Roles.NationalAdmin);
+        var request = new CreateReportTemplateRequest
+        {
+            Name = "Monthly Report",
+            OrganizationLevel = OrganizationLevel.Muqam,
+            Sections = new()
+            {
+                new CreateReportSectionRequest
+                {
+                    Title = "Attendance",
+                    Questions = new() { new CreateReportQuestionRequest { QuestionText = "How many attended?", QuestionType = "Number" } }
+                }
+            }
+        };
+
+        var denied = await new CreateTemplateVersionCommandHandler(_db, MuqamHead(_muqam))
+            .Handle(new CreateTemplateVersionCommand(_template.Id, request), default);
+        denied.Messages.Should().ContainSingle(m => m.StartsWith("FORBIDDEN"));
+
+        var result = await new CreateTemplateVersionCommandHandler(_db, secretariat)
+            .Handle(new CreateTemplateVersionCommand(_template.Id, request), default);
+
+        result.Succeeded.Should().BeTrue(string.Join(", ", result.Messages));
+        var v2 = await _db.ReportTemplates.SingleAsync(t => t.Id == result.Data);
+        v2.Version.Should().Be(2);
+        v2.RootTemplateId.Should().Be(_template.Id);
+        (await _db.ReportTemplates.SingleAsync(t => t.Id == _template.Id)).IsActive.Should().BeFalse();
+        (await _db.ReportSubmissions.SingleAsync(s => s.Id == id)).ReportTemplateId.Should().Be(_template.Id);
+
+        var v3 = await new CreateTemplateVersionCommandHandler(_db, secretariat)
+            .Handle(new CreateTemplateVersionCommand(v2.Id, request), default);
+        (await _db.ReportTemplates.SingleAsync(t => t.Id == v3.Data)).Version.Should().Be(3);
+    }
+
     private Task<Application.Common.Models.Result<PaginationResponse<SubmissionCommentDto>>> Comments(ICurrentUserService user, Guid id) =>
         new GetCommentsQueryHandler(_db, user).Handle(new GetCommentsQuery(id), default);
 
