@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+using ManagementApi.Application.Reports.Common;
+using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -44,6 +45,11 @@ public class UnflagSubmissionCommandHandler : IRequestHandler<UnflagSubmissionCo
             .Include(f => f.ReportSubmission)
             .ThenInclude(s => s.ReportTemplate)
             .FirstOrDefaultAsync(f => f.Id == request.Request.FlagId, cancellationToken);
+
+        if (!ReportingScope.IsSecretariat(_currentUserService))
+        {
+            return Result.Failure("FORBIDDEN: Only the National Secretariat can resolve flags");
+        }
 
         if (flag == null)
         {

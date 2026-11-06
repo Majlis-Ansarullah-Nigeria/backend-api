@@ -37,6 +37,7 @@ public record ReportSubmissionDto
     public bool CanEdit { get; init; }
     public bool CanWithdraw { get; init; }
     public bool CanReview { get; init; }
+    public bool CanComment { get; init; } // Secretariat and owning unit; never observers
 
     public static ReportSubmissionDto From(ReportSubmission s, ICurrentUserService user) => new()
     {
@@ -73,6 +74,7 @@ public record ReportSubmissionDto
         IsOwnUnit = ReportingScope.OwnsReport(user, s),
         CanEdit = ReportingScope.OwnsReport(user, s) && s.IsEditable,
         CanWithdraw = ReportingScope.OwnsReport(user, s) && s.Status == SubmissionStatus.Submitted && s.ReviewStartedAt == null,
+        CanComment = ReportingScope.IsSecretariat(user) || ReportingScope.OwnsReport(user, s),
         CanReview = ReportingScope.IsSecretariat(user) &&
             s.Status is SubmissionStatus.Submitted or SubmissionStatus.InReview or SubmissionStatus.Acknowledged
     };

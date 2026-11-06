@@ -413,6 +413,7 @@ public class ReportSubmissionsController : BaseApiController
     /// </summary>
     [HttpPost("flags/{flagId}/resolve")]
     [MustHavePermission(Permissions.ReportsApprove)]
+    [Authorize(Roles = SecretariatRoles)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UnflagSubmission(Guid flagId, [FromBody] UnflagSubmissionRequest request)

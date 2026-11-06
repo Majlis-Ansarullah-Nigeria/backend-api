@@ -1,3 +1,4 @@
+using ManagementApi.Application.Reports.Common;
 using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
@@ -40,7 +41,8 @@ public class UpdateCommentCommandHandler : IRequestHandler<UpdateCommentCommand,
         var comment = await _context.SubmissionComments
             .FirstOrDefaultAsync(c => c.Id == request.Request.CommentId, cancellationToken);
 
-        if (comment == null)
+        if (comment == null ||
+            !await ReportingScope.CanDiscussAsync(_context, _currentUserService, comment.ReportSubmissionId, cancellationToken))
         {
             return Result.Failure("Comment not found");
         }

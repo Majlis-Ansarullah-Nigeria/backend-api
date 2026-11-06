@@ -1,3 +1,4 @@
+using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -17,10 +18,12 @@ public record GetCommentsQuery(
 public class GetCommentsQueryHandler : IRequestHandler<GetCommentsQuery, Result<PaginationResponse<SubmissionCommentDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetCommentsQueryHandler(IApplicationDbContext context)
+    public GetCommentsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<PaginationResponse<SubmissionCommentDto>>> Handle(
@@ -28,8 +31,8 @@ public class GetCommentsQueryHandler : IRequestHandler<GetCommentsQuery, Result<
         CancellationToken cancellationToken)
     {
         // Verify submission exists
-        var submissionExists = await _context.ReportSubmissions
-            .AnyAsync(s => s.Id == query.SubmissionId, cancellationToken);
+        // Review comments are for the Secretariat and the owning unit; observers do not see them.
+        var submissionExists = await ReportingScope.CanDiscussAsync(_context, _currentUser, query.SubmissionId, cancellationToken);
 
         if (!submissionExists)
         {

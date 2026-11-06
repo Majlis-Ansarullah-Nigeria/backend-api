@@ -1,5 +1,6 @@
 using FluentAssertions;
 using ManagementApi.Application.Common.Interfaces;
+using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.Commands;
 using ManagementApi.Application.Reports.DTOs;
 using ManagementApi.Application.Reports.Queries;
@@ -261,6 +262,32 @@ public class ReportCommandsTests
         observed.Data.CanReview.Should().BeFalse();
         observed.Data.MuqamName.Should().Be("Agege Muqam");
     }
+
+    [Fact]
+    public async Task Observers_cannot_read_or_write_review_comments_and_others_cannot_see_files()
+    {
+        var head = MuqamHead(_muqam);
+        var id = (await Submit(head)).Data;
+        var secretariat = User(OrganizationLevel.National, role: Roles.NationalAdmin);
+        var dilaHead = User(OrganizationLevel.Dila, dilaId: _dila.Id, zoneId: _zone.Id);
+        var otherHead = MuqamHead(_otherMuqam);
+
+        var added = await new AddCommentCommandHandler(_db, secretariat, Mock.Of<INotificationService>())
+            .Handle(new AddCommentCommand(new AddCommentRequest { SubmissionId = id, Content = "Please explain line 3" }), default);
+        added.Succeeded.Should().BeTrue(string.Join(", ", added.Messages));
+
+        (await Comments(head, id)).Succeeded.Should().BeTrue();
+        (await Comments(dilaHead, id)).Succeeded.Should().BeFalse();
+        (await new AddCommentCommandHandler(_db, dilaHead, Mock.Of<INotificationService>())
+            .Handle(new AddCommentCommand(new AddCommentRequest { SubmissionId = id, Content = "x" }), default))
+            .Succeeded.Should().BeFalse();
+
+        (await new GetFileAttachmentsQueryHandler(_db, dilaHead).Handle(new GetFileAttachmentsQuery(id), default)).Succeeded.Should().BeTrue();
+        (await new GetFileAttachmentsQueryHandler(_db, otherHead).Handle(new GetFileAttachmentsQuery(id), default)).Succeeded.Should().BeFalse();
+    }
+
+    private Task<Application.Common.Models.Result<PaginationResponse<SubmissionCommentDto>>> Comments(ICurrentUserService user, Guid id) =>
+        new GetCommentsQueryHandler(_db, user).Handle(new GetCommentsQuery(id), default);
 
     private Task<Application.Common.Models.Result<Guid>> Submit(ICurrentUserService user, string data = "{}") =>
         Handlers.Submit(_db, user, _clock).Handle(new SubmitReportCommand(new SubmitReportRequest

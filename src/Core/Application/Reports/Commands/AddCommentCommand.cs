@@ -1,3 +1,4 @@
+using ManagementApi.Application.Reports.Common;
 using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
@@ -46,7 +47,8 @@ public class AddCommentCommandHandler : IRequestHandler<AddCommentCommand, Resul
             .Include(s => s.ReportTemplate)
             .FirstOrDefaultAsync(s => s.Id == request.Request.SubmissionId, cancellationToken);
 
-        if (submission == null)
+        if (submission == null ||
+            !await ReportingScope.CanDiscussAsync(_context, _currentUserService, submission.Id, cancellationToken))
         {
             return Result<Guid>.Failure("Submission not found");
         }

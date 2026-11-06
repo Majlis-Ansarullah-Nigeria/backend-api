@@ -122,6 +122,27 @@ public static class ReportingScope
         }
     }
 
+    /// <summary>Whether the current user may see this report (owner, observer or Secretariat).</summary>
+    public static Task<bool> CanSeeAsync(IApplicationDbContext context, ICurrentUserService user, Guid submissionId, CancellationToken cancellationToken) =>
+        context.ReportSubmissions.VisibleTo(user).AnyAsync(s => s.Id == submissionId, cancellationToken);
+
+    /// <summary>
+    /// Whether the current user may read and write the review conversation (comments) on a report:
+    /// the Secretariat and the owning unit only. Observers never see review comments.
+    /// </summary>
+    public static async Task<bool> CanDiscussAsync(IApplicationDbContext context, ICurrentUserService user, Guid submissionId, CancellationToken cancellationToken)
+    {
+        if (IsSecretariat(user))
+        {
+            return await context.ReportSubmissions.AnyAsync(s => s.Id == submissionId, cancellationToken);
+        }
+
+        var submission = await context.ReportSubmissions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == submissionId, cancellationToken);
+        return submission is not null && OwnsReport(user, submission);
+    }
+
     /// <summary>True when the report belongs to the current user's own unit (they may edit it).</summary>
     public static bool OwnsReport(ICurrentUserService user, ReportSubmission submission) =>
         submission.OrganizationLevel == user.OrganizationLevel && submission.OrganizationLevel switch

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+using ManagementApi.Application.Reports.Common;
+using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -22,10 +23,12 @@ public class DownloadFileQueryValidator : AbstractValidator<DownloadFileQuery>
 public class DownloadFileQueryHandler : IRequestHandler<DownloadFileQuery, Result<FileDownloadDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public DownloadFileQueryHandler(IApplicationDbContext context)
+    public DownloadFileQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<FileDownloadDto>> Handle(DownloadFileQuery request, CancellationToken cancellationToken)
@@ -33,7 +36,8 @@ public class DownloadFileQueryHandler : IRequestHandler<DownloadFileQuery, Resul
         var attachment = await _context.FileAttachments
             .FirstOrDefaultAsync(f => f.Id == request.FileAttachmentId, cancellationToken);
 
-        if (attachment == null)
+        if (attachment == null ||
+            !await ReportingScope.CanSeeAsync(_context, _currentUser, attachment.ReportSubmissionId, cancellationToken))
         {
             return Result<FileDownloadDto>.Failure("File attachment not found");
         }

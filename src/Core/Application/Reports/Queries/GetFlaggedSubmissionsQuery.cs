@@ -1,3 +1,4 @@
+using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -15,19 +16,24 @@ public record GetFlaggedSubmissionsQuery(
 public class GetFlaggedSubmissionsQueryHandler : IRequestHandler<GetFlaggedSubmissionsQuery, Result<PaginationResponse<SubmissionFlagDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetFlaggedSubmissionsQueryHandler(IApplicationDbContext context)
+    public GetFlaggedSubmissionsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<PaginationResponse<SubmissionFlagDto>>> Handle(
         GetFlaggedSubmissionsQuery query,
         CancellationToken cancellationToken)
     {
+        // Only flags on reports the current user may see
+        var visibleIds = _context.ReportSubmissions.VisibleTo(_currentUser).Select(s => s.Id);
         var flagsQuery = _context.SubmissionFlags
             .Include(f => f.ReportSubmission)
             .ThenInclude(s => s.ReportTemplate)
+            .Where(f => visibleIds.Contains(f.ReportSubmissionId))
             .AsQueryable();
 
         // Apply filters

@@ -1,3 +1,4 @@
+using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -22,6 +23,12 @@ public class GetOverdueSubmissionsQueryHandler : IRequestHandler<GetOverdueSubmi
 
     public async Task<Result<List<OverdueSubmissionDto>>> Handle(GetOverdueSubmissionsQuery request, CancellationToken cancellationToken)
     {
+        // Every missing unit nationwide, with contact details: National Secretariat only.
+        if (!ReportingScope.IsSecretariat(_currentUser))
+        {
+            return Result<List<OverdueSubmissionDto>>.Success(new List<OverdueSubmissionDto>());
+        }
+
         var now = DateTime.UtcNow;
 
         // Get all open/expired submission windows

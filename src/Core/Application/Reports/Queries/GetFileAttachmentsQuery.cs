@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+using ManagementApi.Application.Reports.Common;
+using FluentValidation;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.DTOs;
@@ -22,14 +23,21 @@ public class GetFileAttachmentsQueryValidator : AbstractValidator<GetFileAttachm
 public class GetFileAttachmentsQueryHandler : IRequestHandler<GetFileAttachmentsQuery, Result<List<FileAttachmentDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetFileAttachmentsQueryHandler(IApplicationDbContext context)
+    public GetFileAttachmentsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<List<FileAttachmentDto>>> Handle(GetFileAttachmentsQuery request, CancellationToken cancellationToken)
     {
+        if (!await ReportingScope.CanSeeAsync(_context, _currentUser, request.SubmissionId, cancellationToken))
+        {
+            return Result<List<FileAttachmentDto>>.Failure("Submission not found");
+        }
+
         var attachments = await _context.FileAttachments
             .Where(f => f.ReportSubmissionId == request.SubmissionId)
             .OrderBy(f => f.CreatedOn)
