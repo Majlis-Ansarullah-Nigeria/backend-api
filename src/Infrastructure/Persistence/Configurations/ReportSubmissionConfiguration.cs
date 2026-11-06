@@ -78,3 +78,15 @@ public class ReportTemplateReportTypeConfiguration : IEntityTypeConfiguration<Re
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+public class ReportReminderConfiguration : IEntityTypeConfiguration<ReportReminder>
+{
+    public void Configure(EntityTypeBuilder<ReportReminder> builder)
+    {
+        builder.ToTable("ReportReminders");
+        builder.Property(r => r.Id).ValueGeneratedNever();
+
+        // One reminder of each kind per unit per window
+        builder.HasIndex(r => new { r.SubmissionWindowId, r.OrganizationLevel, r.UnitId, r.DaysBeforeDue }).IsUnique();
+    }
+}

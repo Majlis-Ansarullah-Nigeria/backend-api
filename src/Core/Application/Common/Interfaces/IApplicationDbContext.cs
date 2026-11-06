@@ -19,6 +19,7 @@ public interface IApplicationDbContext
 
     // Reports
     DbSet<ReportType> ReportTypes { get; }
+    DbSet<ReportReminder> ReportReminders { get; }
     DbSet<ReportTemplate> ReportTemplates { get; }
     DbSet<ReportSection> ReportSections { get; }
     DbSet<ReportQuestion> ReportQuestions { get; }

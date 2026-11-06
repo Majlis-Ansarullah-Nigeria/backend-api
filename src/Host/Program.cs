@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Hangfire;
 using Hangfire.PostgreSql;
 using ManagementApi.Application;
@@ -234,6 +234,17 @@ RecurringJob.AddOrUpdate<IJamaatSyncJob>(
     {
         TimeZone = TimeZoneInfo.Local
     });
+
+// Reports: mark missed reports after windows close, and remind units before their due date
+RecurringJob.AddOrUpdate<ManagementApi.Infrastructure.BackgroundJobs.IMissedReportsJob>(
+    "reports-mark-missed",
+    job => job.MarkMissedAsync(),
+    builder.Configuration["BackgroundJobs:MissedReportsSchedule"] ?? "*/15 * * * *");
+
+RecurringJob.AddOrUpdate<ManagementApi.Infrastructure.BackgroundJobs.IDeadlineReminderJob>(
+    "reports-due-reminders",
+    job => job.SendDeadlineRemindersAsync(),
+    builder.Configuration["BackgroundJobs:DueRemindersSchedule"] ?? "0 * * * *");
 
 Log.Information("Starting Management API...");
 Log.Information("Hangfire Dashboard available at: /hangfire");

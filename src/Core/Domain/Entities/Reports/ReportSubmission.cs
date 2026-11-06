@@ -212,6 +212,33 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
         ReviewStartedAt = nowUtc;
     }
 
+    /// <summary>A unit that never started its report, recorded as missed when its window closed.</summary>
+    public static ReportSubmission CreateMissed(
+        Guid reportTemplateId,
+        Guid submissionWindowId,
+        OrganizationLevel level,
+        Guid unitId,
+        Guid? muqamId,
+        Guid? dilaId,
+        Guid? zoneId)
+    {
+        var report = new ReportSubmission(reportTemplateId, submissionWindowId, level, unitId, muqamId, dilaId, zoneId,
+            Guid.Empty, "SYSTEM", "Not submitted", null, "{}");
+        report.Status = SubmissionStatus.Missed;
+        return report;
+    }
+
+    /// <summary>
+    /// The Secretariat gave a missed unit more time (an extension), so it can fill the report again.
+    /// </summary>
+    public void ReopenFromMissed()
+    {
+        if (Status == SubmissionStatus.Missed)
+        {
+            Status = SubmissionStatus.Draft;
+        }
+    }
+
     /// <summary>The window closed without a submission. Idempotent.</summary>
     public void MarkMissed()
     {

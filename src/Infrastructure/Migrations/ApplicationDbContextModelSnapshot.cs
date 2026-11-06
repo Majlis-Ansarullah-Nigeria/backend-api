@@ -560,6 +560,34 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.ToTable("ReportQuestions");
                 });
 
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportReminder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DaysBeforeDue")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrganizationLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmissionWindowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubmissionWindowId", "OrganizationLevel", "UnitId", "DaysBeforeDue")
+                        .IsUnique();
+
+                    b.ToTable("ReportReminders", (string)null);
+                });
+
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.ReportSection", b =>
                 {
                     b.Property<Guid>("Id")

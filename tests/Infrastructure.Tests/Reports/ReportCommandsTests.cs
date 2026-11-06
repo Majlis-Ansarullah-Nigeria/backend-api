@@ -7,6 +7,7 @@ using ManagementApi.Application.Reports.Queries;
 using ManagementApi.Domain.Entities;
 using ManagementApi.Domain.Entities.Reports;
 using ManagementApi.Domain.Enums;
+using ManagementApi.Domain.Identity;
 using ManagementApi.Infrastructure.Persistence;
 using ManagementApi.Shared.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -322,6 +323,65 @@ public class ReportCommandsTests
         var v3 = await new CreateTemplateVersionCommandHandler(_db, secretariat)
             .Handle(new CreateTemplateVersionCommand(v2.Id, request), default);
         (await _db.ReportTemplates.SingleAsync(t => t.Id == v3.Data)).Version.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Closing_marks_drafts_and_unstarted_units_missed_except_extended_units_and_an_extension_reopens()
+    {
+        var third = new Muqam("Ifako Muqam", "M03", _dila.Id);
+        _db.Muqams.Add(third);
+        await _db.SaveChangesAsync();
+        await SaveDraft(MuqamHead(_muqam));            // draft → missed
+        await Submit(MuqamHead(_otherMuqam));          // submitted → untouched
+        var window = await _db.SubmissionWindows.Include(w => w.Extensions).SingleAsync();
+        window.GrantExtension(OrganizationLevel.Muqam, third.Id, window.EndDate.AddDays(2), window.EndDate.AddDays(3), "Flood");
+        await _db.SaveChangesAsync();
+
+        _clock.Now = _window.EndDate.AddHours(1);
+        var jobs = new ReportWindowJobHandlers(_db, Mock.Of<INotificationService>(), _clock);
+        var first = await jobs.Handle(new MarkMissedReportsCommand(), default);
+        var again = await jobs.Handle(new MarkMissedReportsCommand(), default);
+
+        first.Data.Should().Be(1);
+        again.Data.Should().Be(0);
+        var statuses = await _db.ReportSubmissions.ToDictionaryAsync(s => s.UnitId, s => s.Status);
+        statuses[_muqam.Id].Should().Be(SubmissionStatus.Missed);
+        statuses[_otherMuqam.Id].Should().Be(SubmissionStatus.Submitted);
+        statuses.Should().NotContainKey(third.Id);
+
+        _clock.Now = _window.EndDate.AddDays(4);   // extension over too
+        (await jobs.Handle(new MarkMissedReportsCommand(), default)).Data.Should().Be(1);
+
+        // The Secretariat extends the first Muqam: it can report again
+        window.GrantExtension(OrganizationLevel.Muqam, _muqam.Id, _clock.Now.AddDays(1), _clock.Now.AddDays(2), "Late approval");
+        await _db.SaveChangesAsync();
+        var resubmit = await Submit(MuqamHead(_muqam));
+        resubmit.Succeeded.Should().BeTrue(string.Join(", ", resubmit.Messages));
+    }
+
+    [Fact]
+    public async Task Reminders_go_once_to_heads_of_units_that_have_not_submitted()
+    {
+        await Submit(MuqamHead(_otherMuqam));
+        var pendingHead = new ApplicationUser { UserName = "agege", IsActive = true, OrganizationLevel = OrganizationLevel.Muqam, MuqamId = _muqam.Id };
+        var doneHead = new ApplicationUser { UserName = "ojodu", IsActive = true, OrganizationLevel = OrganizationLevel.Muqam, MuqamId = _otherMuqam.Id };
+        var someoneElse = new ApplicationUser { UserName = "member", IsActive = true, OrganizationLevel = OrganizationLevel.Muqam };
+        _db.Users.AddRange(pendingHead, doneHead, someoneElse);
+        await _db.SaveChangesAsync();
+
+        var notifications = new Mock<INotificationService>();
+        var recipients = new List<Guid>();
+        notifications.Setup(n => n.NotifyDeadlineApproachingAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<int>(),
+                It.IsAny<List<(Guid UserId, string UserName)>>(), It.IsAny<CancellationToken>()))
+            .Callback<Guid, string, DateTime, int, List<(Guid UserId, string UserName)>, CancellationToken>((_, _, _, _, users, _) => recipients.AddRange(users.Select(u => u.UserId)))
+            .Returns(Task.CompletedTask);
+
+        _clock.Now = _window.EndDate.AddDays(-1);   // 1 day before the due date
+        var jobs = new ReportWindowJobHandlers(_db, notifications.Object, _clock);
+        await jobs.Handle(new SendDueRemindersCommand(), default);
+        await jobs.Handle(new SendDueRemindersCommand(), default);
+
+        recipients.Should().Equal(pendingHead.Id);
     }
 
     private Task<Application.Common.Models.Result<PaginationResponse<SubmissionCommentDto>>> Comments(ICurrentUserService user, Guid id) =>

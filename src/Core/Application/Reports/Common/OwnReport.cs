@@ -67,6 +67,9 @@ public static class OwnReport
                 : "WINDOW_CLOSED: This submission window is closed");
         }
 
+        // A missed unit given an extension by the Secretariat can fill its report again.
+        report?.ReopenFromMissed();
+
         var isLate = window.IsLateFor(nowUtc, unit.Level, unit.UnitId);
 
         if (report is not null)

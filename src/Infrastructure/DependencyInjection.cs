@@ -72,6 +72,8 @@ public static class DependencyInjection
         // Background Jobs
         services.AddScoped<IMemberSyncJob, BackgroundJobs.MemberSyncJob>();
         services.AddScoped<IJamaatSyncJob, BackgroundJobs.JamaatSyncJob>();
+        services.AddScoped<BackgroundJobs.IDeadlineReminderJob, BackgroundJobs.DeadlineReminderJob>();
+        services.AddScoped<BackgroundJobs.IMissedReportsJob, BackgroundJobs.MissedReportsJob>();
 
         // Authorization
         services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();

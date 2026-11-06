@@ -129,6 +129,26 @@ public class ReportSubmissionsController : BaseApiController
     }
 
     /// <summary>
+    /// Who has reported in a window: every expected unit with its status, totals per Zone and Dila.
+    /// Limited to the units the current user may see.
+    /// </summary>
+    [HttpGet("completion/{windowId}")]
+    [MustHavePermission(Permissions.ReportsView)]
+    [ProducesResponseType(typeof(WindowCompletionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWindowCompletion(Guid windowId)
+    {
+        var result = await Mediator.Send(new GetWindowCompletionQuery(windowId));
+
+        if (!result.Succeeded)
+        {
+            return NotFound(new { errors = result.Messages });
+        }
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
     /// Submit a new report
     /// </summary>
     [HttpPost]
