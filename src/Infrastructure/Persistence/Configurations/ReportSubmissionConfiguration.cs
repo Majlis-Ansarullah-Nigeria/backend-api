@@ -32,3 +32,21 @@ public class SubmissionApprovalConfiguration : IEntityTypeConfiguration<Submissi
         builder.Property(a => a.Id).ValueGeneratedNever();
     }
 }
+
+public class WindowExtensionConfiguration : IEntityTypeConfiguration<WindowExtension>
+{
+    public void Configure(EntityTypeBuilder<WindowExtension> builder)
+    {
+        builder.ToTable("WindowExtensions");
+        builder.Property(e => e.Id).ValueGeneratedNever();
+        builder.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+
+        builder.HasOne<SubmissionWindow>()
+            .WithMany(w => w.Extensions)
+            .HasForeignKey(e => e.SubmissionWindowId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // One extension per unit per window
+        builder.HasIndex(e => new { e.SubmissionWindowId, e.OrganizationLevel, e.UnitId }).IsUnique();
+    }
+}

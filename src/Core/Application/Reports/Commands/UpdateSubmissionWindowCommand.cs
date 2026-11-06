@@ -63,12 +63,20 @@ public class UpdateSubmissionWindowCommandHandler : IRequestHandler<UpdateSubmis
             return Result.Failure("Cannot shorten the deadline to a date that has already passed. The new end date must be in the future.");
         }
 
-        window.UpdateWindow(
-            request.Request.Name,
-            request.Request.StartDate,
-            request.Request.EndDate,
-            request.Request.Description
-        );
+        try
+        {
+            window.UpdateWindow(
+                request.Request.Name,
+                request.Request.StartDate,
+                request.Request.EndDate,
+                request.Request.Description
+            );
+            window.SetDueDates(request.Request.MuqamDueAt, request.Request.DilaDueAt, request.Request.ZoneDueAt);
+        }
+        catch (ArgumentException ex)
+        {
+            return Result.Failure(ex.Message);
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

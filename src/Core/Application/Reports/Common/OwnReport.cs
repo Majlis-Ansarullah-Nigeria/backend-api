@@ -11,7 +11,8 @@ namespace ManagementApi.Application.Reports.Common;
 /// </summary>
 public static class OwnReport
 {
-    public record Loaded(ReportSubmission Report, SubmissionWindow Window, bool IsNew);
+    /// <param name="IsLate">Whether a submission now would be past this unit's due date.</param>
+    public record Loaded(ReportSubmission Report, SubmissionWindow Window, bool IsNew, bool IsLate);
 
     public static async Task<(Loaded? Loaded, string? Error)> LoadOrCreateAsync(
         IApplicationDbContext context,
@@ -23,6 +24,7 @@ public static class OwnReport
         CancellationToken cancellationToken)
     {
         var window = await context.SubmissionWindows
+            .Include(w => w.Extensions)
             .FirstOrDefaultAsync(w => w.Id == submissionWindowId, cancellationToken);
 
         if (window is null)
@@ -58,16 +60,18 @@ public static class OwnReport
 
         // Returned reports may be revised after the window closes, until their revision deadline.
         var isRevision = report?.Status == SubmissionStatus.Returned;
-        if (!isRevision && !window.IsOpen(nowUtc))
+        if (!isRevision && !window.IsOpenFor(nowUtc, unit.Level, unit.UnitId))
         {
             return (null, nowUtc < window.StartDate
                 ? "WINDOW_NOT_OPEN: This submission window has not opened yet"
                 : "WINDOW_CLOSED: This submission window is closed");
         }
 
+        var isLate = window.IsLateFor(nowUtc, unit.Level, unit.UnitId);
+
         if (report is not null)
         {
-            return (new Loaded(report, window, false), null);
+            return (new Loaded(report, window, false, isLate), null);
         }
 
         if (!template.IsActive)
@@ -90,6 +94,6 @@ public static class OwnReport
             responseData);
 
         context.ReportSubmissions.Add(report);
-        return (new Loaded(report, window, true), null);
+        return (new Loaded(report, window, true, isLate), null);
     }
 }

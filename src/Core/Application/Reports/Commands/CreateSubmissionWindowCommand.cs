@@ -68,13 +68,22 @@ public class CreateSubmissionWindowCommandHandler : IRequestHandler<CreateSubmis
             return Result<Guid>.Failure("Cannot create submission window because it overlaps with an existing active window for this template. Please adjust the dates.");
         }
 
-        var window = new SubmissionWindow(
-            request.Request.ReportTemplateId,
-            request.Request.Name,
-            request.Request.StartDate,
-            request.Request.EndDate,
-            request.Request.Description
-        );
+        SubmissionWindow window;
+        try
+        {
+            window = new SubmissionWindow(
+                request.Request.ReportTemplateId,
+                request.Request.Name,
+                request.Request.StartDate,
+                request.Request.EndDate,
+                request.Request.Description
+            );
+            window.SetDueDates(request.Request.MuqamDueAt, request.Request.DilaDueAt, request.Request.ZoneDueAt);
+        }
+        catch (ArgumentException ex)
+        {
+            return Result<Guid>.Failure(ex.Message);
+        }
 
         _context.SubmissionWindows.Add(window);
         await _context.SaveChangesAsync(cancellationToken);

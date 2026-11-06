@@ -70,7 +70,7 @@ public class SubmitReportCommandHandler : IRequestHandler<SubmitReportCommand, R
                     _currentUserService.Email);
             }
 
-            loaded.Report.Submit(now, isLate: false);
+            loaded.Report.Submit(now, loaded.IsLate);
         }
         catch (InvalidOperationException ex)
         {
@@ -79,6 +79,8 @@ public class SubmitReportCommandHandler : IRequestHandler<SubmitReportCommand, R
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result<Guid>.Success(loaded.Report.Id, "Report submitted successfully");
+        return Result<Guid>.Success(loaded.Report.Id, loaded.IsLate
+            ? "Report submitted after the due date and marked late"
+            : "Report submitted successfully");
     }
 }

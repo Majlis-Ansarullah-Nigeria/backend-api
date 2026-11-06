@@ -957,6 +957,9 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("DilaDueAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -969,6 +972,9 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<DateTime?>("LastModifiedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("MuqamDueAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -979,11 +985,59 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("ZoneDueAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ReportTemplateId");
 
                     b.ToTable("SubmissionWindows");
+                });
+
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.WindowExtension", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ClosesAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LastModifiedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OrganizationLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("SubmissionWindowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubmissionWindowId", "OrganizationLevel", "UnitId")
+                        .IsUnique();
+
+                    b.ToTable("WindowExtensions", (string)null);
                 });
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Zone", b =>
@@ -1459,6 +1513,15 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Navigation("ReportTemplate");
                 });
 
+            modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.WindowExtension", b =>
+                {
+                    b.HasOne("ManagementApi.Domain.Entities.Reports.SubmissionWindow", null)
+                        .WithMany("Extensions")
+                        .HasForeignKey("SubmissionWindowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ManagementApi.Domain.Identity.ApplicationRolePermission", b =>
                 {
                     b.HasOne("ManagementApi.Domain.Identity.ApplicationRole", "Role")
@@ -1557,6 +1620,8 @@ namespace ManagementApi.Infrastructure.Migrations
 
             modelBuilder.Entity("ManagementApi.Domain.Entities.Reports.SubmissionWindow", b =>
                 {
+                    b.Navigation("Extensions");
+
                     b.Navigation("Submissions");
                 });
 

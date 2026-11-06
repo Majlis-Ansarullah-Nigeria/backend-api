@@ -246,7 +246,7 @@ public class ReviewSubmissionCommandHandlers :
             return Result.Failure("Submission not found");
         }
 
-        if (submission.SubmissionWindow is { } window && !window.IsOpen(Now))
+        if (submission.SubmissionWindow is { } window && !window.IsOpenFor(Now, submission.OrganizationLevel, submission.UnitId))
         {
             return Result.Failure("WINDOW_CLOSED: This submission window is closed, so the report can no longer be withdrawn");
         }
@@ -311,7 +311,7 @@ public class ReviewSubmissionCommandHandlers :
     private Task<ReportSubmission?> LoadAsync(Guid id, CancellationToken cancellationToken) =>
         _context.ReportSubmissions
             .Include(s => s.ReportTemplate)
-            .Include(s => s.SubmissionWindow)
+            .Include(s => s.SubmissionWindow!.Extensions)
             .Include(s => s.Approvals)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 
