@@ -527,10 +527,10 @@ public class ReportSubmissionsController : BaseApiController
 
         if (!result.Succeeded)
         {
-            return BadRequest(result);
+            return BadRequest(new { errors = result.Messages });
         }
 
-        return Ok(result);
+        return Ok(result.Data);
     }
 
     /// <summary>
