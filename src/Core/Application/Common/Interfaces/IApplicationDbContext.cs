@@ -14,6 +14,7 @@ public interface IApplicationDbContext
     DbSet<Zone> Zones { get; }
     DbSet<Jamaat> Jamaats { get; }
     DbSet<ApplicationUser> Users { get; }
+    DbSet<EmailChangeRequest> EmailChangeRequests { get; }
     DbSet<ApplicationRole> Roles { get; }
     DbSet<ApplicationRolePermission> RolePermissions { get; }
 

@@ -57,12 +57,19 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
+        // Password reset links expire after 1 hour
+        services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(1));
+        services.AddMemoryCache();
+
         // Services
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<Services.IEmailTemplateService, Services.EmailTemplateService>();
+        services.AddScoped<IEmailService, Services.MailKitEmailService>();
         services.AddScoped<INotificationService, Services.NotificationService>();
+        services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
 
         // External Services
         services.AddHttpClient();

@@ -90,3 +90,20 @@ public class ReportReminderConfiguration : IEntityTypeConfiguration<ReportRemind
         builder.HasIndex(r => new { r.SubmissionWindowId, r.OrganizationLevel, r.UnitId, r.DaysBeforeDue }).IsUnique();
     }
 }
+
+public class EmailChangeRequestConfiguration : IEntityTypeConfiguration<ManagementApi.Domain.Identity.EmailChangeRequest>
+{
+    public void Configure(EntityTypeBuilder<ManagementApi.Domain.Identity.EmailChangeRequest> builder)
+    {
+        builder.ToTable("EmailChangeRequests", "Identity");
+        builder.Property(e => e.Id).ValueGeneratedNever();
+        builder.Property(e => e.ChandaNo).HasMaxLength(50).IsRequired();
+        builder.Property(e => e.CurrentEmail).HasMaxLength(256);
+        builder.Property(e => e.RequestedEmail).HasMaxLength(256).IsRequired();
+        builder.Property(e => e.PhoneNumber).HasMaxLength(30);
+        builder.Property(e => e.Note).HasMaxLength(500);
+        builder.Property(e => e.RejectionReason).HasMaxLength(500);
+        builder.HasIndex(e => new { e.Status, e.RequestedAt });
+        builder.HasIndex(e => e.UserId);
+    }
+}

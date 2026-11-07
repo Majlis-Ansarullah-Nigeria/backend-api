@@ -37,6 +37,21 @@ builder.Host.UseSerilog();
 
 // Add services to the container
 builder.Services.AddControllers();
+
+// Anonymous account-recovery endpoints: 10 requests per IP per 15 minutes
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("account-recovery", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(15),
+                QueueLimit = 0
+            }));
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger
@@ -199,6 +214,8 @@ using (var scope = app.Services.CreateScope())
 // app.UseHttpsRedirection(); // Commented out: SSL is handled by Dokploy
 
 app.UseCors("AllowAll");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

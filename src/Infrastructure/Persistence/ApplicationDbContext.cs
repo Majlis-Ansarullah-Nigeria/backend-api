@@ -43,6 +43,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ReportQuestion> ReportQuestions => Set<ReportQuestion>();
     public DbSet<ReportSubmission> ReportSubmissions => Set<ReportSubmission>();
     public DbSet<ReportType> ReportTypes => Set<ReportType>();
+    public DbSet<EmailChangeRequest> EmailChangeRequests => Set<EmailChangeRequest>();
     public DbSet<ReportReminder> ReportReminders => Set<ReportReminder>();
     public DbSet<SubmissionWindow> SubmissionWindows => Set<SubmissionWindow>();
     public DbSet<SubmissionApproval> SubmissionApprovals => Set<SubmissionApproval>();
