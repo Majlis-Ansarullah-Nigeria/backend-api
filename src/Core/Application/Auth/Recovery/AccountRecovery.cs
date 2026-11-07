@@ -20,7 +20,8 @@ namespace ManagementApi.Application.Auth.Recovery;
 
 public record ForgotPasswordLookupRequest(string ChandaNo);
 public record ForgotPasswordLookupResult(bool HasEmail, string? MaskedEmail);
-public record ForgotPasswordRequest(string ChandaNo);
+/// <param name="Identifier">The email address on the account, or the Membership Number (ChandaNo).</param>
+public record ForgotPasswordRequest(string Identifier);
 public record ResetPasswordRequest(Guid UserId, string Token, string NewPassword);
 public record RequestEmailChangeRequest(string ChandaNo, string NewEmail, string? PhoneNumber, string? Note);
 public record RejectEmailChangeRequest(string? Reason);
@@ -84,7 +85,7 @@ public class AccountRecoveryHandlers :
     IRequestHandler<RejectEmailChangeCommand, Result>
 {
     public const string LinkSentMessage =
-        "If this email is correct, you'll receive a link to reset your password. Check your inbox and spam folder. The link expires in 1 hour.";
+        "If an account matches, we've sent a link to reset your password. Check your inbox and spam folder. The link expires in 1 hour.";
     public const string RequestSentMessage =
         "Your request has been sent to the National Secretariat. Once they confirm it's you, we'll send the reset link to your new email.";
     private const string Forbidden = "FORBIDDEN: Only the National Secretariat can review email change requests";
@@ -132,8 +133,19 @@ public class AccountRecoveryHandlers :
 
     public async Task<Result> Handle(SendPasswordResetLinkCommand request, CancellationToken cancellationToken)
     {
-        var user = await FindActiveUserAsync(request.Request.ChandaNo, cancellationToken);
-        if (user is not null && IsUsableEmail(user.Email) && TryStartResend(user.Id))
+        var identifier = (request.Request.Identifier ?? string.Empty).Trim();
+
+        // An email may belong to more than one account (emails are not unique here): each gets its own link.
+        var users = identifier.Contains('@')
+            ? await _context.Users
+                .Where(u => u.IsActive && u.NormalizedEmail == identifier.ToUpperInvariant())
+                .Take(5)
+                .ToListAsync(cancellationToken)
+            : (await FindActiveUserAsync(identifier, cancellationToken)) is { } byNumber
+                ? new List<ApplicationUser> { byNumber }
+                : new List<ApplicationUser>();
+
+        foreach (var user in users.Where(u => IsUsableEmail(u.Email) && TryStartResend(u.Id)))
         {
             await SendResetLinkAsync(user, user.Email!, cancellationToken);
         }

@@ -70,6 +70,17 @@ public class AccountRecoveryTests
     }
 
     [Fact]
+    public async Task Reset_link_can_be_requested_with_the_email_address_instead_of_the_number()
+    {
+        _member.NormalizedEmail = _member.Email!.ToUpperInvariant();
+        await _db.SaveChangesAsync();
+
+        await Handlers(Anonymous()).Handle(new SendPasswordResetLinkCommand(new(" Adeyemi@Gmail.com ")), default);
+
+        _sent.Should().ContainSingle().Which.Should().Be(("adeyemi@gmail.com", "Reset your password"));
+    }
+
+    [Fact]
     public async Task Email_change_needs_secretariat_approval_then_the_link_goes_to_the_new_address()
     {
         await Handlers(Anonymous()).Handle(new RequestEmailChangeCommand(new("1234", "old@typo.com", null, null)), default);
