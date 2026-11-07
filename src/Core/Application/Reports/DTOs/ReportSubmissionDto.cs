@@ -145,6 +145,7 @@ public record GetSubmissionsRequest
     public SubmissionStatus? Status { get; init; }
     public bool? IsLate { get; init; }
     public string? Search { get; init; } // unit name or reference number
+    public string? StatusGroup { get; init; } // ToReview, Returned, Acknowledged, AllSubmitted (inbox tabs)
     public bool? OnlyOwnUnit { get; init; }
     public Guid? MuqamId { get; init; }
     public Guid? DilaId { get; init; }

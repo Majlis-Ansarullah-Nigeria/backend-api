@@ -2,6 +2,7 @@ using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Reports.DTOs;
+using ManagementApi.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,6 +47,15 @@ public class GetSubmissionsQueryHandler : IRequestHandler<GetSubmissionsQuery, R
         {
             query = query.Where(s => s.Status == filter.Status.Value);
         }
+
+        query = filter.StatusGroup switch
+        {
+            "ToReview" => query.Where(s => s.Status == SubmissionStatus.Submitted || s.Status == SubmissionStatus.InReview),
+            "Returned" => query.Where(s => s.Status == SubmissionStatus.Returned),
+            "Acknowledged" => query.Where(s => s.Status == SubmissionStatus.Acknowledged),
+            "AllSubmitted" => query.Where(s => s.Status != SubmissionStatus.Draft && s.Status != SubmissionStatus.Missed),
+            _ => query
+        };
 
         if (filter.IsLate.HasValue)
         {
