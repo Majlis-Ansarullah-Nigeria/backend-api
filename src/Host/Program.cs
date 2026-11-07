@@ -36,7 +36,10 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        // Enums can be sent as numbers or names; responses keep numbers.
+        options.JsonSerializerOptions.Converters.Add(new ManagementApi.Host.Json.LenientEnumConverterFactory()));
 
 // Anonymous account-recovery endpoints: 10 requests per IP per 15 minutes
 builder.Services.AddRateLimiter(options =>
