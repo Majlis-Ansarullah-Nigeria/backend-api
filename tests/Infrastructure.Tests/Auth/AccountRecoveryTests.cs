@@ -46,6 +46,15 @@ public class AccountRecoveryTests
         AccountRecoveryHandlers.MaskEmail("a@b.ng").Should().Be("a•••@b•••.ng");
     }
 
+    [Theory]
+    [InlineData("1234@temp.local", false)]
+    [InlineData("not-an-email", false)]
+    [InlineData("musa@gmail.com", true)]
+    public void Placeholder_and_invalid_emails_are_not_usable(string email, bool usable)
+    {
+        AccountRecoveryHandlers.IsUsableEmail(email).Should().Be(usable);
+    }
+
     [Fact]
     public async Task Lookup_masks_the_email_and_unknown_numbers_look_like_accounts_without_email()
     {

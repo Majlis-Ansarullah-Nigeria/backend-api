@@ -360,6 +360,12 @@ public class AccountRecoveryHandlers :
             return false;
         }
 
+        // Registration gives members without an email a placeholder like "1234@temp.local": not deliverable.
+        if (email.Trim().EndsWith(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         try
         {
             return new MailAddress(email).Address == email.Trim();
