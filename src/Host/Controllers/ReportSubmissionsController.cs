@@ -80,6 +80,25 @@ public class ReportSubmissionsController : BaseApiController
     }
 
     /// <summary>
+    /// The report as a PDF. Anyone who may open the report may download it.
+    /// </summary>
+    [HttpGet("{submissionId}/pdf")]
+    [MustHavePermission(Permissions.ReportsView)]
+    [Produces("application/pdf")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSubmissionPdf(Guid submissionId)
+    {
+        var result = await Mediator.Send(new ManagementApi.Application.Reports.Pdf.GetSubmissionPdfQuery(submissionId));
+        if (!result.Succeeded || result.Data is null)
+        {
+            return NotFound(new { errors = result.Messages });
+        }
+
+        return File(result.Data.Content, "application/pdf", result.Data.FileName);
+    }
+
+    /// <summary>
     /// Get report analytics and statistics
     /// </summary>
     [HttpGet("analytics")]
@@ -468,7 +487,7 @@ public class ReportSubmissionsController : BaseApiController
     /// Add a comment to a submission (US-25: Standalone Comments System)
     /// </summary>
     [HttpPost("{submissionId}/comments")]
-    [MustHavePermission("Permissions.Reports.ViewSubmissions")]
+    [MustHavePermission(Permissions.ReportsView)]
     public async Task<IActionResult> AddComment(Guid submissionId, [FromBody] AddCommentRequest request)
     {
         // Ensure the submissionId in the route matches the request
@@ -491,7 +510,7 @@ public class ReportSubmissionsController : BaseApiController
     /// Get all comments for a submission with optional threading (US-25: Standalone Comments System)
     /// </summary>
     [HttpGet("{submissionId}/comments")]
-    [MustHavePermission("Permissions.Reports.ViewSubmissions")]
+    [MustHavePermission(Permissions.ReportsView)]
     public async Task<IActionResult> GetComments(
         Guid submissionId,
         [FromQuery] bool includeDeleted = false,
@@ -518,7 +537,7 @@ public class ReportSubmissionsController : BaseApiController
     /// Update a comment (US-25: Standalone Comments System)
     /// </summary>
     [HttpPut("comments/{commentId}")]
-    [MustHavePermission("Permissions.Reports.ViewSubmissions")]
+    [MustHavePermission(Permissions.ReportsView)]
     public async Task<IActionResult> UpdateComment(Guid commentId, [FromBody] UpdateCommentRequest request)
     {
         // Ensure the commentId in the route matches the request
@@ -541,7 +560,7 @@ public class ReportSubmissionsController : BaseApiController
     /// Delete a comment (soft delete) (US-25: Standalone Comments System)
     /// </summary>
     [HttpDelete("comments/{commentId}")]
-    [MustHavePermission("Permissions.Reports.ViewSubmissions")]
+    [MustHavePermission(Permissions.ReportsView)]
     public async Task<IActionResult> DeleteComment(Guid commentId)
     {
         var request = new DeleteCommentRequest { CommentId = commentId };

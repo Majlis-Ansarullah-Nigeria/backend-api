@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<Services.IEmailTemplateService, Services.EmailTemplateService>();
+        services.AddSingleton<ManagementApi.Application.Reports.Pdf.IReportPdfRenderer, Reports.ReportPdfRenderer>();
         services.AddScoped<IEmailService, Services.MailKitEmailService>();
         services.AddScoped<INotificationService, Services.NotificationService>();
         services.AddScoped<IAccountRecoveryService, AccountRecoveryService>();
