@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ManagementApi.Application.Reports.Commands;
 
 /// <summary>
-/// Publishes a changed template as the next version. Published versions are never edited:
-/// earlier versions are retired, and reports and open windows keep the version they use.
-/// National Secretariat only.
+/// Starts the next version of a template as a draft (copied from the request). Publishing it
+/// (PublishTemplateCommand) retires the earlier versions; until then nothing changes for units.
+/// Set Publish = true to publish straight away. National Secretariat only.
 /// </summary>
 public record CreateTemplateVersionCommand(Guid TemplateId, CreateReportTemplateRequest Request) : IRequest<Result<Guid>>;
 
@@ -56,9 +56,23 @@ public class CreateTemplateVersionCommandHandler : IRequestHandler<CreateTemplat
             .Where(t => t.Id == groupId || t.RootTemplateId == groupId)
             .ToListAsync(cancellationToken);
 
+        if (versions.Any(v => v.IsDraft))
+        {
+            return Result<Guid>.Failure("There is already a draft version of this template. Continue editing it instead.");
+        }
+
         var r = request.Request;
         var next = new ReportTemplate(r.Name, previous.ReportType, r.OrganizationLevel, r.IsForAllMembers, r.Description, r.DisplayOrder);
         next.BecomeNextVersionOf(previous, versions.Max(v => v.Version) + 1);
+        try
+        {
+            next.SetSubmittingLevels(r.Levels is { Count: > 0 } levels ? levels : previous.SubmittingLevels);
+        }
+        catch (ArgumentException ex)
+        {
+            return Result<Guid>.Failure(ex.Message);
+        }
+
         _context.ReportTemplates.Add(next);
 
         var error = TemplateStructure.Add(_context, next, r.Sections);
@@ -67,10 +81,13 @@ public class CreateTemplateVersionCommandHandler : IRequestHandler<CreateTemplat
             return Result<Guid>.Failure(error);
         }
 
-        // Retire every earlier version: no new windows on them, but existing reports keep rendering with them.
-        versions.ForEach(v => v.Deactivate());
+        if (r.Publish)
+        {
+            next.Publish(DateTime.UtcNow);
+            versions.ForEach(v => v.Deactivate());
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return Result<Guid>.Success(next.Id, $"Version {next.Version} published");
+        return Result<Guid>.Success(next.Id, r.Publish ? $"Version {next.Version} published" : $"Draft of version {next.Version} saved");
     }
 }

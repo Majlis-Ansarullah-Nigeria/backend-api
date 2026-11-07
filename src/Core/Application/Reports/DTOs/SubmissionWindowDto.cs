@@ -7,6 +7,13 @@ public record SubmissionWindowDto
     public Guid Id { get; init; }
     public Guid ReportTemplateId { get; init; }
     public string ReportTemplateName { get; init; } = default!;
+    public int ReportTemplateVersion { get; init; } = 1;
+    public string? ReportTypeCode { get; init; }
+    public OrganizationLevel TemplateLevel { get; init; } // lowest level that submits (older screens)
+    public List<OrganizationLevel> TemplateLevels { get; init; } = new();
+    public DateTime? PeriodStart { get; init; }
+    public int ExpectedCount { get; init; }
+    public int MissedCount { get; init; }
     public string Name { get; init; } = default!;
     public string? Description { get; init; }
     public DateTime StartDate { get; init; } // opens
@@ -42,6 +49,7 @@ public record WindowExtensionDto
 public record CreateSubmissionWindowRequest
 {
     public Guid ReportTemplateId { get; init; }
+    public DateTime? PeriodStart { get; init; }
     public string Name { get; init; } = default!;
     public string? Description { get; init; }
     public DateTime StartDate { get; init; }
@@ -53,6 +61,7 @@ public record CreateSubmissionWindowRequest
 
 public record UpdateSubmissionWindowRequest
 {
+    public DateTime? PeriodStart { get; init; }
     public string Name { get; init; } = default!;
     public string? Description { get; init; }
     public DateTime StartDate { get; init; }

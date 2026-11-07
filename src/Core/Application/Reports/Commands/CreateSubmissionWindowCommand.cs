@@ -55,6 +55,11 @@ public class CreateSubmissionWindowCommandHandler : IRequestHandler<CreateSubmis
         }
 
         // A window is locked to the version it is opened with; only the current version can get new windows.
+        if (template.IsDraft)
+        {
+            return Result<Guid>.Failure("This template version is still a draft. Publish it before opening a window.");
+        }
+
         if (!template.IsActive)
         {
             return Result<Guid>.Failure("This template version is retired or inactive. Open the window on the current version.");
@@ -85,6 +90,7 @@ public class CreateSubmissionWindowCommandHandler : IRequestHandler<CreateSubmis
                 request.Request.Description
             );
             window.SetDueDates(request.Request.MuqamDueAt, request.Request.DilaDueAt, request.Request.ZoneDueAt);
+            window.SetPeriod(request.Request.PeriodStart);
         }
         catch (ArgumentException ex)
         {

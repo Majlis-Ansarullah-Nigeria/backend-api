@@ -1,5 +1,6 @@
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
+using ManagementApi.Application.Reports.Common;
 using ManagementApi.Application.Reports.DTOs;
 using ManagementApi.Domain.Entities.Reports;
 using ManagementApi.Domain.Enums;
@@ -15,22 +16,25 @@ public record GetUserAccessibleTemplateQuery(Guid TemplateId, Guid? UserId = nul
 public class GetUserAccessibleTemplateQueryHandler : IRequestHandler<GetUserAccessibleTemplateQuery, Result<ReportTemplateDto>>
 {
     private readonly IApplicationDbContext _context;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetUserAccessibleTemplateQueryHandler(
-        IApplicationDbContext context,
-        UserManager<ApplicationUser> userManager)
+    public GetUserAccessibleTemplateQueryHandler(IApplicationDbContext context, ICurrentUserService currentUser)
     {
         _context = context;
-        _userManager = userManager;
+        _currentUser = currentUser;
     }
 
+    /// <summary>
+    /// A template can be read by the Secretariat, by heads at a level that fills it, and by anyone who
+    /// can see a report filled on it (so observers can read their child units' reports).
+    /// </summary>
     public async Task<Result<ReportTemplateDto>> Handle(GetUserAccessibleTemplateQuery request, CancellationToken cancellationToken)
     {
         var template = await _context.ReportTemplates
             .Include(t => t.ReportTypeEntity)
             .Include(rt => rt.Sections)
                 .ThenInclude(rs => rs.Questions)
+            .AsNoTracking()
             .FirstOrDefaultAsync(rt => rt.Id == request.TemplateId, cancellationToken);
 
         if (template == null)
@@ -38,25 +42,12 @@ public class GetUserAccessibleTemplateQueryHandler : IRequestHandler<GetUserAcce
             return Result<ReportTemplateDto>.Failure("Report template not found");
         }
 
-        // Get the current user's information
-        var currentUserIdString = request.UserId?.ToString() ?? "00000000-0000-0000-0000-000000000000";
-        if (!Guid.TryParse(currentUserIdString, out Guid currentUserId))
-        {
-            return Result<ReportTemplateDto>.Failure("Invalid user ID");
-        }
+        var allowed = ReportingScope.IsSecretariat(_currentUser)
+            || template.IsForAllMembers
+            || template.IsFilledBy(_currentUser.OrganizationLevel)
+            || await _context.ReportSubmissions.VisibleTo(_currentUser).AnyAsync(s => s.ReportTemplateId == template.Id, cancellationToken);
 
-        var currentUser = await _userManager.FindByIdAsync(currentUserId.ToString());
-
-        if (currentUser == null)
-        {
-            return Result<ReportTemplateDto>.Failure("User not found");
-        }
-
-        // Get user's roles using UserManager
-        var userRoles = await _userManager.GetRolesAsync(currentUser);
-
-        // Check if user can access this template based on organization level
-        if (!CanUserAccessTemplate(userRoles.ToList(), template.OrganizationLevel, template.IsForAllMembers))
+        if (!allowed)
         {
             return Result<ReportTemplateDto>.Failure("User does not have permission to access this template");
         }
@@ -67,6 +58,11 @@ public class GetUserAccessibleTemplateQueryHandler : IRequestHandler<GetUserAcce
             ReportTypeId = template.ReportTypeId,
             Version = template.Version,
             VersionGroupId = template.RootTemplateId ?? template.Id,
+            PublishedAt = template.PublishedAt,
+            VersionStatus = template.IsDraft ? "Draft" : template.IsActive ? "Current" : "Retired",
+            Levels = template.SubmittingLevels.ToList(),
+            QuestionCount = template.Sections.Sum(sec => sec.Questions.Count),
+            RequiredQuestionCount = template.Sections.Sum(sec => sec.Questions.Count(q => q.IsRequired)),
             ReportTypeCode = template.ReportTypeEntity != null ? template.ReportTypeEntity.Code : null,
             Name = template.Name,
             Description = template.Description,
@@ -102,29 +98,5 @@ public class GetUserAccessibleTemplateQueryHandler : IRequestHandler<GetUserAcce
         };
 
         return Result<ReportTemplateDto>.Success(templateDto);
-    }
-
-    private bool CanUserAccessTemplate(List<string> userRoles, OrganizationLevel templateOrgLevel, bool isForAllMembers)
-    {
-        // If template is for all members, anyone with a member role can access
-        if (isForAllMembers)
-        {
-            return userRoles.Any(role => role.ToLower().Contains("member"));
-        }
-
-        // Map organization levels to required role keywords
-        var requiredKeywords = templateOrgLevel switch
-        {
-            OrganizationLevel.Muqam => new[] { "zaim", "muqam", "head" },
-            OrganizationLevel.Dila => new[] { "nazim", "dila", "manager" },
-            OrganizationLevel.Zone => new[] { "zonal", "zone", "coordinator" },
-            OrganizationLevel.National => new[] { "national", "sadr", "president", "admin" },
-            _ => new string[0]
-        };
-
-        // Check if user has any of the required role keywords
-        return userRoles.Any(userRole =>
-            requiredKeywords.Any(keyword =>
-                userRole.ToLower().Contains(keyword.ToLower())));
     }
 }

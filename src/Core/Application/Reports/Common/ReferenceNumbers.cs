@@ -21,7 +21,7 @@ public static class ReferenceNumbers
         var type = template.ReportTypeEntity;
         var typeCode = type?.Code ?? ReportReferenceNumber.FallbackTypeCode(template.ReportType);
         var frequency = type?.Frequency ?? GuessFrequency(template.ReportType);
-        var period = ReportReferenceNumber.Period(frequency, window.StartDate);
+        var period = ReportReferenceNumber.Period(frequency, window.ReferencePeriod);
 
         var unitParts = new List<string>();
         if (report.ZoneId is { } zoneId)

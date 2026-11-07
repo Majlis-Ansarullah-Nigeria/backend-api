@@ -27,6 +27,21 @@ public static class ExpectedUnits
         _ => new List<ExpectedUnit>()
     };
 
+    /// <summary>Every unit expected to report for a template filled at several levels.</summary>
+    public static async Task<List<ExpectedUnit>> ForLevelsAsync(
+        IApplicationDbContext context,
+        IEnumerable<OrganizationLevel> levels,
+        CancellationToken cancellationToken)
+    {
+        var all = new List<ExpectedUnit>();
+        foreach (var level in levels.Where(IsUnitLevel).Distinct())
+        {
+            all.AddRange(await ForLevelAsync(context, level, cancellationToken));
+        }
+
+        return all;
+    }
+
     public static bool IsUnitLevel(OrganizationLevel level) =>
         level is OrganizationLevel.Muqam or OrganizationLevel.Dila or OrganizationLevel.Zone;
 }

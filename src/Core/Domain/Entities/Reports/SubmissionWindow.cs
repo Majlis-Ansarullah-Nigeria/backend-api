@@ -18,6 +18,17 @@ public class SubmissionWindow : AuditableEntity, IAggregateRoot
     public DateTime EndDate { get; private set; }
     public bool IsActive { get; private set; } = true;
 
+    /// <summary>
+    /// The month or quarter being reported on (first day). Sets the period in reference numbers;
+    /// e.g. the October report can open on 1 November. Null means "the month the window opens".
+    /// </summary>
+    public DateTime? PeriodStart { get; private set; }
+
+    public DateTime ReferencePeriod => PeriodStart ?? StartDate;
+
+    public void SetPeriod(DateTime? periodStart) =>
+        PeriodStart = periodStart is { } p ? new DateTime(p.Year, p.Month, 1, 0, 0, 0, DateTimeKind.Utc) : null;
+
     // Due date per level; when not set, the level is due when the window closes.
     public DateTime? MuqamDueAt { get; private set; }
     public DateTime? DilaDueAt { get; private set; }

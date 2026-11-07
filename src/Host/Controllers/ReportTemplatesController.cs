@@ -174,4 +174,30 @@ public class ReportTemplatesController : BaseApiController
 
         return Ok(new { id = result.Data, message = result.Messages.FirstOrDefault() });
     }
+
+    /// <summary>
+    /// Save changes to a draft version. Published versions can't be edited. National Secretariat only.
+    /// </summary>
+    [HttpPut("{templateId}")]
+    [Authorize(Roles = Roles.NationalAdmin + "," + Roles.SuperAdmin)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateTemplateDraft(Guid templateId, [FromBody] CreateReportTemplateRequest request)
+    {
+        var result = await Mediator.Send(new UpdateTemplateDraftCommand(templateId, request));
+        return result.Succeeded ? Ok(new { message = result.Messages.FirstOrDefault() }) : BadRequest(new { errors = result.Messages });
+    }
+
+    /// <summary>
+    /// Publish a draft version; every other version of the template is retired. National Secretariat only.
+    /// </summary>
+    [HttpPost("{templateId}/publish")]
+    [Authorize(Roles = Roles.NationalAdmin + "," + Roles.SuperAdmin)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> PublishTemplate(Guid templateId)
+    {
+        var result = await Mediator.Send(new PublishTemplateCommand(templateId));
+        return result.Succeeded ? Ok(new { message = result.Messages.FirstOrDefault() }) : BadRequest(new { errors = result.Messages });
+    }
 }

@@ -40,6 +40,7 @@ public class ReportCommandsTests
             new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 11, 30, 23, 59, 0, DateTimeKind.Utc));
 
+        _template.MarkPublished(new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc));
         _db.Zones.Add(_zone);
         _db.Dilas.Add(_dila);
         _db.Muqams.AddRange(_muqam, _otherMuqam);
@@ -217,6 +218,30 @@ public class ReportCommandsTests
 
         var references = await _db.ReportSubmissions.Select(s => s.ReferenceNumber).ToListAsync();
         references.Should().BeEquivalentTo(new[] { "MON-2026-11-Z01D01M01", "MON-2026-11-Z01D01M01-2" });
+    }
+
+    [Fact]
+    public async Task A_head_cannot_fill_a_report_meant_for_another_level()
+    {
+        var dilaHead = User(OrganizationLevel.Dila, dilaId: _dila.Id, zoneId: _zone.Id, role: Roles.NazimAla);
+
+        var result = await Submit(dilaHead);
+
+        result.Succeeded.Should().BeFalse();
+        result.Messages.Should().Contain(m => m.Contains("isn't filled at Dila level"));
+    }
+
+    [Fact]
+    public async Task A_template_filled_by_several_levels_accepts_each_level_once()
+    {
+        _template.SetSubmittingLevels(new[] { OrganizationLevel.Muqam, OrganizationLevel.Dila });
+        await _db.SaveChangesAsync();
+
+        (await Submit(MuqamHead(_muqam))).Succeeded.Should().BeTrue();
+        (await Submit(User(OrganizationLevel.Dila, dilaId: _dila.Id, zoneId: _zone.Id, role: Roles.NazimAla))).Succeeded.Should().BeTrue();
+
+        (await _db.ReportSubmissions.Select(s => s.OrganizationLevel).ToListAsync())
+            .Should().BeEquivalentTo(new[] { OrganizationLevel.Muqam, OrganizationLevel.Dila });
     }
 
     [Fact]

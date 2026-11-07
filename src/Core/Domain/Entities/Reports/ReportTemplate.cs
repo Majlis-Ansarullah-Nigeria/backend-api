@@ -27,6 +27,70 @@ public class ReportTemplate : AuditableEntity, IAggregateRoot
 
     public Guid VersionGroupId => RootTemplateId ?? Id;
 
+    /// <summary>Null while the version is a draft. A published version is never edited.</summary>
+    public DateTime? PublishedAt { get; private set; }
+
+    public bool IsDraft => PublishedAt is null;
+
+    /// <summary>
+    /// The levels whose heads fill this template, as flags (Muqam = 2, Dila = 4, Zone = 8).
+    /// 0 means "only OrganizationLevel" (templates created before levels were added).
+    /// </summary>
+    public int SubmittingLevelFlags { get; private set; }
+
+    public IReadOnlyList<OrganizationLevel> SubmittingLevels =>
+        SubmittingLevelFlags == 0
+            ? new[] { OrganizationLevel }
+            : new[] { OrganizationLevel.Muqam, OrganizationLevel.Dila, OrganizationLevel.Zone }
+                .Where(l => (SubmittingLevelFlags & (1 << (int)l)) != 0).ToArray();
+
+    public bool IsFilledBy(OrganizationLevel level) => SubmittingLevels.Contains(level);
+
+    public void SetSubmittingLevels(IEnumerable<OrganizationLevel> levels)
+    {
+        var list = levels.Distinct().Where(l => l is OrganizationLevel.Muqam or OrganizationLevel.Dila or OrganizationLevel.Zone).ToList();
+        if (list.Count == 0)
+        {
+            throw new ArgumentException("Choose at least one level that fills this template");
+        }
+
+        SubmittingLevelFlags = list.Aggregate(0, (flags, l) => flags | (1 << (int)l));
+        OrganizationLevel = list.Min(); // lowest level, kept for older screens
+    }
+
+    public void Publish(DateTime nowUtc)
+    {
+        if (!IsDraft)
+        {
+            throw new InvalidOperationException("This version is already published.");
+        }
+
+        if (_sections.Count == 0 || _sections.All(s => s.Questions.Count == 0))
+        {
+            throw new InvalidOperationException("Add at least one section with a question before publishing.");
+        }
+
+        PublishedAt = nowUtc;
+        Activate();
+    }
+
+    /// <summary>Drafts only: replace name, instructions and the whole structure.</summary>
+    public void ReplaceDraft(string name, string? description, IEnumerable<OrganizationLevel> levels)
+    {
+        if (!IsDraft)
+        {
+            throw new InvalidOperationException("A published version can't be edited. Create a new version instead.");
+        }
+
+        Name = name;
+        Description = description;
+        SetSubmittingLevels(levels);
+        _sections.Clear();
+    }
+
+    /// <summary>For templates published straight away (the older create screen and seeded templates).</summary>
+    public void MarkPublished(DateTime nowUtc) => PublishedAt ??= nowUtc;
+
     private readonly List<ReportSection> _sections = new();
     public IReadOnlyCollection<ReportSection> Sections => _sections.AsReadOnly();
 
@@ -79,13 +143,15 @@ public class ReportTemplate : AuditableEntity, IAggregateRoot
     }
 
     /// <summary>Makes this template the next version after <paramref name="previous"/> and retires the earlier one.</summary>
+    /// <summary>Starts this template as a draft of the next version after <paramref name="previous"/>.</summary>
     public void BecomeNextVersionOf(ReportTemplate previous, int version)
     {
         RootTemplateId = previous.VersionGroupId;
         Version = version;
         ReportTypeId = previous.ReportTypeId;
         ReportType = previous.ReportType;
-        Activate();
+        PublishedAt = null;
+        Deactivate(); // a draft can't get windows until it's published
     }
 
     public void AssignReportType(ReportType reportType)

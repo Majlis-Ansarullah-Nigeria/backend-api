@@ -19,7 +19,8 @@ public record WindowCompletionDto
     public Guid WindowId { get; init; }
     public string WindowName { get; init; } = default!;
     public string TemplateName { get; init; } = default!;
-    public string Level { get; init; } = default!;
+    public string Level { get; init; } = default!; // lowest submitting level (older screens)
+    public List<string> Levels { get; init; } = new();
     public DateTime OpensAt { get; init; }
     public DateTime ClosesAt { get; init; }
     public CompletionCounts Totals { get; init; } = new();
@@ -52,6 +53,7 @@ public record CompletionGroupDto
 public record CompletionUnitDto
 {
     public Guid UnitId { get; init; }
+    public string Level { get; init; } = default!;
     public string Name { get; init; } = default!;
     public string? ZoneName { get; init; }
     public string? DilaName { get; init; }
@@ -91,14 +93,15 @@ public class GetWindowCompletionQueryHandler : IRequestHandler<GetWindowCompleti
             return Result<WindowCompletionDto>.Failure("Submission window not found");
         }
 
-        var level = window.ReportTemplate.OrganizationLevel;
-        var units = InScope(await ExpectedUnits.ForLevelAsync(_context, level, cancellationToken)).ToList();
+        var levels = window.ReportTemplate.SubmittingLevels;
+        var units = InScope(await ExpectedUnits.ForLevelsAsync(_context, levels, cancellationToken)).ToList();
 
-        var reports = await _context.ReportSubmissions
+        var reports = (await _context.ReportSubmissions
             .AsNoTracking()
-            .Where(s => s.SubmissionWindowId == window.Id && s.OrganizationLevel == level)
-            .Select(s => new { s.Id, s.UnitId, s.Status, s.IsLate, s.SubmittedAt, s.ReferenceNumber })
-            .ToDictionaryAsync(s => s.UnitId, cancellationToken);
+            .Where(s => s.SubmissionWindowId == window.Id)
+            .Select(s => new { s.Id, s.OrganizationLevel, s.UnitId, s.Status, s.IsLate, s.SubmittedAt, s.ReferenceNumber })
+            .ToListAsync(cancellationToken))
+            .ToDictionary(s => (s.OrganizationLevel, s.UnitId));
 
         var zoneNames = await _context.Zones.AsNoTracking().ToDictionaryAsync(z => z.Id, z => z.Name, cancellationToken);
         var dilaNames = await _context.Dilas.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.Name, cancellationToken);
@@ -106,16 +109,17 @@ public class GetWindowCompletionQueryHandler : IRequestHandler<GetWindowCompleti
 
         var rows = units.Select(u =>
         {
-            reports.TryGetValue(u.UnitId, out var report);
+            reports.TryGetValue((u.Level, u.UnitId), out var report);
             var status = report?.Status.ToString() ?? "NotStarted";
-            var dueAt = window.DueAtFor(level, u.UnitId);
+            var dueAt = window.DueAtFor(u.Level, u.UnitId);
             var unstarted = report is null || report.Status == SubmissionStatus.Draft;
             return new CompletionUnitDto
             {
                 UnitId = u.UnitId,
+                Level = u.Level.ToString(),
                 Name = u.Name,
                 ZoneName = u.ZoneId is { } z ? zoneNames.GetValueOrDefault(z) : null,
-                DilaName = level == OrganizationLevel.Muqam && u.DilaId is { } d ? dilaNames.GetValueOrDefault(d) : null,
+                DilaName = u.DilaId is { } d ? dilaNames.GetValueOrDefault(d) : null,
                 Status = status,
                 IsLate = report?.IsLate ?? false,
                 IsOverdue = unstarted && now > dueAt,
@@ -131,15 +135,16 @@ public class GetWindowCompletionQueryHandler : IRequestHandler<GetWindowCompleti
             WindowId = window.Id,
             WindowName = window.Name,
             TemplateName = window.ReportTemplate.Name,
-            Level = level.ToString(),
+            Level = levels.Min().ToString(),
+            Levels = levels.Select(l => l.ToString()).ToList(),
             OpensAt = window.StartDate,
             ClosesAt = window.EndDate,
             Totals = Count(rows),
             ByZone = rows.GroupBy(r => r.ZoneName ?? "No zone")
                 .Select(g => new CompletionGroupDto { Name = g.Key, Counts = Count(g) })
                 .OrderBy(g => g.Name).ToList(),
-            ByDila = level == OrganizationLevel.Muqam
-                ? rows.GroupBy(r => r.DilaName ?? "No dila")
+            ByDila = levels.Contains(OrganizationLevel.Muqam) || levels.Contains(OrganizationLevel.Dila)
+                ? rows.Where(r => r.DilaName != null).GroupBy(r => r.DilaName!)
                     .Select(g => new CompletionGroupDto { Name = g.Key, Counts = Count(g) })
                     .OrderBy(g => g.Name).ToList()
                 : new List<CompletionGroupDto>(),

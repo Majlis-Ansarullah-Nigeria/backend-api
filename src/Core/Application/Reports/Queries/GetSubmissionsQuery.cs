@@ -26,6 +26,7 @@ public class GetSubmissionsQueryHandler : IRequestHandler<GetSubmissionsQuery, R
         var query = _context.ReportSubmissions
             .Include(s => s.ReportTemplate)
             .Include(s => s.Approvals)
+            .Include(s => s.SubmissionWindow!.Extensions)
             .AsNoTracking()
             .VisibleTo(_currentUser);
 
@@ -49,6 +50,33 @@ public class GetSubmissionsQueryHandler : IRequestHandler<GetSubmissionsQuery, R
         if (filter.IsLate.HasValue)
         {
             query = query.Where(s => s.IsLate == filter.IsLate.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.Trim().ToLower();
+            var muqams = _context.Muqams.Where(m => m.Name.ToLower().Contains(term)).Select(m => m.Id);
+            var dilas = _context.Dilas.Where(d => d.Name.ToLower().Contains(term)).Select(d => d.Id);
+            var zones = _context.Zones.Where(z => z.Name.ToLower().Contains(term)).Select(z => z.Id);
+            query = query.Where(s =>
+                (s.ReferenceNumber != null && s.ReferenceNumber.ToLower().Contains(term)) ||
+                s.SubmitterName.ToLower().Contains(term) ||
+                (s.OrganizationLevel == Domain.Enums.OrganizationLevel.Muqam && muqams.Contains(s.UnitId)) ||
+                (s.OrganizationLevel == Domain.Enums.OrganizationLevel.Dila && dilas.Contains(s.UnitId)) ||
+                (s.OrganizationLevel == Domain.Enums.OrganizationLevel.Zone && zones.Contains(s.UnitId)));
+        }
+
+        if (filter.OnlyOwnUnit == true)
+        {
+            var level = _currentUser.OrganizationLevel;
+            var ownId = level switch
+            {
+                Domain.Enums.OrganizationLevel.Muqam => _currentUser.MuqamId,
+                Domain.Enums.OrganizationLevel.Dila => _currentUser.DilaId,
+                Domain.Enums.OrganizationLevel.Zone => _currentUser.ZoneId,
+                _ => (Guid?)Guid.Empty
+            };
+            query = query.Where(s => s.OrganizationLevel == level && s.UnitId == ownId);
         }
 
         if (filter.MuqamId.HasValue)
@@ -90,9 +118,14 @@ public class GetSubmissionsQueryHandler : IRequestHandler<GetSubmissionsQuery, R
             .ToListAsync(cancellationToken);
 
         var names = await UnitNames.LoadAsync(_context, submissions, cancellationToken);
+        var ids = submissions.Select(s => s.Id).ToList();
+        var flagged = (await _context.SubmissionFlags
+            .Where(f => f.IsActive && ids.Contains(f.ReportSubmissionId))
+            .Select(f => f.ReportSubmissionId)
+            .ToListAsync(cancellationToken)).ToHashSet();
 
         var dtos = submissions
-            .Select(s => names.Apply(ReportSubmissionDto.From(s, _currentUser), s))
+            .Select(s => names.Apply(ReportSubmissionDto.From(s, _currentUser), s) with { IsFlagged = flagged.Contains(s.Id) })
             .ToList();
 
         return Result<PaginationResponse<ReportSubmissionDto>>.Success(

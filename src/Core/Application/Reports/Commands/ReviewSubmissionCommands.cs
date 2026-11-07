@@ -231,7 +231,7 @@ public class ReviewSubmissionCommandHandlers :
             return Result.Failure("Submission not found");
         }
 
-        submission.StartReview(Now);
+        submission.StartReview(Now, ReviewerName);
         await _context.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

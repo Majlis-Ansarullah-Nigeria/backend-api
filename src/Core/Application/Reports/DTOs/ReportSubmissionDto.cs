@@ -10,7 +10,15 @@ public record ReportSubmissionDto
     public Guid Id { get; init; }
     public Guid ReportTemplateId { get; init; }
     public string ReportTemplateName { get; init; } = default!;
+    public int ReportTemplateVersion { get; init; } = 1;
     public Guid? SubmissionWindowId { get; init; }
+    public string? WindowName { get; init; }
+    public DateTime? WindowOpensAt { get; init; }
+    public DateTime? DueAt { get; init; }      // for this report's unit, after any extension
+    public DateTime? ClosesAt { get; init; }   // for this report's unit, after any extension
+    public bool HasExtension { get; init; }
+    public DateTime LastSavedAt { get; init; }
+    public bool IsFlagged { get; init; }
     public string SubmitterChandaNo { get; init; } = default!;
     public string SubmitterName { get; init; } = default!;
     public string? SubmitterEmail { get; init; }
@@ -25,6 +33,7 @@ public record ReportSubmissionDto
     public bool IsLate { get; init; }
     public string? ReferenceNumber { get; init; }
     public DateTime? ReviewStartedAt { get; init; }
+    public string? ReviewStartedByName { get; init; }
     public DateTime? AcknowledgedAt { get; init; }
     public DateTime? ReturnedAt { get; init; }
     public string? ReturnReason { get; init; }
@@ -44,7 +53,14 @@ public record ReportSubmissionDto
         Id = s.Id,
         ReportTemplateId = s.ReportTemplateId,
         ReportTemplateName = s.ReportTemplate?.Name ?? string.Empty,
+        ReportTemplateVersion = s.ReportTemplate?.Version ?? 1,
         SubmissionWindowId = s.SubmissionWindowId,
+        WindowName = s.SubmissionWindow?.Name,
+        WindowOpensAt = s.SubmissionWindow?.StartDate,
+        DueAt = s.SubmissionWindow?.DueAtFor(s.OrganizationLevel, s.UnitId),
+        ClosesAt = s.SubmissionWindow?.ClosesAtFor(s.OrganizationLevel, s.UnitId),
+        HasExtension = s.SubmissionWindow?.ExtensionFor(s.OrganizationLevel, s.UnitId) is not null,
+        LastSavedAt = s.LastModifiedOn ?? s.CreatedOn,
         SubmitterChandaNo = s.SubmitterChandaNo,
         SubmitterName = s.SubmitterName,
         SubmitterEmail = s.SubmitterEmail,
@@ -56,6 +72,7 @@ public record ReportSubmissionDto
         IsLate = s.IsLate,
         ReferenceNumber = s.ReferenceNumber,
         ReviewStartedAt = s.ReviewStartedAt,
+        ReviewStartedByName = s.ReviewStartedByName,
         AcknowledgedAt = s.AcknowledgedAt,
         ReturnedAt = s.ReturnedAt,
         ReturnReason = s.ReturnReason,
@@ -127,6 +144,8 @@ public record GetSubmissionsRequest
     public Guid? SubmissionWindowId { get; init; }
     public SubmissionStatus? Status { get; init; }
     public bool? IsLate { get; init; }
+    public string? Search { get; init; } // unit name or reference number
+    public bool? OnlyOwnUnit { get; init; }
     public Guid? MuqamId { get; init; }
     public Guid? DilaId { get; init; }
     public Guid? ZoneId { get; init; }

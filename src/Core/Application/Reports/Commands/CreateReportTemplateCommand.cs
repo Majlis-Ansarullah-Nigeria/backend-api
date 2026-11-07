@@ -56,6 +56,30 @@ public class CreateReportTemplateCommandHandler : IRequestHandler<CreateReportTe
             request.Request.Description,
             request.Request.DisplayOrder);
 
+        try
+        {
+            template.SetSubmittingLevels(request.Request.Levels is { Count: > 0 } levels ? levels : new() { request.Request.OrganizationLevel });
+        }
+        catch (ArgumentException ex)
+        {
+            return Result<Guid>.Failure(ex.Message);
+        }
+
+        if (request.Request.ReportTypeId is { } typeId &&
+            await _context.ReportTypes.FirstOrDefaultAsync(t => t.Id == typeId, cancellationToken) is { } reportType)
+        {
+            template.AssignReportType(reportType);
+        }
+
+        if (request.Request.Publish)
+        {
+            template.MarkPublished(DateTime.UtcNow);
+        }
+        else
+        {
+            template.Deactivate(); // drafts can't get windows
+        }
+
         _context.ReportTemplates.Add(template);
 
         var error = TemplateStructure.Add(_context, template, request.Request.Sections);

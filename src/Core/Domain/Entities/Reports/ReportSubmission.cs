@@ -40,6 +40,7 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
 
     // Review
     public DateTime? ReviewStartedAt { get; private set; }
+    public string? ReviewStartedByName { get; private set; }
     public DateTime? AcknowledgedAt { get; private set; }
     public DateTime? ReturnedAt { get; private set; }
     public string? ReturnReason { get; private set; }
@@ -149,7 +150,7 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
     }
 
     /// <summary>The Secretariat opened the report. Idempotent.</summary>
-    public void StartReview(DateTime nowUtc)
+    public void StartReview(DateTime nowUtc, string? reviewerName = null)
     {
         if (Status != SubmissionStatus.Submitted)
         {
@@ -158,6 +159,7 @@ public class ReportSubmission : AuditableEntity, IAggregateRoot
 
         Status = SubmissionStatus.InReview;
         ReviewStartedAt = nowUtc;
+        ReviewStartedByName = reviewerName;
     }
 
     public void Acknowledge(Guid reviewerId, string reviewerName, DateTime nowUtc, string? comments = null)

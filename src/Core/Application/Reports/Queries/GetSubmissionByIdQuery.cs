@@ -26,6 +26,7 @@ public class GetSubmissionByIdQueryHandler : IRequestHandler<GetSubmissionByIdQu
         var submission = await _context.ReportSubmissions
             .Include(s => s.ReportTemplate)
             .Include(s => s.Approvals)
+            .Include(s => s.SubmissionWindow!.Extensions)
             .AsNoTracking()
             .VisibleTo(_currentUser)
             .FirstOrDefaultAsync(s => s.Id == request.SubmissionId, cancellationToken);
@@ -37,6 +38,9 @@ public class GetSubmissionByIdQueryHandler : IRequestHandler<GetSubmissionByIdQu
 
         var names = await UnitNames.LoadAsync(_context, new[] { submission }, cancellationToken);
 
-        return Result<ReportSubmissionDto>.Success(names.Apply(ReportSubmissionDto.From(submission, _currentUser), submission));
+        var flagged = await _context.SubmissionFlags.AnyAsync(f => f.IsActive && f.ReportSubmissionId == submission.Id, cancellationToken);
+
+        return Result<ReportSubmissionDto>.Success(
+            names.Apply(ReportSubmissionDto.From(submission, _currentUser), submission) with { IsFlagged = flagged });
     }
 }

@@ -29,6 +29,7 @@ public class GetSubmissionWindowsQueryHandler : IRequestHandler<GetSubmissionWin
 
         var query = _context.SubmissionWindows
             .Include(w => w.ReportTemplate)
+            .ThenInclude(t => t.ReportTypeEntity)
             .Include(w => w.Extensions)
             .AsNoTracking()
             .AsQueryable();
@@ -42,6 +43,18 @@ public class GetSubmissionWindowsQueryHandler : IRequestHandler<GetSubmissionWin
         var windowIds = windows.Select(w => w.Id).ToList();
 
         // Submitted reports per window (drafts and missed reports are not submissions)
+        var missed = await _context.ReportSubmissions
+            .Where(s => s.SubmissionWindowId != null && windowIds.Contains(s.SubmissionWindowId.Value) && s.Status == SubmissionStatus.Missed)
+            .GroupBy(s => s.SubmissionWindowId!.Value)
+            .Select(g => new { WindowId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.WindowId, x => x.Count, cancellationToken);
+        var unitCounts = new Dictionary<OrganizationLevel, int>
+        {
+            [OrganizationLevel.Muqam] = await _context.Muqams.CountAsync(cancellationToken),
+            [OrganizationLevel.Dila] = await _context.Dilas.CountAsync(cancellationToken),
+            [OrganizationLevel.Zone] = await _context.Zones.CountAsync(cancellationToken),
+        };
+
         var counts = await _context.ReportSubmissions
             .Where(s => s.SubmissionWindowId != null && windowIds.Contains(s.SubmissionWindowId.Value))
             .Where(s => s.Status != SubmissionStatus.Draft && s.Status != SubmissionStatus.Missed)
@@ -58,6 +71,13 @@ public class GetSubmissionWindowsQueryHandler : IRequestHandler<GetSubmissionWin
             Id = w.Id,
             ReportTemplateId = w.ReportTemplateId,
             ReportTemplateName = w.ReportTemplate?.Name ?? "",
+            ReportTemplateVersion = w.ReportTemplate?.Version ?? 1,
+            ReportTypeCode = w.ReportTemplate?.ReportTypeEntity?.Code,
+            TemplateLevel = w.ReportTemplate?.OrganizationLevel ?? OrganizationLevel.Muqam,
+            TemplateLevels = w.ReportTemplate?.SubmittingLevels.ToList() ?? new List<OrganizationLevel>(),
+            PeriodStart = w.PeriodStart,
+            ExpectedCount = w.ReportTemplate?.SubmittingLevels.Sum(l => unitCounts.GetValueOrDefault(l)) ?? 0,
+            MissedCount = missed.GetValueOrDefault(w.Id),
             Name = w.Name,
             Description = w.Description,
             StartDate = w.StartDate,

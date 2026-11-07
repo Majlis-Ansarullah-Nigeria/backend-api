@@ -683,6 +683,9 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<DateTime?>("ReviewStartedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ReviewStartedByName")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("RevisionDueAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -774,6 +777,9 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<int>("OrganizationLevel")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ReportType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -783,6 +789,9 @@ namespace ManagementApi.Infrastructure.Migrations
 
                     b.Property<Guid?>("RootTemplateId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("SubmittingLevelFlags")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");
@@ -1071,6 +1080,9 @@ namespace ManagementApi.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("PeriodStart")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ReportTemplateId")
                         .HasColumnType("uuid");

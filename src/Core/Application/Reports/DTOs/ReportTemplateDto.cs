@@ -12,6 +12,11 @@ public record ReportTemplateDto
     public string? ReportTypeCode { get; init; }
     public int Version { get; init; } = 1;
     public Guid VersionGroupId { get; init; }
+    public DateTime? PublishedAt { get; init; }
+    public string VersionStatus { get; init; } = "Current"; // Draft, Current, Retired
+    public List<OrganizationLevel> Levels { get; init; } = new();
+    public int QuestionCount { get; init; }
+    public int RequiredQuestionCount { get; init; }
     public OrganizationLevel OrganizationLevel { get; init; }
     public bool IsForAllMembers { get; init; }
     public bool IsActive { get; init; }
@@ -51,6 +56,15 @@ public record CreateReportTemplateRequest
     public bool IsForAllMembers { get; init; }
     public int DisplayOrder { get; init; }
     public List<CreateReportSectionRequest> Sections { get; init; } = new();
+
+    /// <summary>Levels whose heads fill this template. Empty means just OrganizationLevel.</summary>
+    public List<OrganizationLevel>? Levels { get; init; }
+
+    /// <summary>Optional report type to link (its name becomes ReportType).</summary>
+    public Guid? ReportTypeId { get; init; }
+
+    /// <summary>False keeps it as a draft to finish later. Defaults to publishing straight away.</summary>
+    public bool Publish { get; init; } = true;
 }
 
 public record CreateReportSectionRequest

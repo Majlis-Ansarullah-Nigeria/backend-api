@@ -129,6 +129,17 @@ public class ReportSubmissionsController : BaseApiController
     }
 
     /// <summary>
+    /// Counts for the review inbox tabs (to review, returned, acknowledged, all submitted).
+    /// </summary>
+    [HttpGet("inbox-counts")]
+    [MustHavePermission(Permissions.ReportsView)]
+    [ProducesResponseType(typeof(InboxCountsDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetInboxCounts([FromQuery] Guid? windowId)
+    {
+        return Ok(await Mediator.Send(new GetInboxCountsQuery(windowId)));
+    }
+
+    /// <summary>
     /// Who has reported in a window: every expected unit with its status, totals per Zone and Dila.
     /// Limited to the units the current user may see.
     /// </summary>

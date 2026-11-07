@@ -52,22 +52,21 @@ public class ReportWindowJobHandlers :
             .ToListAsync(cancellationToken);
 
         var marked = 0;
-        foreach (var window in windows.Where(w => ExpectedUnits.IsUnitLevel(w.ReportTemplate.OrganizationLevel)))
+        foreach (var window in windows)
         {
-            var level = window.ReportTemplate.OrganizationLevel;
-            var units = await ExpectedUnits.ForLevelAsync(_context, level, cancellationToken);
+            var units = await ExpectedUnits.ForLevelsAsync(_context, window.ReportTemplate.SubmittingLevels, cancellationToken);
             var reports = await _context.ReportSubmissions
-                .Where(s => s.SubmissionWindowId == window.Id && s.OrganizationLevel == level)
-                .ToDictionaryAsync(s => s.UnitId, cancellationToken);
+                .Where(s => s.SubmissionWindowId == window.Id)
+                .ToDictionaryAsync(s => (s.OrganizationLevel, s.UnitId), cancellationToken);
 
             foreach (var unit in units)
             {
-                if (now <= window.ClosesAtFor(level, unit.UnitId))
+                if (now <= window.ClosesAtFor(unit.Level, unit.UnitId))
                 {
                     continue; // this unit still has time (extension)
                 }
 
-                if (reports.TryGetValue(unit.UnitId, out var report))
+                if (reports.TryGetValue((unit.Level, unit.UnitId), out var report))
                 {
                     if (report.Status == SubmissionStatus.Draft)
                     {
@@ -78,7 +77,7 @@ public class ReportWindowJobHandlers :
                 else
                 {
                     _context.ReportSubmissions.Add(ReportSubmission.CreateMissed(
-                        window.ReportTemplateId, window.Id, level, unit.UnitId, unit.MuqamId, unit.DilaId, unit.ZoneId));
+                        window.ReportTemplateId, window.Id, unit.Level, unit.UnitId, unit.MuqamId, unit.DilaId, unit.ZoneId));
                     marked++;
                 }
             }
@@ -99,9 +98,9 @@ public class ReportWindowJobHandlers :
             .ToListAsync(cancellationToken);
 
         var sent = 0;
-        foreach (var window in windows.Where(w => ExpectedUnits.IsUnitLevel(w.ReportTemplate.OrganizationLevel)))
+        foreach (var window in windows)
+        foreach (var level in window.ReportTemplate.SubmittingLevels.Where(ExpectedUnits.IsUnitLevel))
         {
-            var level = window.ReportTemplate.OrganizationLevel;
             var units = await ExpectedUnits.ForLevelAsync(_context, level, cancellationToken);
 
             var notPending = await _context.ReportSubmissions
@@ -109,7 +108,7 @@ public class ReportWindowJobHandlers :
                 .Select(s => s.UnitId)
                 .ToListAsync(cancellationToken);
             var alreadySent = await _context.ReportReminders
-                .Where(r => r.SubmissionWindowId == window.Id)
+                .Where(r => r.SubmissionWindowId == window.Id && r.OrganizationLevel == level)
                 .Select(r => new { r.UnitId, r.DaysBeforeDue })
                 .ToListAsync(cancellationToken);
             var sentKeys = alreadySent.Select(r => (r.UnitId, r.DaysBeforeDue)).ToHashSet();

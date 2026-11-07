@@ -72,6 +72,7 @@ public class UpdateSubmissionWindowCommandHandler : IRequestHandler<UpdateSubmis
                 request.Request.Description
             );
             window.SetDueDates(request.Request.MuqamDueAt, request.Request.DilaDueAt, request.Request.ZoneDueAt);
+            window.SetPeriod(request.Request.PeriodStart);
         }
         catch (ArgumentException ex)
         {

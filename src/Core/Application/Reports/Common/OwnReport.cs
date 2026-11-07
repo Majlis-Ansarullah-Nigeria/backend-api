@@ -51,6 +51,11 @@ public static class OwnReport
             return (null, unitError);
         }
 
+        if (!template.IsFilledBy(unit.Level))
+        {
+            return (null, $"This report isn't filled at {unit.Level} level.");
+        }
+
         var report = await context.ReportSubmissions
             .FirstOrDefaultAsync(s =>
                 s.SubmissionWindowId == window.Id &&
