@@ -3,6 +3,7 @@ using ManagementApi.Application.Auth.DTOs;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ManagementApi.Application.Auth.Queries;
 
@@ -24,13 +25,16 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, Result<AuthResponse
 {
     private readonly IIdentityService _identityService;
     private readonly ITokenService _tokenService;
+    private readonly IApplicationDbContext _context;
 
     public LoginQueryHandler(
         IIdentityService identityService,
-        ITokenService tokenService)
+        ITokenService tokenService,
+        IApplicationDbContext context)
     {
         _identityService = identityService;
         _tokenService = tokenService;
+        _context = context;
     }
 
     public async Task<Result<AuthResponse>> Handle(LoginQuery request, CancellationToken cancellationToken)
@@ -77,6 +81,12 @@ public class LoginQueryHandler : IRequestHandler<LoginQuery, Result<AuthResponse
             MuqamId = user.MuqamId,
             DilaId = user.DilaId,
             ZoneId = user.ZoneId,
+            MuqamName = user.MuqamId is { } muqamId
+                ? await _context.Muqams.Where(m => m.Id == muqamId).Select(m => m.Name).FirstOrDefaultAsync(cancellationToken) : null,
+            DilaName = user.DilaId is { } dilaId
+                ? await _context.Dilas.Where(d => d.Id == dilaId).Select(d => d.Name).FirstOrDefaultAsync(cancellationToken) : null,
+            ZoneName = user.ZoneId is { } zoneId
+                ? await _context.Zones.Where(z => z.Id == zoneId).Select(z => z.Name).FirstOrDefaultAsync(cancellationToken) : null,
             OrganizationLevel = user.OrganizationLevel,
             Roles = roles,
             Permissions = permissions
