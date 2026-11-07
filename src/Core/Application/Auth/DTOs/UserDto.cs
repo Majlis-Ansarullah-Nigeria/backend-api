@@ -17,6 +17,9 @@ public record UserDto
     public Guid? MuqamId { get; init; }
     public Guid? DilaId { get; init; }
     public Guid? ZoneId { get; init; }
+    public string? MuqamName { get; init; }
+    public string? DilaName { get; init; }
+    public string? ZoneName { get; init; }
     public OrganizationLevel? OrganizationLevel { get; init; }
 
     // Roles and Permissions

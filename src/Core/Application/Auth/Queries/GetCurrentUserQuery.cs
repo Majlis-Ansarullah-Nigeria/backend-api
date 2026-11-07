@@ -2,6 +2,7 @@ using ManagementApi.Application.Auth.DTOs;
 using ManagementApi.Application.Common.Interfaces;
 using ManagementApi.Application.Common.Models;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ManagementApi.Application.Auth.Queries;
 
@@ -11,13 +12,16 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, R
 {
     private readonly ICurrentUser _currentUser;
     private readonly IIdentityService _identityService;
+    private readonly IApplicationDbContext _context;
 
     public GetCurrentUserQueryHandler(
         ICurrentUser currentUser,
-        IIdentityService identityService)
+        IIdentityService identityService,
+        IApplicationDbContext context)
     {
         _currentUser = currentUser;
         _identityService = identityService;
+        _context = context;
     }
 
     public async Task<Result<UserDto>> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
@@ -53,6 +57,13 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, R
             DilaId = user.DilaId,
             ZoneId = user.ZoneId,
             OrganizationLevel = user.OrganizationLevel,
+            // Unit names for greetings such as "Nazim Ala, Ikeja Dila · Lagos Zone"
+            MuqamName = user.MuqamId is { } muqamId
+                ? await _context.Muqams.Where(m => m.Id == muqamId).Select(m => m.Name).FirstOrDefaultAsync(cancellationToken) : null,
+            DilaName = user.DilaId is { } dilaId
+                ? await _context.Dilas.Where(d => d.Id == dilaId).Select(d => d.Name).FirstOrDefaultAsync(cancellationToken) : null,
+            ZoneName = user.ZoneId is { } zoneId
+                ? await _context.Zones.Where(z => z.Id == zoneId).Select(z => z.Name).FirstOrDefaultAsync(cancellationToken) : null,
             Roles = roles,
             Permissions = permissions
         };
