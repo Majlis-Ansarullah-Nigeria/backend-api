@@ -16,6 +16,7 @@ public interface IApplicationDbContext
     DbSet<ApplicationUser> Users { get; }
     DbSet<EmailChangeRequest> EmailChangeRequests { get; }
     DbSet<ApplicationRole> Roles { get; }
+    DbSet<Microsoft.AspNetCore.Identity.IdentityUserRole<Guid>> UserRoles { get; }
     DbSet<ApplicationRolePermission> RolePermissions { get; }
 
     // Reports

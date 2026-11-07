@@ -13,4 +13,9 @@ public interface IAccountRecoveryService
     Task<Result> ResetPasswordAsync(Guid userId, string token, string newPassword);
 
     Task<Result> ChangeEmailAsync(ApplicationUser user, string newEmail);
+
+    /// <summary>Fails with "WRONG_PASSWORD" when the current password doesn't match.</summary>
+    Task<Result> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
+
+    Task<bool> CheckPasswordAsync(Guid userId, string password);
 }

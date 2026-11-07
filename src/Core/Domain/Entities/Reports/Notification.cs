@@ -116,7 +116,12 @@ public enum NotificationType
     /// <summary>
     /// Overdue submissions detected
     /// </summary>
-    OverdueAlert = 11
+    OverdueAlert = 11,
+
+    /// <summary>
+    /// A member reported a mistake in their membership record
+    /// </summary>
+    RecordCorrection = 12
 }
 
 /// <summary>

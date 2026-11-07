@@ -68,6 +68,15 @@ public class EmailChangeRequest : AuditableEntity
         }
     }
 
+    /// <summary>The member withdrew the request before it was reviewed.</summary>
+    public void Cancel(DateTime nowUtc)
+    {
+        EnsurePending();
+        Status = EmailChangeRequestStatus.Rejected;
+        RejectionReason = "Cancelled by the member";
+        ReviewedAt = nowUtc;
+    }
+
     private void EnsurePending()
     {
         if (Status != EmailChangeRequestStatus.Pending)

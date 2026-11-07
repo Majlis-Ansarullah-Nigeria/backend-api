@@ -74,5 +74,30 @@ public class AccountRecoveryService : IAccountRecoveryService
         return Result.Success();
     }
 
+    public async Task<Result> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Result.Failure("Account not found");
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        if (result.Succeeded)
+        {
+            return Result.Success();
+        }
+
+        return result.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.PasswordMismatch))
+            ? Result.Failure("WRONG_PASSWORD: Current password is wrong.")
+            : Result.Failure(result.Errors.Select(e => e.Description).ToArray());
+    }
+
+    public async Task<bool> CheckPasswordAsync(Guid userId, string password)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        return user is not null && await _userManager.CheckPasswordAsync(user, password);
+    }
+
     private const string InvalidToken = "INVALID_TOKEN: This link has expired or was already used. Request a new one.";
 }
